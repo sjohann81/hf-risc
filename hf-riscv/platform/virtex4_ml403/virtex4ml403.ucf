@@ -1,0 +1,19 @@
+# Virtex4 ML403
+
+# Clock and Reset
+NET "clk_in" LOC="AE14";
+NET "clk_in" IOSTANDARD = LVCMOS33;
+NET "reset_in" LOC="D6";
+NET "reset_in" PULLUP;
+
+# System level constraints
+NET "clk_in" TNM_NET = "clk_in";
+TIMESPEC TS_clk_in = PERIOD "clk_in" 10000 ps;
+NET "reset_in" TIG;
+
+# UART
+NET "uart_read" LOC=W2;
+NET "uart_read" IOSTANDARD = LVCMOS33;
+NET "uart_write" LOC=W1;
+NET "uart_write" IOSTANDARD = LVCMOS33;
+

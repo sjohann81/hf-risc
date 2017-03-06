@@ -1,0 +1,273 @@
+srcdir := @abs_top_srcdir@
+builddir := @abs_top_builddir@
+INSTALL_DIR := @prefix@
+
+PACKAGES := binutils gcc glibc newlib
+gcc_version := 5.2.0
+binutils_version := 2.25.1
+glibc_version := 2.22
+newlib_version := 2.2.0
+
+DISTDIR ?= /var/cache/distfiles
+GNU_MIRROR := http://mirrors.kernel.org/gnu
+gcc_url := $(GNU_MIRROR)/gcc/gcc-$(gcc_version)/gcc-$(gcc_version).tar.gz
+binutils_url := $(GNU_MIRROR)/binutils/binutils-$(binutils_version).tar.gz
+glibc_url := $(GNU_MIRROR)/glibc/glibc-$(glibc_version).tar.gz
+newlib_url := ftp://sourceware.org/pub/newlib/newlib-$(newlib_version).tar.gz
+
+XLEN ?= @XLEN@
+WITH_ARCH ?= @WITH_ARCH@
+MULTILIB ?=
+SYSROOT := $(INSTALL_DIR)/sysroot
+
+SHELL := /bin/sh
+AWK := @GAWK@
+SED := @GSED@
+PATH := $(INSTALL_DIR)/bin:$(PATH)
+
+# Check to see if we need wrapper scripts for awk/sed (which point to
+# gawk/gsed on platforms where these aren't the default), otherwise
+# don't override these as the wrappers don't always work.
+ifneq (@GSED@,/bin/sed)
+	PATH := $(base_dir)/sed:$(PATH)
+endif
+ifneq (@GAWK@,/usr/bin/gawk)
+	PATH := $(base_dir)/awk:$(PATH)
+endif
+
+export PATH AWK SED
+
+MULTILIB_FLAGS := @multilib_flags@
+ATOMIC_CFLAGS := @atomic_cflags@
+FLOAT_CFLAGS := @float_cflags@
+FLOAT_ASFLAGS := @float_asflags@
+GLIBC_CONFIGURE_FLAGS := @glibc_configure_flags@
+
+CFLAGS_FOR_TARGET := $(CFLAGS_FOR_TARGET_EXTRA) $(ATOMIC_CFLAGS) $(FLOAT_CFLAGS)
+ASFLAGS_FOR_TARGET := $(ASFLAGS_FOR_TARGET_EXTRA) $(FLOAT_ASFLAGS)
+
+all: @default_target@
+
+newlib: stamps/build-gcc-newlib
+
+ifneq ($(findstring --disable-multilib,$(MULTILIB_FLAGS)),)
+linux: stamps/build-gcc-linux-stage2
+else
+linux:
+	$(MAKE) stamps/build-gcc-linux-stage1 XLEN=64
+	$(MAKE) stamps/build-glibc-linux64 XLEN=64
+	$(MAKE) stamps/build-glibc-linux64-soft-float XLEN=64 MULTILIB=-soft-float \
+		GLIBC_CONFIGURE_FLAGS="--without-fp --libdir=/usr/lib/soft-float libc_cv_slibdir=/lib/soft-float"
+	$(MAKE) stamps/build-glibc-linux64-no-atomic XLEN=64 MULTILIB=-no-atomic \
+		CC="riscv64-unknown-linux-gnu-gcc -mno-atomic" \
+		CFLAGS_FOR_TARGET_EXTRA="-mno-atomic" \
+		ASFLAGS_FOR_TARGET_EXTRA="-mno-atomic" \
+		GLIBC_CONFIGURE_FLAGS="--libdir=/usr/lib/no-atomic libc_cv_slibdir=/lib/no-atomic"
+	$(MAKE) stamps/build-glibc-linux64-soft-float-no-atomic XLEN=64 MULTILIB=-soft-float-no-atomic \
+		CC="riscv64-unknown-linux-gnu-gcc -mno-atomic" \
+		CFLAGS_FOR_TARGET_EXTRA="-mno-atomic" \
+		ASFLAGS_FOR_TARGET_EXTRA="-mno-atomic" \
+		GLIBC_CONFIGURE_FLAGS="--without-fp --libdir=/usr/lib/soft-float/no-atomic libc_cv_slibdir=/lib/soft-float/no-atomic"
+	$(MAKE) stamps/build-glibc-linux32 XLEN=32 \
+		CC="riscv64-unknown-linux-gnu-gcc -m32" \
+		READELF=riscv64-unknown-linux-gnu-readelf \
+		CFLAGS_FOR_TARGET_EXTRA="-m32" \
+		ASFLAGS_FOR_TARGET_EXTRA="-m32"
+	$(MAKE) stamps/build-glibc-linux32-soft-float XLEN=32 MULTILIB=-soft-float \
+		CC="riscv64-unknown-linux-gnu-gcc -m32" \
+		READELF=riscv64-unknown-linux-gnu-readelf \
+		CFLAGS_FOR_TARGET_EXTRA="-m32" \
+		ASFLAGS_FOR_TARGET_EXTRA="-m32" \
+		GLIBC_CONFIGURE_FLAGS="--without-fp --libdir=/usr/lib32/soft-float libc_cv_slibdir=/lib32/soft-float"
+	$(MAKE) stamps/build-glibc-linux32-no-atomic XLEN=32 MULTILIB=-no-atomic \
+		CC="riscv64-unknown-linux-gnu-gcc -m32 -mno-atomic" \
+		READELF=riscv64-unknown-linux-gnu-readelf \
+		CFLAGS_FOR_TARGET_EXTRA="-m32 -mno-atomic" \
+		ASFLAGS_FOR_TARGET_EXTRA="-m32 -mno-atomic" \
+		GLIBC_CONFIGURE_FLAGS="--libdir=/usr/lib32/no-atomic libc_cv_slibdir=/lib32/no-atomic"
+	$(MAKE) stamps/build-glibc-linux32-soft-float-no-atomic XLEN=32 MULTILIB=-soft-float-no-atomic \
+		CC="riscv64-unknown-linux-gnu-gcc -m32 -mno-atomic" \
+		READELF=riscv64-unknown-linux-gnu-readelf \
+		CFLAGS_FOR_TARGET_EXTRA="-m32 -mno-atomic" \
+		ASFLAGS_FOR_TARGET_EXTRA="-m32 -mno-atomic" \
+		GLIBC_CONFIGURE_FLAGS="--without-fp --libdir=/usr/lib32/soft-float/no-atomic libc_cv_slibdir=/lib32/soft-float/no-atomic"
+	$(MAKE) stamps/build-gcc-linux-stage2 XLEN=64
+endif
+
+$(addprefix src/original-,$(PACKAGES)):
+	mkdir -p src
+	rm -rf $@ $(subst original-,,$@)-*
+	cd src && (cat $(DISTDIR)/$(subst src/original-,,$@)-$($(subst src/original-,,$@)_version).tar.gz || @FETCHER@ $($(subst src/original-,,$@)_url)) | tar zxf -
+	mv $(subst original-,,$@)-$($(subst src/original-,,$@)_version) $@
+
+$(addprefix src/,$(PACKAGES)): src/%: src/original-%
+	rm -rf $@ $@.tmp
+	cp -a $< $@.tmp
+	$(srcdir)/scripts/cp_s $(srcdir)/$(notdir $@) $@.tmp
+	cd $@.tmp && patch -p1 < $(srcdir)/patches/$(notdir $@)
+	if test -f $@.tmp/contrib/download_prerequisites && test "@NEED_GCC_EXTERNAL_LIBRARIES@" == "true"; then cd $@.tmp && ./contrib/download_prerequisites; fi
+	mv $@.tmp $@
+
+.PHONY: patches $(addprefix $(srcdir)/patches/,$(PACKAGES))
+$(addprefix $(srcdir)/patches/,$(PACKAGES)): $(srcdir)/patches/%: src/%
+	-cd src/$(notdir $@) && rm `cd $(srcdir)/$(notdir $@) && find . -type f`
+	-cd src && diff --exclude=manual --exclude=autom4te.cache -rupN original-$(notdir $@) $(notdir $@) | filterdiff --remove-timestamps > $@
+	$(srcdir)/scripts/cp_s $(srcdir)/$(notdir $@) $<
+
+patches: $(addprefix $(srcdir)/patches/,$(PACKAGES))
+
+stamps/build-binutils-linux: src/binutils
+	rm -rf $@ $(notdir $@)
+	mkdir $(notdir $@)
+	cd $(notdir $@) && $(CURDIR)/$</configure \
+		--target=riscv$(XLEN)-unknown-linux-gnu \
+		--prefix=$(INSTALL_DIR) \
+		--with-sysroot=$(SYSROOT) \
+		$(MULTILIB_FLAGS) \
+		--disable-nls
+	$(MAKE) -C $(notdir $@)
+	$(MAKE) -C $(notdir $@) install
+	mkdir -p $(dir $@) && touch $@
+
+stamps/build-linux-headers:
+	mkdir -p $(SYSROOT)/usr/
+	cp -a $(srcdir)/linux-headers/include $(SYSROOT)/usr/
+	mkdir -p $(dir $@) && touch $@
+
+stamps/build-glibc-linux-headers: src/glibc stamps/build-gcc-linux-stage1
+	rm -rf $@ $(notdir $@)
+	mkdir $(notdir $@)
+	mkdir -p $(SYSROOT)/usr/lib $(SYSROOT)/lib
+	cd $(notdir $@) && $(CURDIR)/$</configure \
+		--host=riscv$(XLEN)-unknown-linux-gnu \
+		--prefix=/usr \
+		libc_cv_forced_unwind=yes \
+		libc_cv_c_cleanup=yes \
+		--enable-shared \
+		--enable-__thread \
+		--disable-multilib \
+		--enable-kernel=2.6.32
+	$(MAKE) -C $(notdir $@) install-headers install_root=$(SYSROOT)
+	mkdir -p $(dir $@) && touch $@
+
+stamps/build-glibc-linux$(XLEN)$(MULTILIB): src/glibc stamps/build-gcc-linux-stage1
+	rm -rf $@ $(notdir $@)
+	mkdir $(notdir $@)
+	mkdir -p $(SYSROOT)/usr/lib $(SYSROOT)/lib
+	cd $(notdir $@) && CFLAGS="$(CFLAGS_FOR_TARGET) -g -O2" \
+		ASFLAGS="$(ASFLAGS_FOR_TARGET)" \
+		$(CURDIR)/$</configure \
+		--host=riscv$(XLEN)-unknown-linux-gnu \
+		--prefix=/usr \
+		libc_cv_forced_unwind=yes \
+		libc_cv_c_cleanup=yes \
+		--enable-shared \
+		--enable-__thread \
+		$(MULTILIB_FLAGS) \
+		--enable-kernel=2.6.32 \
+		$(GLIBC_CONFIGURE_FLAGS)
+	$(MAKE) -C $(notdir $@)
+	$(MAKE) -C $(notdir $@) install install_root=$(SYSROOT)
+	mkdir -p $(dir $@) && touch $@
+
+stamps/build-gcc-linux-stage1: src/gcc stamps/build-binutils-linux \
+                               stamps/build-linux-headers
+	rm -rf $@ $(notdir $@)
+	mkdir $(notdir $@)
+	cd $(notdir $@) && $(CURDIR)/$</configure \
+		--target=riscv$(XLEN)-unknown-linux-gnu \
+		--prefix=$(INSTALL_DIR) \
+		--with-sysroot=$(SYSROOT) \
+		--with-newlib \
+		--without-headers \
+		--disable-shared \
+		--disable-threads \
+		--enable-tls \
+		--enable-languages=c \
+		--disable-libatomic \
+		--disable-libmudflap \
+		--disable-libssp \
+		--disable-libquadmath \
+		--disable-libgomp \
+		--disable-nls \
+		--disable-bootstrap \
+		$(MULTILIB_FLAGS) \
+		$(WITH_ARCH)
+	$(MAKE) -C $(notdir $@) inhibit-libc=true all-gcc
+	$(MAKE) -C $(notdir $@) inhibit-libc=true install-gcc
+	$(MAKE) -C $(notdir $@) inhibit-libc=true all-target-libgcc
+	$(MAKE) -C $(notdir $@) inhibit-libc=true install-target-libgcc
+	mkdir -p $(dir $@) && touch $@
+
+stamps/build-gcc-linux-stage2: src/gcc stamps/build-glibc-linux$(XLEN) \
+                               stamps/build-glibc-linux-headers
+	rm -rf $@ $(notdir $@)
+	mkdir $(notdir $@)
+	cd $(notdir $@) && $(CURDIR)/$</configure \
+		--target=riscv$(XLEN)-unknown-linux-gnu \
+		--prefix=$(INSTALL_DIR) \
+		--with-sysroot=$(SYSROOT) \
+		--enable-shared \
+		--enable-tls \
+		--enable-languages=c,c++,fortran \
+		--disable-libmudflap \
+		--disable-libssp \
+		--disable-libquadmath \
+		--disable-nls \
+		$(MULTILIB_FLAGS) \
+		--disable-bootstrap \
+		$(WITH_ARCH)
+	$(MAKE) -C $(notdir $@)
+	$(MAKE) -C $(notdir $@) install
+	mkdir -p $(dir $@) && touch $@
+
+stamps/build-binutils-newlib: src/binutils
+	rm -rf $@ $(notdir $@)
+	mkdir $(notdir $@)
+	cd $(notdir $@) && $(CURDIR)/$</configure \
+		--target=riscv$(XLEN)-unknown-elf \
+		--prefix=$(INSTALL_DIR) \
+		--enable-tls \
+		--disable-werror
+	$(MAKE) -C $(notdir $@)
+	$(MAKE) -C $(notdir $@) install
+	mkdir -p $(dir $@) && touch $@
+
+src/newlib-gcc: src/gcc src/newlib
+	rm -rf $@ $@.tmp
+	cp -a src/gcc $@.tmp
+	cp -a src/newlib/newlib $@.tmp
+	cp -a src/newlib/libgloss $@.tmp
+	$(srcdir)/scripts/cp_s $(srcdir)/newlib $@.tmp
+	mv $@.tmp $@
+
+stamps/build-gcc-newlib: src/newlib-gcc stamps/build-binutils-newlib
+	rm -rf $@ $(notdir $@)
+	mkdir $(notdir $@)
+	cd $(notdir $@) && $(CURDIR)/$</configure \
+		--target=riscv$(XLEN)-unknown-elf \
+		--prefix=$(INSTALL_DIR) \
+		--disable-shared \
+		--disable-threads \
+		--enable-tls \
+		--enable-languages=c,c++ \
+		--with-newlib \
+		--disable-libmudflap \
+		--disable-libssp \
+		--disable-libquadmath \
+		--disable-libgomp \
+		--disable-nls \
+		$(MULTILIB_FLAGS) \
+		$(WITH_ARCH)
+	$(MAKE) -C $(notdir $@) inhibit-libc=true
+	$(MAKE) -C $(notdir $@) install
+	mkdir -p $(dir $@) && touch $@
+
+clean:
+	rm -rf build-* $(addprefix src/,$(PACKAGES)) stamps
+
+distclean: clean
+	rm -rf src
+
+# All of the packages install themselves, so our install target does nothing.
+install:
