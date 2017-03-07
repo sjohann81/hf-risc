@@ -65,4 +65,20 @@ extern void delay_us(uint32_t usec);
 void interrupt_handler(uint32_t cause, uint32_t *stack);
 void interrupt_register(uint32_t mask, funcptr ptr);
 
+/* IEEE single-precision definitions */
+#define SNG_EXPBITS	8
+#define SNG_FRACBITS	23
+#define SNG_EXP_BIAS	127
+#define SNG_EXP_INFNAN	255
+#define EXCESS		126
+#define SIGNBIT		0x80000000
+#define HIDDEN		(1 << 23)
+#define SIGN(fp)	((fp) & SIGNBIT)
+#define EXP(fp)		(((fp) >> 23) & 0xFF)
+#define MANT(fp)	(((fp) & 0x7FFFFF) | HIDDEN)
+#define PACK(s,e,m)	((s) | ((e) << 23) | (m))
 
+union float_long{
+	float f;
+	int32_t l;
+};

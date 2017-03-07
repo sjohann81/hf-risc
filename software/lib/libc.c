@@ -5,6 +5,7 @@
  */
 
 #include <hf-risc.h>
+#include <stdarg.h>
 
 /*
 auxiliary routines
@@ -388,6 +389,29 @@ int32_t atoi(const int8_t *s){
 	return(f?-n:n);
 }
 
+float atof(const int8_t *p){
+	float val, power;
+	int32_t i, sign;
+
+	for (i = 0; isspace(p[i]); i++);
+
+	sign = (p[i] == '-') ? -1 : 1;
+
+	if (p[i] == '+' || p[i] == '-')
+		i++;
+	for (val = 0.0f; isdigit(p[i]); i++)
+		val = 10.0f * val + (p[i] - '0');
+
+	if (p[i] == '.')
+		i++;
+	for (power = 1.0f; isdigit(p[i]); i++){
+		val = 10.0f * val + (p[i] - '0');
+		power *= 10.0f;
+	}
+
+	return sign * val / power;
+}
+
 int8_t *itoa(int32_t i, int8_t *s, int32_t base){
 	int8_t *ptr = s, *ptr1 = s, tmp_char;
 	int32_t tmp_value;
@@ -451,7 +475,6 @@ void srand(uint32_t seed){
 /*
 printf() and sprintf()
 */
-#include <stdarg.h>
 #define PAD_RIGHT 1
 #define PAD_ZERO 2
 #define PRINT_BUF_LEN 30
@@ -466,27 +489,31 @@ static void printchar(int8_t **str, int32_t c){
 
 static int32_t prints(int8_t **out, const int8_t *string, int32_t width, int32_t pad){
 	int32_t pc = 0, padchar = ' ';
+	int32_t len = 0;
+	const int8_t *ptr;
 
 	if (width > 0){
-		int32_t len = 0;
-		const int8_t *ptr;
-		for (ptr = string; *ptr; ++ptr) ++len;
-		if (len >= width) width = 0;
-		else width -= len;
-		if (pad & PAD_ZERO) padchar = '0';
+		for (ptr = string; *ptr; ++ptr)
+			++len;
+		if (len >= width)
+			width = 0;
+		else
+			width -= len;
+		if (pad & PAD_ZERO)
+			padchar = '0';
 	}
 	if (!(pad & PAD_RIGHT)){
 		for ( ; width > 0; --width){
-			printchar (out, padchar);
+			printchar(out, padchar);
 			++pc;
 		}
 	}
 	for ( ; *string ; ++string){
-		printchar (out, *string);
+		printchar(out, *string);
 		++pc;
 	}
 	for ( ; width > 0; --width){
-		printchar (out, padchar);
+		printchar(out, padchar);
 		++pc;
 	}
 
@@ -502,9 +529,8 @@ static int32_t printi(int8_t **out, int32_t i, int32_t b, int32_t sg, int32_t wi
 	if (i == 0){
 		print_buf[0] = '0';
 		print_buf[1] = '\0';
-		return prints (out, print_buf, width, pad);
+		return prints(out, print_buf, width, pad);
 	}
-
 	if (sg && b == 10 && i < 0){
 		neg = 1;
 		u = -i;
@@ -515,37 +541,43 @@ static int32_t printi(int8_t **out, int32_t i, int32_t b, int32_t sg, int32_t wi
 
 	while (u){
 		t = u % b;
-		if( t >= 10 )
+		if (t >= 10)
 			t += letbase - '0' - 10;
 		*--s = t + '0';
 		u /= b;
 	}
 
 	if (neg){
-		if(width && (pad & PAD_ZERO)){
-			printchar (out, '-');
+		if (width && (pad & PAD_ZERO)){
+			printchar(out, '-');
 			++pc;
 			--width;
-		}
-		else {
+		}else{
 			*--s = '-';
 		}
 	}
 
-	return pc + prints (out, s, width, pad);
+	return pc + prints(out, s, width, pad);
 }
 
 static int32_t print(int8_t **out, const int8_t *format, va_list args){
 	int32_t width, pad;
 	int32_t pc = 0;
 	int8_t scr[2];
+	int8_t *s;
+	int32_t i,j;
+	int8_t buf[30];
+	int32_t f1, precision_n = 6, precision_v = 1;
+	float f;
 
 	for (; *format != 0; ++format){
 		if (*format == '%'){
 			++format;
 			width = pad = 0;
-			if (*format == '\0') break;
-			if (*format == '%') goto out;
+			if (*format == '\0')
+				break;
+			if (*format == '%')
+				goto out;
 			if (*format == '-'){
 				++format;
 				pad = PAD_RIGHT;
@@ -558,54 +590,93 @@ static int32_t print(int8_t **out, const int8_t *format, va_list args){
 				width *= 10;
 				width += *format - '0';
 			}
-			if(*format == 's'){
-				int8_t *s = (int8_t *)va_arg(args, int32_t);
-				pc += prints(out, s?s:"(null)", width, pad);
-				continue;
+			switch(*format){
+				case 's':
+					s = (int8_t *)va_arg(args, size_t);
+					pc += prints(out, s?s:"(null)", width, pad);
+					break;
+				case 'd':
+					pc += printi(out, va_arg(args, size_t), 10, 1, width, pad, 'a');
+					break;
+				case 'x':
+					pc += printi(out, va_arg(args, size_t), 16, 0, width, pad, 'a');
+					break;
+				case 'X':
+					pc += printi(out, va_arg(args, size_t), 16, 0, width, pad, 'A');
+					break;
+				case 'u':
+					pc += printi(out, va_arg(args, size_t), 10, 0, width, pad, 'a');
+					break;
+				case 'c':
+					scr[0] = (int8_t)va_arg(args, size_t);
+					scr[1] = '\0';
+					pc += prints(out, scr, width, pad);
+					break;
+				case '.':
+					// decimal point: 1 to 9 places max. single precision is only about 7 places anyway.
+					i = *++format - '0';
+					precision_n = i;
+					precision_v = 1;
+					pc++;
+				case 'e':
+				case 'E':
+				case 'g':
+				case 'G':
+				case 'f':
+					f = va_arg(args, double);
+					if (f < 0.0f){
+						putchar('-');
+						f = -f;
+						pc++;
+					}
+					itoa((int32_t)f,buf,10);
+					j=0;
+					while (buf[j]){
+						putchar(buf[j++]);
+						pc++;
+					}
+					putchar('.');
+					for(j = 0; j < precision_n; j++)
+						precision_v *= 10;
+					f1 = (f - (int32_t)f) * precision_v;
+					i = precision_v / 10;
+					while (i > f1){
+						printchar(out, '0');
+						pc++;
+						i /= 10;
+					}
+					itoa(f1, buf, 10);
+					j = 0;
+					if (f1 != 0){
+						while (buf[j]){
+							printchar(out, buf[j++]);
+							pc++;
+						}
+					}
+					precision_n = 6;
+					precision_v = 1;
+					break;
 			}
-			if(*format == 'd'){
-				pc += printi(out, va_arg(args, int32_t), 10, 1, width, pad, 'a');
-				continue;
-			}
-			if(*format == 'x'){
-				pc += printi(out, va_arg(args, int32_t), 16, 0, width, pad, 'a');
-				continue;
-			}
-			if(*format == 'X'){
-				pc += printi(out, va_arg(args, int32_t), 16, 0, width, pad, 'A');
-				continue;
-			}
-			if(*format == 'u'){
-				pc += printi(out, va_arg(args, int32_t), 10, 0, width, pad, 'a');
-				continue;
-			}
-			if(*format == 'c'){
-				/* char are converted to int then pushed on the stack */
-				scr[0] = (int8_t)va_arg(args, int32_t);
-				scr[1] = '\0';
-				pc += prints(out, scr, width, pad);
-				continue;
-			}
-		}
-		else {
-		out:
+		}else{
+	out:
 			printchar(out, *format);
 			++pc;
 		}
 	}
 	if (out) **out = '\0';
 	va_end( args );
+	
 	return pc;
 }
 
-int printf(const int8_t *fmt, ...){
+int32_t printf(const int8_t *fmt, ...){
         va_list args;
         
         va_start(args, fmt);
         return print(0, fmt, args);
 }
 
-int sprintf(int8_t *out, const int8_t *fmt, ...){
+int32_t sprintf(int8_t *out, const int8_t *fmt, ...){
         va_list args;
         
         va_start(args, fmt);
