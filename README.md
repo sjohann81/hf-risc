@@ -114,8 +114,8 @@ The toolchain used with this core is the GCC compiler with a backend for the RIS
 
 ### Performance
 
-HF-RISC: 0.96 CoreMark/MHz
-HF-RISCV: 0.84 CoreMark/MHz*
+- HF-RISC: 0.96 CoreMark/MHz
+- HF-RISCV: 0.84 CoreMark/MHz*
 
 If a multiplier is used (not included in this design) the score is around 2.1 Coremark/MHz.
 
