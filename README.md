@@ -71,6 +71,12 @@ Core peripherals have their addresses defined as follows:
 - UART_WRITE / UART_READ: 0xf00000e0
 - UART_DIVISOR: 0xf00000f0
 
+### HF-RISC SoC
+
+Several examples of the HF-RISC SoC are presented for FPGA implementation. A typical platform includes the CPU core (with internal peripherals), memories (RAM), boot ROM and optional external peripherals. The memory map is defined to make it easy for future improvements in the platform, such as large external RAMs, cache controllers and multiprocessor implementations.
+
+Example prototype platforms are available for both HF-RISC and HF-RISCV cores on the 'platform' subdirectories. Simulation testbenches and ROM images are available on the 'sim' subdirectories.
+
 ### HF-RISCV
 
 Another version of this core implements the RV32I base user level instruction set of the RISC-V architecture. The core organization is basically the same as HF-RISC, including the memory map and software compatibility (a given application just has to be recompiled to the RV32I target). Improvements (compared to HF-RISC) include shorter critical path for higher clock frequency and an exception handling mechanism (traps) for unimplemented opcodes.
