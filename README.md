@@ -71,6 +71,33 @@ Core peripherals have their addresses defined as follows:
 - UART_WRITE / UART_READ: 0xf00000e0
 - UART_DIVISOR: 0xf00000f0
 
+Interrupt masks:
+
+- IRQ_COUNTER: 0x00000001		(bit 18 of the counter is set)
+- IRQ_COUNTER_NOT: 0x00000002		(bit 18 of the counter is clear)
+- IRQ_COUNTER2:	0x00000004		(bit 16 of the counter is set)
+- IRQ_COUNTER2_NOT: 0x00000008		(bit 16 of the counter is clear)
+- IRQ_COMPARE: 0x00000010		(counter is equal to compare, clears irq when updated)
+- IRQ_COMPARE2: 0x00000020		(counter bits 23 to 0 are equal to compare2, clears irq when updated)
+- IRQ_UART_READ_AVAILABLE: 0x00000040		(there is data available for reading on the UART)
+- IRQ_UART_WRITE_AVAILABLE: 0x00000080		(UART is not busy)
+- EXT_IRQ0: 0x00010000		(external interrupts on extio_in, high level triggered)
+- EXT_IRQ1: 0x00020000
+- EXT_IRQ2: 0x00040000
+- EXT_IRQ3: 0x00080000
+- EXT_IRQ4: 0x00100000
+- EXT_IRQ5: 0x00200000
+- EXT_IRQ6: 0x00400000
+- EXT_IRQ7: 0x00800000
+- EXT_IRQ0_NOT: 0x01000000		(external interrupts on extio_in, low level triggered)
+- EXT_IRQ1_NOT: 0x02000000
+- EXT_IRQ2_NOT: 0x04000000
+- EXT_IRQ3_NOT: 0x08000000
+- EXT_IRQ4_NOT: 0x10000000
+- EXT_IRQ5_NOT: 0x20000000
+- EXT_IRQ6_NOT: 0x40000000
+- EXT_IRQ7_NOT: 0x80000000
+
 ### HF-RISC SoC
 
 Several examples of the HF-RISC SoC are presented for FPGA implementation. A typical platform includes the CPU core (with internal peripherals), memories (RAM), boot ROM and optional external peripherals. The memory map is defined to make it easy for future improvements in the platform, such as large external RAMs, cache controllers and multiprocessor implementations.
