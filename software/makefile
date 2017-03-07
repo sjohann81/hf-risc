@@ -330,6 +330,27 @@ test_crc:
 	mv test.map code.map
 	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
 
+test_fp:
+	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
+	$(GCC_$(ARCH)) -o libc.o lib/libc.c
+	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
+	$(GCC_$(ARCH)) -o math.o lib/math.c
+	$(GCC_$(ARCH)) -o spi.o lib/spi.c
+	$(GCC_$(ARCH)) -o test_fp.o app/test_fp.c
+	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
+	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
+	$(DUMP_$(ARCH)) -h test.axf > test.sec
+	$(DUMP_$(ARCH)) -s test.axf > test.cnt
+	$(OBJ_$(ARCH)) -O binary test.axf test.bin
+	$(SIZE_$(ARCH)) test.axf
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
 test_spi:
 	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
