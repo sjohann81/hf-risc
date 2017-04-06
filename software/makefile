@@ -1,5 +1,5 @@
 # architecture: mips or riscv
-ARCH=riscv
+ARCH=mips
 
 # board specific parameters
 BAUDRATE=57600
@@ -87,6 +87,32 @@ eeprom_sim:
 	echo "b16b00b5" > eeprom.txt
 	printf "%08x\n" `stat -L -c %s code.txt` >> eeprom.txt
 	cat code.txt >> eeprom.txt
+	
+coremark:
+	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
+	$(GCC_$(ARCH)) -o libc.o lib/libc.c
+	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
+	$(GCC_$(ARCH)) -o math.o lib/math.c
+	$(GCC_$(ARCH)) -o core_list_join.o app/coremark/core_list_join.c
+	$(GCC_$(ARCH)) -o core_main.o app/coremark/core_main.c -DFLAGS_STR=\"'$(GCC_$(ARCH))'\" -Dee_printf=printf
+	$(GCC_$(ARCH)) -o core_matrix.o app/coremark/core_matrix.c
+	$(GCC_$(ARCH)) -o core_state.o app/coremark/core_state.c
+	$(GCC_$(ARCH)) -o core_util.o app/coremark/core_util.c
+	$(GCC_$(ARCH)) -o core_portme.o app/coremark/core_portme.c -Dee_printf=printf -DPERFORMANCE_RUN=1 -DITERATIONS=600
+	$(GCC_$(ARCH)) -o coremark.o app/coremark/coremark.c
+	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
+	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
+	$(DUMP_$(ARCH)) -h test.axf > test.sec
+	$(DUMP_$(ARCH)) -s test.axf > test.cnt
+	$(OBJ_$(ARCH)) -O binary test.axf test.bin
+	$(SIZE_$(ARCH)) test.axf
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
 
 core_test:
 	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
