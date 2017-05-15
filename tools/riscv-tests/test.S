@@ -67,6 +67,7 @@ start:
 
 	TEST(addi)
 	TEST(slti)
+	TEST(sltiu)
 	TEST(xori)
 	TEST(ori)
 	TEST(andi)
@@ -78,6 +79,7 @@ start:
 	TEST(sub)
 	TEST(sll)
 	TEST(slt)
+	TEST(sltu)
 	TEST(xor)
 	TEST(srl)
 	TEST(sra)
