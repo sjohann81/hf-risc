@@ -32,12 +32,16 @@ SECTIONS
 		_etext = .;
 	} > ram
 
-	.data :
+	.rodata :
 	{
 		_rodata = .;
 		*(.rodata)
 		*(.rodata.*)
 		_erodata = .;
+	} > ram
+
+	.data :
+	{
 		_data = .;
 		*(.data)
 		*(.data.*)

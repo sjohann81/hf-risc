@@ -1,5 +1,4 @@
 #include <hf-risc.h>
-#include <fp-math.h>
 
 /*
 f1(x) : x^6 - x^5 + 3x^4 - x^2 - 3 = 0
@@ -45,7 +44,7 @@ float fd2(float x){
 int main(){
 	int i;
 	float x, rn = -1.0, rp = 1.0;
-
+	int8_t buf[30];
 
 	/*
 	negative root: -0.947064
@@ -54,12 +53,14 @@ int main(){
 	x = rn;
 	for (i = 0; i < 10; i++)		/* newton-raphson, 10 iterations */
 		x = x - f1(x) / fd1(x);
-	printf("\nnegative root: %f", x);
+	ftoa(x, buf, 6);
+	printf("\nnegative root: %s", buf);
 
 	x = rp;
 	for (i = 0; i < 10; i++)		/* newton-raphson, 10 iterations */
 		x = x - f1(x) / fd1(x);
-	printf("\npositive root: %f", x);
+	ftoa(x, buf, 6);
+	printf("\npositive root: %s", buf);
 
 	/*
 	positive root: 1.900522
@@ -67,7 +68,8 @@ int main(){
 	x = rp;
 	for (i = 0; i < 20; i++)		/* newton-raphson, 20 iterations */
 		x = x - f2(x) / fd2(x);
-	printf("\npositive root: %f", x);
+	ftoa(x, buf, 6);
+	printf("\npositive root: %s", buf);
 
 	return 0;
 }

@@ -13,7 +13,7 @@ modifications include:
 */
 
 #include <hf-risc.h>
-#include <fp-math.h>
+#include <math.h>
 
 // absolute value of a floating point number
 float fabs(float n){

@@ -1,5 +1,5 @@
 # architecture: mips or riscv
-ARCH=mips
+ARCH=riscv
 
 # board specific parameters
 BAUDRATE=57600
@@ -11,7 +11,7 @@ CFLAGS_STRIP = -fdata-sections -ffunction-sections
 LDFLAGS_STRIP = --gc-sections
 
 CFLAGS_NO_HW_MULDIV = -mnohwmult -mnohwdiv -ffixed-lo -ffixed-hi
-GCC_mips = mips-elf-gcc -O2 -c -mips1 -mpatfree -mfix-r4000 -mno-check-zero-division -msoft-float -fshort-double -ffreestanding -nostdlib -fomit-frame-pointer -G 0 -I ./include -DCPU_SPEED=${F_CLK} -DBIG_ENDIAN $(CFLAGS_STRIP) $(CFLAGS_NO_HW_MULDIV) # -DDEBUG_PORT
+GCC_mips = mips-elf-gcc -Wall -O2 -c -mips2 -mno-branch-likely -mpatfree -mfix-r4000 -mno-check-zero-division -msoft-float -ffreestanding -nostdlib -fomit-frame-pointer -G 0 -I ./include -DCPU_SPEED=${F_CLK} -DBIG_ENDIAN $(CFLAGS_NO_HW_MULDIV) $(CFLAGS_STRIP) #-DDEBUG_PORT
 
 AS_mips = mips-elf-as -mips1 -msoft-float
 LD_mips = mips-elf-ld -mips1 $(LDFLAGS_STRIP)
@@ -20,13 +20,13 @@ READ_mips = mips-elf-readelf
 OBJ_mips = mips-elf-objcopy
 SIZE_mips = mips-elf-size
 
-GCC_riscv = riscv64-unknown-elf-gcc -march=RV32I -O2 -c -msoft-float -fshort-double -ffreestanding -nostdlib -ffixed-s10 -ffixed-s11 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) #-ffixed-s10 -ffixed-s11 -mrvc -fPIC -DDEBUG_PORT
-AS_riscv = riscv64-unknown-elf-as -m32 -msoft-float #-fPIC
-LD_riscv = riscv64-unknown-elf-ld -melf32lriscv $(LDFLAGS_STRIP)
-DUMP_riscv = riscv64-unknown-elf-objdump -Mno-aliases
-READ_riscv = riscv64-unknown-elf-readelf
-OBJ_riscv = riscv64-unknown-elf-objcopy
-SIZE_riscv = riscv64-unknown-elf-size
+GCC_riscv = riscv32-unknown-elf-gcc -march=rv32i -mabi=ilp32 -Wall -O2 -c -ffreestanding -nostdlib -ffixed-s10 -ffixed-s11 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) #-ffixed-s10 -ffixed-s11 -mrvc -fPIC -DDEBUG_PORT
+AS_riscv = riscv32-unknown-elf-as -march=rv32i -mabi=ilp32 #-fPIC
+LD_riscv = riscv32-unknown-elf-ld -melf32lriscv $(LDFLAGS_STRIP)
+DUMP_riscv = riscv32-unknown-elf-objdump -Mno-aliases
+READ_riscv = riscv32-unknown-elf-readelf
+OBJ_riscv = riscv32-unknown-elf-objcopy
+SIZE_riscv = riscv32-unknown-elf-size
 
 all:
 
@@ -42,7 +42,6 @@ debug: serial
 monitor:
 	$(AS_$(ARCH)) -o boot_rom.o lib/$(ARCH)/boot_rom.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o monitor.o boot/monitor.c
 	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc_bootloader.ld -Map test.map -N -o test.axf \
@@ -65,7 +64,6 @@ monitor:
 boot_sim:
 	$(AS_$(ARCH)) -o boot_rom.o lib/$(ARCH)/boot_rom.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o bootloader_sim.o boot/bootloader_sim.c
 	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc_bootloader.ld -Map test.map -N -o test.axf \
@@ -91,7 +89,6 @@ eeprom_sim:
 coremark:
 	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o core_list_join.o app/coremark/core_list_join.c
 	$(GCC_$(ARCH)) -o core_main.o app/coremark/core_main.c -DFLAGS_STR=\"'$(GCC_$(ARCH))'\" -Dee_printf=printf
@@ -117,7 +114,6 @@ coremark:
 core_test:
 	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o core_test.o app/core_test.c
 	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
@@ -137,7 +133,6 @@ core_test:
 euler:
 	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o euler.o app/euler.c
 	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
@@ -157,7 +152,6 @@ euler:
 exp_io:
 	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o spi.o lib/spi.c
 	$(GCC_$(ARCH)) -o mcp23s17.o lib/mcp23s17.c
@@ -179,7 +173,6 @@ exp_io:
 fib:
 	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o fib.o app/fib.c
 	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
@@ -199,7 +192,6 @@ fib:
 hanoi:
 	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o hanoi.o app/hanoi.c
 	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
@@ -219,7 +211,6 @@ hanoi:
 hello:
 	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o hello.o app/hello.c
 	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
@@ -239,7 +230,6 @@ hello:
 interrupt_test:
 	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o interrupt_test.o app/interrupt_test.c
 	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
@@ -259,7 +249,6 @@ interrupt_test:
 newton:
 	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o newton.o app/newton.c
 	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
@@ -279,7 +268,6 @@ newton:
 pi:
 	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o pi.o app/pi.c
 	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
@@ -299,7 +287,6 @@ pi:
 sort:
 	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o sort.o app/sort.c
 	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
@@ -319,7 +306,6 @@ sort:
 test64:
 	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o test64.o app/test64.c
 	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
@@ -339,7 +325,6 @@ test64:
 test_crc:
 	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o test_crc.o app/test_crc.c
 	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
@@ -359,7 +344,6 @@ test_crc:
 test_fp:
 	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o spi.o lib/spi.c
 	$(GCC_$(ARCH)) -o test_fp.o app/test_fp.c
@@ -380,7 +364,6 @@ test_fp:
 test_spi:
 	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o spi.o lib/spi.c
 	$(GCC_$(ARCH)) -o test_spi.o app/test_spi.c
@@ -401,7 +384,6 @@ test_spi:
 xtea:
 	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o xtea.o app/xtea.c
 	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
@@ -421,7 +403,6 @@ xtea:
 xtea_hw:
 	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o xtea_hw.o app/xtea_hw.c
 	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
@@ -441,9 +422,66 @@ xtea_hw:
 xtea_hw_vec:
 	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o fp-math.o lib/fp-math.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o xtea_hw_vec.o app/xtea_hw_vec.c
+	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
+	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
+	$(DUMP_$(ARCH)) -h test.axf > test.sec
+	$(DUMP_$(ARCH)) -s test.axf > test.cnt
+	$(OBJ_$(ARCH)) -O binary test.axf test.bin
+	$(SIZE_$(ARCH)) test.axf
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	
+aes_tiny:
+	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
+	$(GCC_$(ARCH)) -o libc.o lib/libc.c
+	$(GCC_$(ARCH)) -o math.o lib/math.c
+	$(GCC_$(ARCH)) -o aes.o app/aes_tiny/aes.c
+	$(GCC_$(ARCH)) -o test.o app/aes_tiny/test.c
+	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
+	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
+	$(DUMP_$(ARCH)) -h test.axf > test.sec
+	$(DUMP_$(ARCH)) -s test.axf > test.cnt
+	$(OBJ_$(ARCH)) -O binary test.axf test.bin
+	$(SIZE_$(ARCH)) test.axf
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+aes_lite:
+	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
+	$(GCC_$(ARCH)) -o libc.o lib/libc.c
+	$(GCC_$(ARCH)) -o math.o lib/math.c
+	$(GCC_$(ARCH)) -o aes.o app/aes_lite/aes.c
+	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
+	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
+	$(DUMP_$(ARCH)) -h test.axf > test.sec
+	$(DUMP_$(ARCH)) -s test.axf > test.cnt
+	$(OBJ_$(ARCH)) -O binary test.axf test.bin
+	$(SIZE_$(ARCH)) test.axf
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+test:
+	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
+	$(GCC_$(ARCH)) -o libc.o lib/libc.c
+	$(GCC_$(ARCH)) -o math.o lib/math.c
+	$(GCC_$(ARCH)) -o test.o app/test.c
 	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
 	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
 	$(DUMP_$(ARCH)) -h test.axf > test.sec

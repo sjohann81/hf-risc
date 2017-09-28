@@ -4,7 +4,6 @@ algorithm is precise to 9 digits.
 */
 
 #include <hf-risc.h>
-#include <fp-math.h>
 
 int fac(int n){
 	int i, f;
@@ -17,15 +16,16 @@ int fac(int n){
 
 int main(){
 	int i;
-	float e, f;
+	double e;
+	int8_t buf[30];
 
 	e = 0;
 	for (i = 0; i < 13; i++){
-		e += 1.0 / (float)fac(i);
-		f = e;
-		printf("[%d] - e = %.9f\n", i, f);
-	}
+		e += 1.0 / (double)fac(i);
 
+		ftoa(e, buf, 6);
+		printf("[%d] - e = %s\n", i, buf);
+	}
+	
 	return 0;
 }
-
