@@ -88,6 +88,7 @@ void delay_ms(uint32_t msec);
 void delay_us(uint32_t usec);
 void interrupt_handler(uint32_t cause, uint32_t *stack);
 void interrupt_register(uint32_t mask, funcptr ptr);
+void panic(void);
 
 /* IEEE single-precision definitions */
 #define SNG_EXPBITS	8

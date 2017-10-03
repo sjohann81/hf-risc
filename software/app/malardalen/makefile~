@@ -1,0 +1,726 @@
+BAUDRATE=57600
+F_CLK=25000000
+SERIAL_DEV=/dev/ttyUSB0
+
+CFLAGS_FEW_REGS = -ffixed-t0 -ffixed-t1 -ffixed-t2 -ffixed-t3 -ffixed-t4 -ffixed-t5 -ffixed-t6 -ffixed-t7 -ffixed-s0 -ffixed-s1 -ffixed-s2 -ffixed-s3 -ffixed-s4 -ffixed-s5 -ffixed-s6 -ffixed-s7
+CFLAGS_FEW_FEW_REGS = -ffixed-t8 -ffixed-t9 -ffixed-a0 -ffixed-a1 -ffixed-v0 -ffixed-v1 -ffixed-fp -ffixed-gp
+CFLAGS_NO_HW_MULDIV = -mnohwmult -mnohwdiv -ffixed-lo -ffixed-hi
+CFLAGS_NO_HW_DIV = -mnohwdiv
+# recycle $gp as a temporary register, do not put instructions on the BDS
+CFLAGS_OTHER = -fcall-used-gp -fno-delayed-branch
+# more aggressive optimizations, also turns -frename-registers on by default.
+CFLAGS_XTREME = -funroll-all-loops -fgcse-sm -finline-limit=500 -fno-schedule-insns
+
+#remove unreferenced functions
+CFLAGS_STRIP = -fdata-sections -ffunction-sections
+LDFLAGS_STRIP = --gc-sections
+
+# notes for PIC code:
+# - use the correct linker script (hf_risc.ld)
+# - don't pass -KPIC to mips-elf-as
+# - don't pass -shared -fPIC to mips-elf-ld
+# - use -G 0 when using -fPIC -mabicalls flags on mips-elf-gcc. you can use -G 8 when $gp is used and code is non-pic
+# - ignore warnings regarding mixed pic / non-pic code
+
+GCC_MIPS = mips-elf-gcc -O2 -c -mips2 -mno-branch-likely -mpatfree -mfix-r4000 -mno-check-zero-division -msoft-float -fshort-double -ffreestanding -nostdlib -fomit-frame-pointer -G 0 -I ../../hf_risc_test/include -DCPU_SPEED=${F_CLK} -DBIG_ENDIAN $(CFLAGS_STRIP) $(CFLAGS_NO_HW_MULDIV) #-fPIC -mabicalls #$(CFLAGS_FEW_REGS) -DDEBUG_PORT   test: -march=r4000 -mabi=64
+#http://www.theochem.uni-duisburg.de/cgi-bin/info2www?%28gcc-4.6%29MIPS+Options
+
+AS_MIPS = mips-elf-as -mips1
+LD_MIPS = mips-elf-ld -mips1 $(LDFLAGS_STRIP)
+DUMP_MIPS = mips-elf-objdump
+READ_MIPS = mips-elf-readelf
+OBJ_MIPS = mips-elf-objcopy
+SIZE_MIPS = mips-elf-size
+
+
+GCC_RISCV = riscv64-unknown-elf-gcc -march=RV32I -O2 -c -msoft-float -fshort-double -ffreestanding -nostdlib -ffixed-s10 -ffixed-s11 -I ../../hf_risc_test/include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP)  #-ffixed-s10 -ffixed-s11 -nostdinc -fno-builtin -mrvc
+AS_RISCV = riscv64-unknown-elf-as -m32 -msoft-float
+LD_RISCV = riscv64-unknown-elf-ld -melf32lriscv $(LDFLAGS_STRIP)
+DUMP_RISCV = riscv64-unknown-elf-objdump -Mno-aliases
+READ_RISCV = riscv64-unknown-elf-readelf
+OBJ_RISCV = riscv64-unknown-elf-objcopy
+SIZE_RISCV = riscv64-unknown-elf-size
+
+all:
+
+serial:
+	stty ${BAUDRATE} raw cs8 -parenb -crtscts clocal cread ignpar ignbrk -ixon -ixoff -ixany -brkint -icrnl -imaxbel -opost -onlcr -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke -F ${SERIAL_DEV}
+
+load: serial
+	cp code.bin ${SERIAL_DEV}
+
+debug: serial
+	cat ${SERIAL_DEV}
+
+adpcm:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o adpcm.o adpcm.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o adpcm.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+bs:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o bs.o bs.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o bs.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+bsort100:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o bsort100.o bsort100.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o bsort100.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+cnt:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o cnt.o cnt.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o cnt.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+compress:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o compress.o compress.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o compress.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+cover:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o cover.o cover.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o cover.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+crc:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o crc.o crc.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o crc.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+duff:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o duff.o duff.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o duff.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+edn:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o edn.o edn.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o edn.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+expint:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o expint.o expint.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o expint.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+fac:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o fac.o fac.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o fac.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+fdct:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o fdct.o fdct.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o fdct.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+fft1:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o fft1.o fft1.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o fft1.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+fibcall:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o fibcall.o fibcall.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o fibcall.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+fir:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o fir.o fir.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o fir.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+insertsort:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o insertsort.o insertsort.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o insertsort.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+janne_complex:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o janne_complex.o janne_complex.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o janne_complex.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+jfdctint:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o jfdctint.o jfdctint.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o jfdctint.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+lcdnum:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o lcdnum.o lcdnum.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o lcdnum.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+lms:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o lms.o lms.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o lms.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+ludcmp:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o ludcmp.o ludcmp.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o ludcmp.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+matmult:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o matmult.o matmult.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o matmult.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+minver:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o minver.o minver.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o minver.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+ndes:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o ndes.o ndes.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o ndes.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+ns:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o ns.o ns.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o ns.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+nsichneu:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o nsichneu.o nsichneu.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o nsichneu.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+prime:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o prime.o prime.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o prime.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+qsort-exam:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o qsort-exam.o qsort-exam.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o qsort-exam.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+qurt:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o qurt.o qurt.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o qurt.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+recursion:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o recursion.o recursion.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o recursion.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+select:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o select.o select.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o select.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+sqrt:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o sqrt.o sqrt.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o sqrt.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+st:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o math.o ../../hf_risc_test/math.c
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o st.o st.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o math.o libc.o st.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+statemate:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o statemate.o statemate.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o statemate.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+ud:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT
+	$(GCC_MIPS) -o ud.o ud.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o libc.o ud.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+whet:
+	$(AS_MIPS) -o crt0.o ../../hf_risc_test/crt0.s
+	$(GCC_MIPS) -o math.o ../../hf_risc_test/math.c
+	$(GCC_MIPS) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT -DFLOATING_POINT
+	$(GCC_MIPS) -o whet.o whet.c
+	$(LD_MIPS) -T../../hf_risc_test/hf_risc.ld -Map test.map -N -o test.axf \
+		crt0.o math.o libc.o whet.o
+	$(DUMP_MIPS) --disassemble --reloc test.axf > test.lst
+	$(DUMP_MIPS) -h test.axf > test.sec
+	$(DUMP_MIPS) -s test.axf > test.cnt
+	$(OBJ_MIPS) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+whet_rv:
+	$(AS_RISCV) -o crt0.o ../../hf_risc_test/crt0v.s
+	$(GCC_RISCV) -o math.o ../../hf_risc_test/math.c
+	$(GCC_RISCV) -o libc.o ../../hf_risc_test/libc.c -DFLOATING_POINT -DFLOATING_POINT
+	$(GCC_RISCV) -o whet.o whet.c
+	$(LD_RISCV) -T../../hf_risc_test/hf_riscv.ld -Map test.map -N -o test.axf \
+		crt0.o math.o libc.o whet.o
+	$(DUMP_RISCV) --disassemble --reloc test.axf > test.lst
+	$(DUMP_RISCV) -h test.axf > test.sec
+	$(DUMP_RISCV) -s test.axf > test.cnt
+	$(OBJ_RISCV) -O binary test.axf test.bin
+	mv test.axf code.axf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+
+clean:
+	-rm -rf *.o *.axf *.map *.lst *.sec *.cnt *.txt *.bin *~
+

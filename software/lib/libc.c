@@ -92,6 +92,12 @@ void exception_handler(uint32_t epc, uint32_t opcode)
 {
 }
 
+void panic(void)
+{
+	volatile uint32_t *trap_addr = (uint32_t *)0xe0000000;
+	*trap_addr = 0;
+}
+
 /*
 minimal custom C library
 */

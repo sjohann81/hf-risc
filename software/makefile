@@ -1,5 +1,5 @@
 # architecture: mips or riscv
-ARCH=riscv
+ARCH=mips
 
 # board specific parameters
 BAUDRATE=57600
@@ -38,20 +38,40 @@ load: serial
 
 debug: serial
 	cat ${SERIAL_DEV}
+
+crt:
+	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
+	$(GCC_$(ARCH)) -o libc.o lib/libc.c
+	$(GCC_$(ARCH)) -o math.o lib/math.c
+
+link:	
+	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.elf *.o
+	$(DUMP_$(ARCH)) --disassemble --reloc test.elf > test.lst
+	$(DUMP_$(ARCH)) -h test.elf > test.sec
+	$(DUMP_$(ARCH)) -s test.elf > test.cnt
+	$(OBJ_$(ARCH)) -O binary test.elf test.bin
+	$(SIZE_$(ARCH)) test.elf
+	mv test.elf code.elf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
 	
 monitor:
 	$(AS_$(ARCH)) -o boot_rom.o lib/$(ARCH)/boot_rom.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o monitor.o boot/monitor.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc_bootloader.ld -Map test.map -N -o test.axf \
+	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc_bootloader.ld -Map test.map -N -o test.elf \
 		boot_rom.o libc.o monitor.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin --pad-to 4096
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
+	$(DUMP_$(ARCH)) --disassemble --reloc test.elf > test.lst
+	$(DUMP_$(ARCH)) -h test.elf > test.sec
+	$(DUMP_$(ARCH)) -s test.elf > test.cnt
+	$(OBJ_$(ARCH)) -O binary test.elf test.bin --pad-to 4096
+	$(SIZE_$(ARCH)) test.elf
+	mv test.elf code.elf
 	mv test.bin code.bin
 	mv test.lst code.lst
 	mv test.sec code.sec
@@ -66,14 +86,14 @@ boot_sim:
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 	$(GCC_$(ARCH)) -o bootloader_sim.o boot/bootloader_sim.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc_bootloader.ld -Map test.map -N -o test.axf \
+	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc_bootloader.ld -Map test.map -N -o test.elf \
 		boot_rom.o libc.o bootloader_sim.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
+	$(DUMP_$(ARCH)) --disassemble --reloc test.elf > test.lst
+	$(DUMP_$(ARCH)) -h test.elf > test.sec
+	$(DUMP_$(ARCH)) -s test.elf > test.cnt
+	$(OBJ_$(ARCH)) -O binary test.elf test.bin
+	$(SIZE_$(ARCH)) test.elf
+	mv test.elf code.elf
 	mv test.bin code.bin
 	mv test.lst code.lst
 	mv test.sec code.sec
@@ -86,10 +106,7 @@ eeprom_sim:
 	printf "%08x\n" `stat -L -c %s code.txt` >> eeprom.txt
 	cat code.txt >> eeprom.txt
 	
-coremark:
-	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
-	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o math.o lib/math.c
+coremark: crt
 	$(GCC_$(ARCH)) -o core_list_join.o app/coremark/core_list_join.c
 	$(GCC_$(ARCH)) -o core_main.o app/coremark/core_main.c -DFLAGS_STR=\"'$(GCC_$(ARCH))'\" -Dee_printf=printf
 	$(GCC_$(ARCH)) -o core_matrix.o app/coremark/core_matrix.c
@@ -97,407 +114,96 @@ coremark:
 	$(GCC_$(ARCH)) -o core_util.o app/coremark/core_util.c
 	$(GCC_$(ARCH)) -o core_portme.o app/coremark/core_portme.c -Dee_printf=printf -DPERFORMANCE_RUN=1 -DITERATIONS=600
 	$(GCC_$(ARCH)) -o coremark.o app/coremark/coremark.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
-	mv test.bin code.bin
-	mv test.lst code.lst
-	mv test.sec code.sec
-	mv test.cnt code.cnt
-	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	@$(MAKE) --no-print-directory link
 
-core_test:
-	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
-	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o math.o lib/math.c
+core_test: crt
 	$(GCC_$(ARCH)) -o core_test.o app/core_test.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
-	mv test.bin code.bin
-	mv test.lst code.lst
-	mv test.sec code.sec
-	mv test.cnt code.cnt
-	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	@$(MAKE) --no-print-directory link
 
-euler:
-	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
-	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o math.o lib/math.c
+euler: crt
 	$(GCC_$(ARCH)) -o euler.o app/euler.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
-	mv test.bin code.bin
-	mv test.lst code.lst
-	mv test.sec code.sec
-	mv test.cnt code.cnt
-	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	@$(MAKE) --no-print-directory link
 
-exp_io:
-	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
-	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o math.o lib/math.c
+exp_io: crt
 	$(GCC_$(ARCH)) -o spi.o lib/spi.c
 	$(GCC_$(ARCH)) -o mcp23s17.o lib/mcp23s17.c
 	$(GCC_$(ARCH)) -o exp_io.o app/exp_io.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
-	mv test.bin code.bin
-	mv test.lst code.lst
-	mv test.sec code.sec
-	mv test.cnt code.cnt
-	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	@$(MAKE) --no-print-directory link
 
-fib:
-	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
-	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o math.o lib/math.c
+fib: crt
 	$(GCC_$(ARCH)) -o fib.o app/fib.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
-	mv test.bin code.bin
-	mv test.lst code.lst
-	mv test.sec code.sec
-	mv test.cnt code.cnt
-	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	@$(MAKE) --no-print-directory link
 
-hanoi:
-	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
-	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o math.o lib/math.c
+hanoi: crt
 	$(GCC_$(ARCH)) -o hanoi.o app/hanoi.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
-	mv test.bin code.bin
-	mv test.lst code.lst
-	mv test.sec code.sec
-	mv test.cnt code.cnt
-	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	@$(MAKE) --no-print-directory link
 
-hello:
-	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
-	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o math.o lib/math.c
+hello: crt
 	$(GCC_$(ARCH)) -o hello.o app/hello.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
-	mv test.bin code.bin
-	mv test.lst code.lst
-	mv test.sec code.sec
-	mv test.cnt code.cnt
-	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	@$(MAKE) --no-print-directory link
 
-interrupt_test:
-	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
-	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o math.o lib/math.c
+interrupt_test: crt
 	$(GCC_$(ARCH)) -o interrupt_test.o app/interrupt_test.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
-	mv test.bin code.bin
-	mv test.lst code.lst
-	mv test.sec code.sec
-	mv test.cnt code.cnt
-	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	@$(MAKE) --no-print-directory link
 
-newton:
-	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
-	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o math.o lib/math.c
+newton: crt
 	$(GCC_$(ARCH)) -o newton.o app/newton.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
-	mv test.bin code.bin
-	mv test.lst code.lst
-	mv test.sec code.sec
-	mv test.cnt code.cnt
-	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	@$(MAKE) --no-print-directory link
 
-pi:
-	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
-	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o math.o lib/math.c
+pi: crt
 	$(GCC_$(ARCH)) -o pi.o app/pi.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
-	mv test.bin code.bin
-	mv test.lst code.lst
-	mv test.sec code.sec
-	mv test.cnt code.cnt
-	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	@$(MAKE) --no-print-directory link
 
-sort:
-	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
-	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o math.o lib/math.c
+sort: crt
 	$(GCC_$(ARCH)) -o sort.o app/sort.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
-	mv test.bin code.bin
-	mv test.lst code.lst
-	mv test.sec code.sec
-	mv test.cnt code.cnt
-	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	@$(MAKE) --no-print-directory link
 
-test64:
-	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
-	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o math.o lib/math.c
+test64: crt
 	$(GCC_$(ARCH)) -o test64.o app/test64.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
-	mv test.bin code.bin
-	mv test.lst code.lst
-	mv test.sec code.sec
-	mv test.cnt code.cnt
-	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	@$(MAKE) --no-print-directory link
 
-test_crc:
-	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
-	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o math.o lib/math.c
+test_crc: crt
 	$(GCC_$(ARCH)) -o test_crc.o app/test_crc.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
-	mv test.bin code.bin
-	mv test.lst code.lst
-	mv test.sec code.sec
-	mv test.cnt code.cnt
-	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	@$(MAKE) --no-print-directory link
 
-test_fp:
-	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
-	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o math.o lib/math.c
-	$(GCC_$(ARCH)) -o spi.o lib/spi.c
+test_fp: crt
 	$(GCC_$(ARCH)) -o test_fp.o app/test_fp.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
-	mv test.bin code.bin
-	mv test.lst code.lst
-	mv test.sec code.sec
-	mv test.cnt code.cnt
-	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	@$(MAKE) --no-print-directory link
 
-test_spi:
-	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
-	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o math.o lib/math.c
+test_spi: crt
 	$(GCC_$(ARCH)) -o spi.o lib/spi.c
 	$(GCC_$(ARCH)) -o test_spi.o app/test_spi.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
-	mv test.bin code.bin
-	mv test.lst code.lst
-	mv test.sec code.sec
-	mv test.cnt code.cnt
-	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	@$(MAKE) --no-print-directory link
 
-xtea:
-	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
-	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o math.o lib/math.c
+xtea: crt
 	$(GCC_$(ARCH)) -o xtea.o app/xtea.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
-	mv test.bin code.bin
-	mv test.lst code.lst
-	mv test.sec code.sec
-	mv test.cnt code.cnt
-	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	@$(MAKE) --no-print-directory link
 	
-xtea_hw:
-	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
-	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o math.o lib/math.c
+xtea_hw: crt
 	$(GCC_$(ARCH)) -o xtea_hw.o app/xtea_hw.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
-	mv test.bin code.bin
-	mv test.lst code.lst
-	mv test.sec code.sec
-	mv test.cnt code.cnt
-	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	@$(MAKE) --no-print-directory link
 
-xtea_hw_vec:
-	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
-	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o math.o lib/math.c
+xtea_hw_vec: crt
 	$(GCC_$(ARCH)) -o xtea_hw_vec.o app/xtea_hw_vec.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
-	mv test.bin code.bin
-	mv test.lst code.lst
-	mv test.sec code.sec
-	mv test.cnt code.cnt
-	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	@$(MAKE) --no-print-directory link
 	
-aes_tiny:
-	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
-	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o math.o lib/math.c
+aes_tiny: crt
 	$(GCC_$(ARCH)) -o aes.o app/aes_tiny/aes.c
 	$(GCC_$(ARCH)) -o test.o app/aes_tiny/test.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
-	mv test.bin code.bin
-	mv test.lst code.lst
-	mv test.sec code.sec
-	mv test.cnt code.cnt
-	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	@$(MAKE) --no-print-directory link
 
-aes_lite:
-	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
-	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o math.o lib/math.c
+aes_lite: crt
 	$(GCC_$(ARCH)) -o aes.o app/aes_lite/aes.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
-	mv test.bin code.bin
-	mv test.lst code.lst
-	mv test.sec code.sec
-	mv test.cnt code.cnt
-	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	@$(MAKE) --no-print-directory link
 
-test:
-	$(AS_$(ARCH)) -o crt0.o lib/$(ARCH)/crt0.s
-	$(GCC_$(ARCH)) -o libc.o lib/libc.c
-	$(GCC_$(ARCH)) -o math.o lib/math.c
+test: crt
 	$(GCC_$(ARCH)) -o test.o app/test.c
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.axf *.o
-	$(DUMP_$(ARCH)) --disassemble --reloc test.axf > test.lst
-	$(DUMP_$(ARCH)) -h test.axf > test.sec
-	$(DUMP_$(ARCH)) -s test.axf > test.cnt
-	$(OBJ_$(ARCH)) -O binary test.axf test.bin
-	$(SIZE_$(ARCH)) test.axf
-	mv test.axf code.axf
-	mv test.bin code.bin
-	mv test.lst code.lst
-	mv test.sec code.sec
-	mv test.cnt code.cnt
-	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	@$(MAKE) --no-print-directory link
 
+include app/malardalen/malardalen.mak
+	
 clean:
-	-rm -rf *~ *.o *.axf *.map *.lst *.sec *.cnt *.txt *.bin *.vhd
+	-rm -rf *~ *.o *.elf *.map *.lst *.sec *.cnt *.txt *.bin *.vhd
 	-rm -rf app/*~
 	-rm -rf boot/*~
 	-rm -rf include/*~
