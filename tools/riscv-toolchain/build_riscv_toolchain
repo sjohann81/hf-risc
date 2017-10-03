@@ -1,0 +1,72 @@
+#!/bin/sh
+# this script was written by Sergio Johann Filho [sergio.johann@acad.pucrs.br]
+#
+# in order to build the toolchain, we need some basic tools:
+# flex bison libgmp3-dev libmpfr-dev autoconf texinfo build-essential libncurses5-dev
+#
+# you don't need to run this script as root. after completion, just move the
+# mips-elf/ directory to its place (e.g /usr/local) and add the tools directory
+# to the PATH environment variable (export $PATH:=$PATH:/usr/local/riscv/gcc/bin).
+# alternatively, the compiler may be left anywhere in the user home directory.
+#
+
+binutils_base="binutils-2.28"
+gcc_base="gcc-7.1.0"
+
+root_dir=`pwd`
+
+TARGET=riscv32-unknown-elf
+PREFIX=${root_dir}/$TARGET/${gcc_base}
+BUILD=i686-linux-gnu
+
+# setup our toolchain new path
+export PATH=$PREFIX/bin:$PATH
+
+dl_dir="${root_dir}/download"
+src_dir="${root_dir}/source"
+bld_dir="${root_dir}/build"
+install_dir="${root_dir}/install"
+
+mkdir $src_dir
+mkdir $bld_dir
+mkdir $install_dir
+mkdir $dl_dir
+
+# download all sources
+cd $dl_dir
+wget -c ftp://ftp.gnu.org/gnu/binutils/${binutils_base}.tar.bz2
+wget -c ftp://ftp.gnu.org/gnu/gcc/${gcc_base}/${gcc_base}.tar.bz2
+
+# unpack everything
+cd $src_dir
+tar -jxvf ${dl_dir}/"${binutils_base}.tar.bz2"
+tar -jxvf ${dl_dir}/"${gcc_base}.tar.bz2"
+
+#
+# build binutils
+#
+cd $bld_dir
+mkdir $binutils_base
+cd $binutils_base
+${src_dir}/${binutils_base}/configure --prefix=$PREFIX --target=$TARGET
+	--disable-shared --disable-threads --enable-tls --enable-languages=c,c++ \
+	--with-newlib --disable-libmudflap --disable-libssp --disable-libquadmath \
+	--disable-libgomp --disable-nls --disable-multilib
+make
+make install
+
+#
+# build GCC
+#
+cd ${src_dir}/${gcc_base}
+./contrib/download_prerequisites
+
+cd $bld_dir
+mkdir ${gcc_base}-initial
+cd ${gcc_base}-initial
+${src_dir}/${gcc_base}/configure --prefix=$PREFIX --target=$TARGET \
+	--disable-shared --disable-threads --enable-tls --enable-languages=c,c++ \
+	--with-newlib --disable-libmudflap --disable-libssp --disable-libquadmath \
+	--disable-libgomp --disable-nls --disable-multilibs 
+make all-gcc
+make install-gcc

@@ -1,0 +1,129 @@
+#!/bin/sh
+# this script was written by Sergio Johann Filho [sergio.johann@acad.pucrs.br]
+#
+# mods performed on GCC sources for the MIPS I target (new flags added):
+# -mpatfree - don't use patented MIPS instructions (swl, swr, lwl, lwr)
+# -mnohwmult - don't generate multiplication instructions (mult, multu)
+# -mnohwdiv - don't generate division instructions (div, divu)
+#
+# in order to build the toolchain, we need some basic tools:
+# flex bison libgmp3-dev libmpfr-dev autoconf texinfo build-essential libncurses5-dev
+#
+# you don't need to run this script as root. after completion, just move the
+# mips-elf/ directory to its place (e.g /usr/local) and add the tools directory
+# to the PATH environment variable (export $PATH:=$PATH:/usr/local/mips-elf/
+# gcc-4.9.3/bin). alternatively, the compiler may be left anywhere in the user
+# home directory.
+#
+# to test the toolchain:
+#
+# mips-elf-gcc -Tidt.ld hello.c -o hello
+# mips-elf-run hello
+#
+# to run under the control of gdb:
+#
+# mips-elf-gdb hello
+#   break main
+#   target sim
+#   load
+#   run
+#   next
+#   next
+#   quit
+#
+
+binutils_base="binutils-2.27"
+gcc_base="gcc-4.9.3"
+newlib_base="newlib-2.2.0"
+gdb_base="gdb-7.9.1"
+
+root_dir=`pwd`
+
+TARGET=mips-elf
+PREFIX=${root_dir}/$TARGET/${gcc_base}
+BUILD=i686-linux-gnu
+
+# setup our toolchain new path
+export PATH=$PREFIX/bin:$PATH
+
+dl_dir="${root_dir}/download"
+src_dir="${root_dir}/source"
+bld_dir="${root_dir}/build"
+install_dir="${root_dir}/install"
+
+mkdir $src_dir
+mkdir $bld_dir
+mkdir $install_dir
+mkdir $dl_dir
+
+# download all sources
+cd $dl_dir
+wget -c ftp://ftp.gnu.org/gnu/binutils/${binutils_base}.tar.bz2
+wget -c ftp://ftp.gnu.org/gnu/gcc/${gcc_base}/${gcc_base}.tar.bz2
+wget -c ftp://sourceware.org/pub/newlib/${newlib_base}.tar.gz
+wget -c ftp://ftp.gnu.org/gnu/gdb/${gdb_base}.tar.gz
+
+# unpack everything
+cd $src_dir
+tar -jxvf ${dl_dir}/"${binutils_base}.tar.bz2"
+tar -jxvf ${dl_dir}/"${gcc_base}.tar.bz2"
+tar -zxvf ${dl_dir}/"${newlib_base}.tar.gz"
+tar -zxvf ${dl_dir}/"${gdb_base}.tar.gz"
+
+# patch GCC
+cp ${root_dir}/mips.c ${src_dir}/${gcc_base}/gcc/config/mips/
+cp ${root_dir}/mips.md ${src_dir}/${gcc_base}/gcc/config/mips/
+cp ${root_dir}/mips.opt ${src_dir}/${gcc_base}/gcc/config/mips/
+
+#
+# build binutils
+#
+cd $bld_dir
+mkdir $binutils_base
+cd $binutils_base
+${src_dir}/${binutils_base}/configure --prefix=$PREFIX --target=$TARGET
+	--enable-interwork --enable-multilib --with-gnu-as --with-gnu-ld \
+	--disable-nls --disable-werror
+make
+make install
+
+#
+# build GCC
+#
+cd ${src_dir}/${gcc_base}
+./contrib/download_prerequisites
+
+cd $bld_dir
+mkdir ${gcc_base}-initial
+cd ${gcc_base}-initial
+${src_dir}/${gcc_base}/configure --prefix=$PREFIX --target=$TARGET \
+        --with-gnu-as --with-gnu-ld --enable-languages=c \
+        --with-newlib --without-headers 
+make
+make install
+
+# build libgcc.a
+make all-target-libgcc CFLAGS_FOR_TARGET="-g -O2 -mpatfree"
+make install-target-libgcc
+
+#
+# build newlib
+#
+cd $bld_dir
+mkdir $newlib_base
+cd $newlib_base
+${src_dir}/${newlib_base}/configure --prefix=$PREFIX --target=$TARGET \
+	--disable-newlib-supplied-syscalls CFLAGS_FOR_TARGET="-mpatfree"
+make
+make install
+
+#
+# build GDB
+#
+cd $bld_dir
+mkdir $gdb_base
+cd $gdb_base
+${src_dir}/${gdb_base}/configure --prefix=$PREFIX --target=$TARGET
+make
+make install
+
