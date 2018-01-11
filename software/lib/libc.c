@@ -88,8 +88,10 @@ void interrupt_register(uint32_t mask, funcptr ptr){
 			isr[i] = ptr;
 }
 
-void exception_handler(uint32_t epc, uint32_t opcode)
+uint32_t exception_handler(uint32_t service, uint32_t value, uint32_t epc, uint32_t opcode)
 {
+	/* for testing purposes, right now */
+	return ((service & 0xffff) << 16) + value;
 }
 
 void panic(void)
@@ -586,11 +588,11 @@ static void printchar(int8_t **str, int32_t c){
 		**str = c;
 		++(*str);
 	}else{
-		putchar(c);
+		if (c) putchar(c);
 	}
 }
 
-int vsprintf(char **buf, const char *fmt, va_list args)
+static int vsprintf(char **buf, const char *fmt, va_list args)
 {
 	char **p, *str;
 	const char *digits = "0123456789abcdef";

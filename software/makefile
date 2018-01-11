@@ -1,5 +1,5 @@
 # architecture: mips or riscv
-ARCH=mips
+ARCH=riscv
 
 # board specific parameters
 BAUDRATE=57600
@@ -168,6 +168,10 @@ test_crc: crt
 
 test_fp: crt
 	$(GCC_$(ARCH)) -o test_fp.o app/test_fp.c
+	@$(MAKE) --no-print-directory link
+
+test_trig: crt
+	$(GCC_$(ARCH)) -o test_trig.o app/test_trig.c
 	@$(MAKE) --no-print-directory link
 
 test_spi: crt

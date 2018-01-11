@@ -64,12 +64,13 @@ _isr:
 	beq	a0, zero, _exception	# it's an exception, not an interrupt
 	jal	ra, interrupt_handler	# jump to C handler
 _restore:	
+	lw	a0, 16(sp)
+	lw	a1, 20(sp)
+_restore_exception:
 	lw	ra, 0(sp)
 	lw	t0, 4(sp)
 	lw	t1, 8(sp)
 	lw	t2, 12(sp)
-	lw	a0, 16(sp)
-	lw	a1, 20(sp)
 	lw	a2, 24(sp)
 	lw	a3, 28(sp)
 	lw	a4, 32(sp)
@@ -89,10 +90,15 @@ _restore:
 _exception:
 	addi	s10, s10, -4		# s10 is IRQ_EPC-4, actual EPC is IRQ_EPC-8
 	lw	s11, 0(s10)		# read opcode
-	addi	a0, s10, 0
-	addi	a1, s11, 0
-	jal	ra, exception_handler	# TODO: set rd reg on some exceptions
-	jal	zero, _restore
+	# pass syscall parameters on a0 and a1 from stack
+	lw	a0, 16(sp)
+	lw	a1, 20(sp)
+	# pass EPC and syscall opcodes on a2 and a3
+	addi	a2, s10, 0
+	addi	a3, s11, 0
+	# call exception handler. return values will be at a0 and a1
+	jal	ra, exception_handler
+	jal	zero, _restore_exception
 
 	.global _interrupt_set
 _interrupt_set:
