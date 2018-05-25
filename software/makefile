@@ -20,7 +20,7 @@ READ_mips = mips-elf-readelf
 OBJ_mips = mips-elf-objcopy
 SIZE_mips = mips-elf-size
 
-GCC_riscv = riscv32-unknown-elf-gcc -march=rv32i -mabi=ilp32 -Wall -O2 -c -ffreestanding -nostdlib -ffixed-s10 -ffixed-s11 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) #-ffixed-s10 -ffixed-s11 -mrvc -fPIC -DDEBUG_PORT
+GCC_riscv = riscv32-unknown-elf-gcc -march=rv32i -mabi=ilp32 -Wall -O2 -c -ffreestanding -nostdlib -ffixed-s10 -ffixed-s11 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) #-DDEBUG_PORT #-ffixed-s10 -ffixed-s11 -mrvc -fPIC -DDEBUG_PORT
 AS_riscv = riscv32-unknown-elf-as -march=rv32i -mabi=ilp32 #-fPIC
 LD_riscv = riscv32-unknown-elf-ld -melf32lriscv $(LDFLAGS_STRIP)
 DUMP_riscv = riscv32-unknown-elf-objdump -Mno-aliases
@@ -44,7 +44,7 @@ crt:
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
 
-link:	
+link:
 	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.elf *.o
 	$(DUMP_$(ARCH)) --disassemble --reloc test.elf > test.lst
 	$(DUMP_$(ARCH)) -h test.elf > test.sec
@@ -58,7 +58,7 @@ link:
 	mv test.cnt code.cnt
 	mv test.map code.map
 	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
-	
+
 monitor:
 	$(AS_$(ARCH)) -o boot_rom.o lib/$(ARCH)/boot_rom.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
@@ -80,7 +80,7 @@ monitor:
 	hexdump -v -e '4/1 "%02x" "\n"' code.bin > boot.txt
 	xxd -b -c 4 code.bin | awk '{print $$2 $$3 $$4 $$5}' > boot_bin.txt
 	./../tools/xilinx/ram_image ./../tools/xilinx/ram_xilinx.vhd boot.txt boot_ram.vhd
-	
+
 boot_sim:
 	$(AS_$(ARCH)) -o boot_rom.o lib/$(ARCH)/boot_rom.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
@@ -105,14 +105,14 @@ eeprom_sim:
 	echo "b16b00b5" > eeprom.txt
 	printf "%08x\n" `stat -L -c %s code.txt` >> eeprom.txt
 	cat code.txt >> eeprom.txt
-	
+
 coremark: crt
 	$(GCC_$(ARCH)) -o core_list_join.o app/coremark/core_list_join.c
 	$(GCC_$(ARCH)) -o core_main.o app/coremark/core_main.c -DFLAGS_STR=\"'$(GCC_$(ARCH))'\" -Dee_printf=printf
 	$(GCC_$(ARCH)) -o core_matrix.o app/coremark/core_matrix.c
 	$(GCC_$(ARCH)) -o core_state.o app/coremark/core_state.c
 	$(GCC_$(ARCH)) -o core_util.o app/coremark/core_util.c
-	$(GCC_$(ARCH)) -o core_portme.o app/coremark/core_portme.c -Dee_printf=printf -DPERFORMANCE_RUN=1 -DITERATIONS=600
+	$(GCC_$(ARCH)) -o core_portme.o app/coremark/core_portme.c -Dee_printf=printf -DPERFORMANCE_RUN=1 -DITERATIONS=1000
 	$(GCC_$(ARCH)) -o coremark.o app/coremark/coremark.c
 	@$(MAKE) --no-print-directory link
 
@@ -158,6 +158,10 @@ sort: crt
 	$(GCC_$(ARCH)) -o sort.o app/sort.c
 	@$(MAKE) --no-print-directory link
 
+sudoku: crt
+	$(GCC_$(ARCH)) -o sudoku.o app/sudoku.c
+	@$(MAKE) --no-print-directory link
+
 test64: crt
 	$(GCC_$(ARCH)) -o test64.o app/test64.c
 	@$(MAKE) --no-print-directory link
@@ -182,7 +186,7 @@ test_spi: crt
 xtea: crt
 	$(GCC_$(ARCH)) -o xtea.o app/xtea.c
 	@$(MAKE) --no-print-directory link
-	
+
 xtea_hw: crt
 	$(GCC_$(ARCH)) -o xtea_hw.o app/xtea_hw.c
 	@$(MAKE) --no-print-directory link
@@ -190,7 +194,7 @@ xtea_hw: crt
 xtea_hw_vec: crt
 	$(GCC_$(ARCH)) -o xtea_hw_vec.o app/xtea_hw_vec.c
 	@$(MAKE) --no-print-directory link
-	
+
 aes_tiny: crt
 	$(GCC_$(ARCH)) -o aes.o app/aes_tiny/aes.c
 	$(GCC_$(ARCH)) -o test.o app/aes_tiny/test.c
@@ -205,7 +209,7 @@ test: crt
 	@$(MAKE) --no-print-directory link
 
 include app/malardalen/malardalen.mak
-	
+
 clean:
 	-rm -rf *~ *.o *.elf *.map *.lst *.sec *.cnt *.txt *.bin *.vhd
 	-rm -rf app/*~
