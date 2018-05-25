@@ -18,6 +18,8 @@ entity datapath is
 		data_in:	in std_logic_vector(31 downto 0);
 		data_out:	out std_logic_vector(31 downto 0);
 		data_w:		out std_logic_vector(3 downto 0);
+		data_b:		out std_logic;
+		data_h:		out std_logic;
 		data_access:	out std_logic
 	);
 end datapath;
@@ -308,6 +310,8 @@ begin
 	jump_taken <= '1' when jump_ctl_r /= "00" else '0';
 
 	address <= result when data_access_s = '1' and mwait = '1' else pc;
+	data_b <= '1' when mem_read_ctl_r = "01" or mem_write_ctl_r = "01" else '0';
+	data_h <= '1' when mem_read_ctl_r = "10" or mem_write_ctl_r = "10" else '0';
 	data_access_s <= '1' when reg_to_mem_r = '1' or mem_to_reg_r = '1' else '0';
 	mwait <= '1' when data_access_s = '1' and data_access_s_dly = '0' else '0';
 	data_access <= mwait;
@@ -351,7 +355,7 @@ begin
 					when "10" => data_in_s <= x"000000" & data_in(15 downto 8);
 					when "01" => data_in_s <= x"000000" & data_in(23 downto 16);
 					when others => data_in_s <= x"000000" & data_in(31 downto 24);
-		
+
 				end case;
 			when "10" =>			-- load half word
 				case result(1) is

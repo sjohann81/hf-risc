@@ -17,10 +17,11 @@ end tb;
 architecture tb of tb is
 	signal clock_in, reset, stall_cpu, data, stall, stall_sig: std_logic := '0';
 	signal uart_read, uart_write: std_logic;
-	signal boot_enable_n, ram_enable_n, irq_cpu, irq_ack_cpu, exception_cpu, data_access_cpu, ram_dly: std_logic;
-	signal address, data_read, data_write, data_read_boot, data_read_ram, irq_vector_cpu, address_cpu, data_in_cpu, data_out_cpu: std_logic_vector(31 downto 0);
+	signal boot_enable_n, ram_enable_n, irq_cpu, irq_ack_cpu, exception_cpu, data_b_cpu, data_h_cpu, data_access_cpu, ram_dly: std_logic;
+	signal address, data_read, data_write, data_read_boot, data_read_ram, data_read_sram, irq_vector_cpu, address_cpu, data_in_cpu, data_out_cpu: std_logic_vector(31 downto 0);
 	signal ext_irq: std_logic_vector(7 downto 0);
 	signal data_we, data_w_n_ram, data_w_cpu: std_logic_vector(3 downto 0);
+	signal wr, rd, stall_dly, stall_dly2, stall_sram, spi_cs, spi_clk, spi_mosi, spi_miso, hold_n: std_logic := '0';
 begin
 
 	process						--25Mhz system clock
@@ -31,29 +32,29 @@ begin
 		wait for 20 ns;
 	end process;
 
-	process
-	begin
-		stall <= not stall;
-		wait for 123 ns;
-		stall <= not stall;
-		wait for 123 ns;
-	end process;
-
 	reset <= '0', '1' after 5 ns, '0' after 500 ns;
-	stall_sig <= '0'; --stall;
+	stall_sig <= stall_sram;
 	ext_irq <= x"00";
 	uart_read <= '1';
 	boot_enable_n <= '0' when (address(31 downto 28) = "0000" and stall_cpu = '0') or reset = '1' else '1';
 	ram_enable_n <= '0' when (address(31 downto 28) = "0100" and stall_cpu = '0') or reset = '1' else '1';
-	data_read <= data_read_boot when address(31 downto 28) = "0000" and ram_dly = '0' else data_read_ram;
+	rd <= '1' when (address(31 downto 28) = "0110" and data_we = "0000" and stall_dly2 = '0') else '0';
+	wr <= '1' when (address(31 downto 28) = "0110" and data_we /= "0000" and stall_dly2 = '0') else '0';
+	data_read <= data_read_boot when address(31 downto 28) = "0000" and ram_dly = '0' else
+	data_read_sram when address(31 downto 28) = "0110" or stall_dly2 = '1' else data_read_ram;
 	data_w_n_ram <= not data_we;
+	hold_n <= '1';
 
-	process(clock_in, reset)
+	process(clock_in, reset, stall_sram)
 	begin
 		if reset = '1' then
 			ram_dly <= '0';
+			stall_dly <= '0';
+			stall_dly2 <= '0';
 		elsif clock_in'event and clock_in = '1' then
 			ram_dly <= not ram_enable_n;
+			stall_dly <= stall_sram;
+			stall_dly2 <= stall_dly;
 		end if;
 	end process;
 
@@ -70,6 +71,8 @@ begin
 			data_in => data_in_cpu,
 			data_out => data_out_cpu,
 			data_w => data_w_cpu,
+			data_b => data_b_cpu,
+			data_h => data_h_cpu,
 			data_access => data_access_cpu
 	);
 
@@ -104,6 +107,33 @@ begin
 		extio_out => open,
 		uart_read => uart_read,
 		uart_write => uart_write
+	);
+
+	sram_ctrl_core: entity work.spi_sram_ctrl
+	port map(	clk_i => clock_in,
+			rst_i => reset,
+			addr_i => address(23 downto 0),
+			data_i => data_write,
+			data_o => data_read_sram,
+			bmode_i => data_b_cpu,
+			hmode_i => data_h_cpu,
+			wr_i => wr,
+			rd_i => rd,
+			cpu_stall_o => stall_sram,
+			spi_cs_n_o => spi_cs,
+			spi_clk_o => spi_clk,
+			spi_mosi_o => spi_mosi,
+			spi_miso_i => spi_miso
+	);
+
+	spi_sram: entity work.M23LC1024
+	port map(	SI_SIO0 => spi_mosi,
+			SO_SIO1 => spi_miso,
+			SCK => spi_clk,
+			CS_N => spi_cs,
+			SIO2 => open,
+			HOLD_N_SIO3 => hold_n,
+			RESET => reset
 	);
 
 	-- boot ROM
@@ -255,7 +285,7 @@ begin
 		if reset = '1' then
 		elsif clock_in'event and clock_in = '0' then
 			assert address /= x"e0000000" report "end of simulation" severity failure;
-			assert (address < x"50000000") or (address >= x"f0000000") report "out of memory region" severity failure;
+--			assert (address < x"50000000") or (address >= x"f0000000") report "out of memory region" severity failure;
 			assert address /= x"40000100" report "handling IRQ" severity warning;
 		end if;
 	end process;
