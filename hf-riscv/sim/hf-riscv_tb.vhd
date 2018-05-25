@@ -17,7 +17,7 @@ end tb;
 architecture tb of tb is
 	signal clock_in, reset, stall_cpu, data, stall, stall_sig: std_logic := '0';
 	signal uart_read, uart_write: std_logic;
-	signal boot_enable_n, ram_enable_n, irq_cpu, irq_ack_cpu, exception_cpu, data_access_cpu, ram_dly: std_logic;
+	signal boot_enable_n, ram_enable_n, irq_cpu, irq_ack_cpu, exception_cpu, data_b_cpu, data_h_cpu, data_access_cpu, ram_dly: std_logic;
 	signal address, data_read, data_write, data_read_boot, data_read_ram, irq_vector_cpu, address_cpu, data_in_cpu, data_out_cpu: std_logic_vector(31 downto 0);
 	signal ext_irq: std_logic_vector(7 downto 0);
 	signal data_we, data_w_n_ram, data_w_cpu: std_logic_vector(3 downto 0);
@@ -70,6 +70,8 @@ begin
 			data_in => data_in_cpu,
 			data_out => data_out_cpu,
 			data_w => data_w_cpu,
+			data_b => data_b_cpu,
+			data_h => data_h_cpu,
 			data_access => data_access_cpu
 	);
 
