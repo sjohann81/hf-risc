@@ -123,6 +123,10 @@ core_test: crt
 euler: crt
 	$(GCC_$(ARCH)) -o euler.o app/euler.c
 	@$(MAKE) --no-print-directory link
+	
+euler_fixed: crt
+	$(GCC_$(ARCH)) -o euler.o app/euler_fixed.c
+	@$(MAKE) --no-print-directory link
 
 exp_io: crt
 	$(GCC_$(ARCH)) -o spi.o lib/spi.c
