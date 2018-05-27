@@ -66,13 +66,13 @@ void testfp(void){
 	
 }
 
-void main(void){
-	int8_t buf[30];
+int testmath(){
+	int8_t buf[30], buf2[30];
+	float angle, degrees[] = {0.0, 30.0, 45.0, 60.0, 90.0, 120.0, 135.0, 150.0, 180.0, 210.0, 225.0, 240.0, 270.0, 300.0, 315.0, 330.0, 360.0};
+	int32_t i, angles = sizeof(degrees) / sizeof(float);
 	
-	testfp();
-
 	fixtoa(fix_mul(fix_div(fix_val(1.0), fix_val(9.0)), fix_val(9.0)), buf, 6);
-	printf("(1.0 / 9.0) * 9.0: %s\n", buf); 
+	printf("\n(1.0 / 9.0) * 9.0: %s\n", buf); 
 	fixtoa(fix_sqrt(fix_val(2.0)), buf, 6);
 	printf("sqrt 2: %s\n", buf);
 	fixtoa(fix_exp(fix_val(5.0)), buf, 6);
@@ -84,45 +84,38 @@ void main(void){
 	fixtoa(fix_pow(fix_val(2.0), fix_val(3.0)), buf, 6);
 	printf("pow (2,3): %s\n", buf);
 
-	fixtoa(fix_sin(fix_rad(fix_val(30.0))), buf, 6);
-	printf("sin 30: %s\n", buf);
-	fixtoa(fix_sin(fix_rad(fix_val(45.0))), buf, 6);
-	printf("sin 45: %s\n", buf);
-	fixtoa(fix_cos(fix_rad(fix_val(30.0))), buf, 6);
-	printf("cos 30: %s\n", buf);
-	fixtoa(fix_cos(fix_rad(fix_val(45.0))), buf, 6);
-	printf("cos 45: %s\n", buf);
-	fixtoa(fix_tan(fix_rad(fix_val(30.0))), buf, 6);
-	printf("tan 30: %s\n", buf);
-	fixtoa(fix_tan(fix_rad(fix_val(45.0))), buf, 6);
-	printf("tan 45: %s\n", buf);
+	for (i = 0; i < angles; i++){
+		angle = degrees[i];
+		ftoa(angle, buf2, 2);
+		
+		fixtoa(fix_sin(fix_rad(fix_val(angle))), buf, 6);
+		printf("\nsin %s: %s ", buf2, buf);
+		fixtoa(fix_cos(fix_rad(fix_val(angle))), buf, 6);
+		printf("cos %s: %s ", buf2, buf);
+		fixtoa(fix_tan(fix_rad(fix_val(angle))), buf, 6);
+		printf("tan %s: %s\n", buf2, buf);
+		
+		fixtoa(fix_asin(fix_rad(fix_val(angle))), buf, 6);
+		printf("asin %s: %s ", buf2, buf);
+		fixtoa(fix_acos(fix_rad(fix_val(angle))), buf, 6);
+		printf("acos %s: %s ", buf2, buf);
+		fixtoa(fix_atan(fix_rad(fix_val(angle))), buf, 6);
+		printf("atan %s: %s\n", buf2, buf);
+
+		fixtoa(fix_sinh(fix_rad(fix_val(angle))), buf, 6);
+		printf("sinh %s: %s ", buf2, buf);
+		fixtoa(fix_cosh(fix_rad(fix_val(angle))), buf, 6);
+		printf("cosh %s: %s ", buf2, buf);
+		fixtoa(fix_tanh(fix_rad(fix_val(angle))), buf, 6);
+		printf("tanh %s: %s\n", buf2, buf);
+	}
 	
-	fixtoa(fix_atan(fix_rad(fix_val(30.0))), buf, 6);
-	printf("atan 30: %s\n", buf);
-	fixtoa(fix_atan(fix_rad(fix_val(45.0))), buf, 6);
-	printf("atan 45: %s\n", buf);
-	fixtoa(fix_asin(fix_rad(fix_val(30.0))), buf, 6);
-	printf("asin 30: %s\n", buf);
-	fixtoa(fix_asin(fix_rad(fix_val(45.0))), buf, 6);
-	printf("asin 45: %s\n", buf);
-	fixtoa(fix_acos(fix_rad(fix_val(30.0))), buf, 6);
-	printf("acos 30: %s\n", buf);
-	fixtoa(fix_acos(fix_rad(fix_val(45.0))), buf, 6);
-	printf("acos 45: %s\n", buf);
+	return 0;
+}
 
-	fixtoa(fix_sinh(fix_rad(fix_val(30.0))), buf, 6);
-	printf("sinh 30: %s\n", buf);
-	fixtoa(fix_sinh(fix_rad(fix_val(45.0))), buf, 6);
-	printf("sinh 45: %s\n", buf);
-	fixtoa(fix_cosh(fix_rad(fix_val(30.0))), buf, 6);
-	printf("cosh 30: %s\n", buf);
-	fixtoa(fix_cosh(fix_rad(fix_val(45.0))), buf, 6);
-	printf("cosh 45: %s\n", buf);
-	fixtoa(fix_tanh(fix_rad(fix_val(30.0))), buf, 6);
-	printf("tanh 30: %s\n", buf);
-	fixtoa(fix_tanh(fix_rad(fix_val(45.0))), buf, 6);
-	printf("tanh 45: %s\n", buf);
+int main(void){
+	testfp();
+	testmath();
 
-
-	return;
+	return 0;
 }
