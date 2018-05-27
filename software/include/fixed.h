@@ -250,7 +250,6 @@ fixed_t fix_log(fixed_t fp, fixed_t base)
 	return fix_div(fix_ln(fp), fix_ln(base));
 }
 
-
 fixed_t fix_pow(fixed_t fp, fixed_t exp)
 {
 	if (exp == 0)

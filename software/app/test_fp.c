@@ -41,7 +41,7 @@ void testfp(void){
 	printf("\nmachine epsilon: %s", buf);
 
 	a = 3.0f / 4.0f;
-	for (i = -10; i > -13; i--){
+	for (i = 3; i > -7; i--){
 		x = pow(3.0f, i);
 		doit(a, x);
 	}

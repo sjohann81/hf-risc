@@ -138,6 +138,10 @@ fib: crt
 	$(GCC_$(ARCH)) -o fib.o app/fib.c
 	@$(MAKE) --no-print-directory link
 
+float_fixed: crt
+	$(GCC_$(ARCH)) -o float_fixed.o app/float_fixed.c
+	@$(MAKE) --no-print-directory link
+
 hanoi: crt
 	$(GCC_$(ARCH)) -o hanoi.o app/hanoi.c
 	@$(MAKE) --no-print-directory link
@@ -176,6 +180,10 @@ test_crc: crt
 
 test_fp: crt
 	$(GCC_$(ARCH)) -o test_fp.o app/test_fp.c
+	@$(MAKE) --no-print-directory link
+	
+test_fixed: crt
+	$(GCC_$(ARCH)) -o test_fixed.o app/test_fixed.c
 	@$(MAKE) --no-print-directory link
 
 test_trig: crt

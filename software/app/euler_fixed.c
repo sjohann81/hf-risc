@@ -3,7 +3,6 @@ approximation of euler's number using fixed point math
 */
 
 #include <hf-risc.h>
-
 #define FIX_IBITS	20
 #include <fixed.h>
 
@@ -44,5 +43,7 @@ int main(){
 	printf("log (2,10): %s\n", buf);
 	fixtoa(fix_pow(fix_val(2.0), fix_val(3.0)), buf, 6);
 	printf("pow (2,3): %s\n", buf);
+	fixtoa(fix_mul(fix_div(fix_val(1.0), fix_val(9.0)), fix_val(9.0)), buf, 6);
+	printf("(1.0 / 9.0) * 9.0: %s\n", buf); 
 	return 0;
 }
