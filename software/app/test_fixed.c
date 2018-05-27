@@ -63,9 +63,66 @@ void testfp(void){
 		x = fix_pow(fix_val(3.0), fix_val(i));
 		doit(a, x);
 	}
+	
 }
 
 void main(void){
+	int8_t buf[30];
+	
 	testfp();
+
+	fixtoa(fix_mul(fix_div(fix_val(1.0), fix_val(9.0)), fix_val(9.0)), buf, 6);
+	printf("(1.0 / 9.0) * 9.0: %s\n", buf); 
+	fixtoa(fix_sqrt(fix_val(2.0)), buf, 6);
+	printf("sqrt 2: %s\n", buf);
+	fixtoa(fix_exp(fix_val(5.0)), buf, 6);
+	printf("exp 5: %s\n", buf);
+	fixtoa(fix_ln(fix_val(2.0)), buf, 6);
+	printf("ln 2: %s\n", buf);
+	fixtoa(fix_log(fix_val(2.0), fix_val(10.0)), buf, 6);
+	printf("log (2,10): %s\n", buf);
+	fixtoa(fix_pow(fix_val(2.0), fix_val(3.0)), buf, 6);
+	printf("pow (2,3): %s\n", buf);
+
+	fixtoa(fix_sin(fix_rad(fix_val(30.0))), buf, 6);
+	printf("sin 30: %s\n", buf);
+	fixtoa(fix_sin(fix_rad(fix_val(45.0))), buf, 6);
+	printf("sin 45: %s\n", buf);
+	fixtoa(fix_cos(fix_rad(fix_val(30.0))), buf, 6);
+	printf("cos 30: %s\n", buf);
+	fixtoa(fix_cos(fix_rad(fix_val(45.0))), buf, 6);
+	printf("cos 45: %s\n", buf);
+	fixtoa(fix_tan(fix_rad(fix_val(30.0))), buf, 6);
+	printf("tan 30: %s\n", buf);
+	fixtoa(fix_tan(fix_rad(fix_val(45.0))), buf, 6);
+	printf("tan 45: %s\n", buf);
+	
+	fixtoa(fix_atan(fix_rad(fix_val(30.0))), buf, 6);
+	printf("atan 30: %s\n", buf);
+	fixtoa(fix_atan(fix_rad(fix_val(45.0))), buf, 6);
+	printf("atan 45: %s\n", buf);
+	fixtoa(fix_asin(fix_rad(fix_val(30.0))), buf, 6);
+	printf("asin 30: %s\n", buf);
+	fixtoa(fix_asin(fix_rad(fix_val(45.0))), buf, 6);
+	printf("asin 45: %s\n", buf);
+	fixtoa(fix_acos(fix_rad(fix_val(30.0))), buf, 6);
+	printf("acos 30: %s\n", buf);
+	fixtoa(fix_acos(fix_rad(fix_val(45.0))), buf, 6);
+	printf("acos 45: %s\n", buf);
+
+	fixtoa(fix_sinh(fix_rad(fix_val(30.0))), buf, 6);
+	printf("sinh 30: %s\n", buf);
+	fixtoa(fix_sinh(fix_rad(fix_val(45.0))), buf, 6);
+	printf("sinh 45: %s\n", buf);
+	fixtoa(fix_cosh(fix_rad(fix_val(30.0))), buf, 6);
+	printf("cosh 30: %s\n", buf);
+	fixtoa(fix_cosh(fix_rad(fix_val(45.0))), buf, 6);
+	printf("cosh 45: %s\n", buf);
+	fixtoa(fix_tanh(fix_rad(fix_val(30.0))), buf, 6);
+	printf("tanh 30: %s\n", buf);
+	fixtoa(fix_tanh(fix_rad(fix_val(45.0))), buf, 6);
+	printf("tanh 45: %s\n", buf);
+
+
 	return;
 }
