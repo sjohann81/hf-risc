@@ -8,6 +8,14 @@ typedef int32_t fixed_t;
 #define FIX_MULDIV_WIDTH	32
 #endif
 
+#if FIX_MULDIV_WIDTH != 32 && FIX_MULDIV_WIDTH != 64
+#error "FIX_MULDIV_WIDTH should be either 32 or 64"
+#endif
+
+#if FIX_IBITS < 16 && FIX_MULDIV_WIDTH == 32
+#error "FIX_IBITS must be greater or equal to 16 when FIX_MULDIV_WIDTH is 32"
+#endif
+
 #define FIX_FBITS		(32 - FIX_IBITS)
 #define FIX_FMASK		(((fixed_t)1 << FIX_FBITS) - 1)
 #define FIX_ONE			((fixed_t)((fixed_t)1 << FIX_FBITS))
@@ -343,6 +351,7 @@ fixed_t fix_asin(fixed_t arg)
 		return fix_val(0.0);
 
 	temp = fix_sqrt(fix_val(1.0) - fix_mul(arg, arg));
+	
 	if(arg > fix_val(0.7))
 		temp = FIX_HALF_PI - fix_atan(fix_div(temp, arg));
 	else
@@ -353,9 +362,8 @@ fixed_t fix_asin(fixed_t arg)
 
 fixed_t fix_acos(fixed_t arg)
 {
-	if ((arg > fix_val(1.0)) || (arg < fix_val(-1.0))){
+	if ((arg > fix_val(1.0)) || (arg < fix_val(-1.0)))
 		return fix_val(0.0);
-	}
 
 	return (FIX_HALF_PI - fix_asin(arg));
 }
@@ -390,9 +398,8 @@ fixed_t fix_cosh(fixed_t arg)
 	if (arg < fix_val(0.0))
 		arg = -arg;
 
-	if (arg > fix_val(21.0)){
+	if (arg > fix_val(21.0))
 		return fix_exp(arg) >> 1;
-	}
 
 	temp = (fix_exp(arg) + fix_exp(-arg)) >> 1;
 
@@ -409,7 +416,7 @@ fixed_t fix_tanh(fixed_t arg)
 		sign = fix_val(-1.0);
 	}
 
-	if(arg > fix_val(21.0))
+	if (arg > fix_val(21.0))
 		return sign;
 
 	temp = fix_div(fix_mul(sign, fix_sinh(arg)), fix_cosh(arg));
