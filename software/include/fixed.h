@@ -1,3 +1,9 @@
+/* file:          fixed.h
+ * description:   fixed point arithmetic / math library
+ * date:          05/2018
+ * author:        Sergio Johann Filho <sergio.johann@acad.pucrs.br>
+ */
+
 typedef int32_t fixed_t;
 
 #ifndef FIX_IBITS
