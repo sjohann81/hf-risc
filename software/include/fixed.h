@@ -7,7 +7,7 @@
 typedef int32_t fixed_t;
 
 #ifndef FIX_IBITS
-#define FIX_IBITS		16	
+#define FIX_IBITS		16
 #endif
 
 #ifndef FIX_MULDIV_WIDTH
@@ -138,12 +138,12 @@ fixed_t fix_sqrt(fixed_t a)
 		return -1;
 	if (a == 0 || a == FIX_ONE)
 		return a;
-		
+
 	if (a < FIX_ONE && a > 6){
 		inv = 1;
 		a = fix_div(FIX_ONE, a);
 	}
-	
+
 	if (a > FIX_ONE){
 		s = a;
 		itr = 0;
@@ -156,21 +156,21 @@ fixed_t fix_sqrt(fixed_t a)
 	l = (a >> 1) + 1;
 	for (i = 0; i < itr; i++)
 		l = (l + fix_div(a, l)) >> 1;
-		
+
 	if (inv)
 		return fix_div(FIX_ONE, l);
-		
+
 	return l;
 }
 
 fixed_t fix_exp(fixed_t fp)
 {
 	fixed_t xabs, k, z, r, xp;
-	fixed_t p0 = fix_val( 1.66666666666666019037e-01);
-	fixed_t p1 = fix_val(-2.77777777770155933842e-03);
-	fixed_t p2 = fix_val( 6.61375632143793436117e-05);
-	fixed_t p3 = fix_val(-1.65339022054652515390e-06);
-	fixed_t p4 = fix_val( 4.13813679705723846039e-08);
+	fixed_t p0 = fix_val( 0.166666666666666019);
+	fixed_t p1 = fix_val(-0.002777777777701559);
+	fixed_t p2 = fix_val( 0.000066137563214379);
+	fixed_t p3 = fix_val(-0.000001653390220547);
+	fixed_t p4 = fix_val( 0.000000041381367971);
 
 	if (fp == 0)
 		return FIX_ONE;
@@ -179,7 +179,7 @@ fixed_t fix_exp(fixed_t fp)
 	k = fix_mul(xabs, FIX_LN2_INV);
 	k += FIX_HALF;
 	k &= ~FIX_FMASK;
-	
+
 	if (fp < 0)
 		k = -k;
 
@@ -188,12 +188,12 @@ fixed_t fix_exp(fixed_t fp)
 
 	r = FIX_TWO + fix_mul(z, p0 + fix_mul(z, p1 + fix_mul(z, p2 + fix_mul(z, p3 + fix_mul(z, p4)))));
 	xp = FIX_ONE + fix_div(fix_mul(fp, FIX_TWO), r - fp);
-	
+
 	if (k < 0)
 		k = FIX_ONE >> (-k >> FIX_FBITS);
 	else
 		k = FIX_ONE << (k >> FIX_FBITS);
-		
+
 	return fix_mul(k, xp);
 }
 
@@ -201,13 +201,13 @@ fixed_t fix_ln(fixed_t fp)
 {
 	fixed_t log2, xi;
 	fixed_t f, s, z, w, r;
-	fixed_t p0 = fix_val(6.666666666666735130e-01);
-	fixed_t p1 = fix_val(3.999999999940941908e-01);
-	fixed_t p2 = fix_val(2.857142874366239149e-01);
-	fixed_t p3 = fix_val(2.222219843214978396e-01);
-	fixed_t	p4 = fix_val(1.818357216161805012e-01);
-	fixed_t p5 = fix_val(1.531383769920937332e-01);
-	fixed_t p6 = fix_val(1.479819860511658591e-01);
+	fixed_t p0 = fix_val(0.666666666666673513);
+	fixed_t p1 = fix_val(0.399999999994094191);
+	fixed_t p2 = fix_val(0.285714287436623915);
+	fixed_t p3 = fix_val(0.22222198432149784);
+	fixed_t	p4 = fix_val(0.181835721616180501);
+	fixed_t p5 = fix_val(0.153138376992093733);
+	fixed_t p6 = fix_val(0.147981986051165859);
 
 	if (fp < 0)
 		return 0;
@@ -216,7 +216,7 @@ fixed_t fix_ln(fixed_t fp)
 
 	log2 = 0;
 	xi = fp;
-	while (xi > FIX_TWO) {
+	while (xi >= FIX_TWO) {
 		xi >>= 1;
 		log2++;
 	}
@@ -226,7 +226,7 @@ fixed_t fix_ln(fixed_t fp)
 	w = fix_mul(z, z);
 	r = fix_mul(w, p1 + fix_mul(w, p3 + fix_mul(w, p5))) + fix_mul(z, p0 + fix_mul(w, p2 + fix_mul(w, p4 + fix_mul(w, p6))));
 	r = fix_mul(FIX_LN2, (log2 << FIX_FBITS)) + f - fix_mul(s, f - r);
-	
+
 	return r;
 }
 
@@ -239,10 +239,10 @@ fixed_t fix_pow(fixed_t fp, fixed_t exp)
 {
 	if (exp == 0)
 		return FIX_ONE;
-		
+
 	if (fp < 0)
 		return 0;
-		
+
 	return fix_exp(fix_mul(fix_ln(fp), exp));
 }
 
@@ -261,9 +261,9 @@ fixed_t fix_sin(fixed_t rad)
 		rad -= FIX_TWO_PI;
 
 	if (rad < 0)
-		sine = fix_mul(fix_val(1.27323954), rad) + fix_mul(fix_mul(fix_val(0.405284735), rad), rad);
+		sine = fix_mul(fix_val(1.273239544735162686), rad) + fix_mul(fix_mul(fix_val(0.405284734569351086), rad), rad);
 	else
-		sine = fix_mul(fix_val(1.27323954), rad) - fix_mul(fix_mul(fix_val(0.405284735), rad), rad);
+		sine = fix_mul(fix_val(1.273239544735162686), rad) - fix_mul(fix_mul(fix_val(0.405284734569351086), rad), rad);
 
 	if (sine < 0)
 		sine = fix_mul(fix_val(0.225), (fix_mul(sine, -sine) - sine)) + sine;
@@ -285,29 +285,29 @@ fixed_t fix_tan(fixed_t rad)
 
 static fixed_t xatan(fixed_t arg)
 {
-	fixed_t p4 = fix_val(0.161536412982230228262e2);
-	fixed_t p3 = fix_val(0.26842548195503973794141e3);
-	fixed_t p2 = fix_val(0.11530293515404850115428136e4);
-	fixed_t p1 = fix_val(0.178040631643319697105464587e4);
-	fixed_t p0 = fix_val(0.89678597403663861959987488e3);
-	fixed_t q4 = fix_val(0.5895697050844462222791e2);
-	fixed_t q3 = fix_val(0.536265374031215315104235e3);
-	fixed_t q2 = fix_val(0.16667838148816337184521798e4);
-	fixed_t q1 = fix_val(0.207933497444540981287275926e4);
-	fixed_t q0 = fix_val(0.89678597403663861962481162e3);
+	fixed_t p4 = fix_val(  16.153641298223022826);
+	fixed_t p3 = fix_val( 268.425481955039737941);
+	fixed_t p2 = fix_val(1153.029351540485011543);
+	fixed_t p1 = fix_val(1780.406316433196971055);
+	fixed_t p0 = fix_val( 896.7859740366386196);
+	fixed_t q4 = fix_val(  58.956970508444622228);
+	fixed_t q3 = fix_val( 536.265374031215315104);
+	fixed_t q2 = fix_val(1666.783814881633718452);
+	fixed_t q1 = fix_val(2079.334974445409812873);
+	fixed_t q0 = fix_val( 896.785974036638619625);
 	fixed_t argsq, value;
 
 	argsq = fix_mul(arg, arg);
 	value = fix_mul((fix_mul((fix_mul((fix_mul(p4, argsq) + p3), argsq) + p2), argsq) + p1), argsq) + p0;
 	value = fix_div(value, (fix_mul((fix_mul((fix_mul((fix_mul((argsq + q4), argsq) + q3), argsq) + q2), argsq) + q1), argsq) + q0));
-	
+
 	return fix_mul(value, arg);
 }
 
 static fixed_t satan(fixed_t arg)
 {
-	fixed_t sq2p1 = fix_val(2.414213562373095048802e0);
-	fixed_t sq2m1 = fix_val(0.414213562373095048802e0);
+	fixed_t sq2p1 = fix_val(2.414213562373095049);
+	fixed_t sq2m1 = fix_val(0.414213562373095049);
 
 	if (arg < sq2m1)
 		return xatan(arg);
@@ -357,8 +357,8 @@ fixed_t fix_asin(fixed_t arg)
 		return fix_val(0.0);
 
 	temp = fix_sqrt(fix_val(1.0) - fix_mul(arg, arg));
-	
-	if(arg > fix_val(0.7))
+
+	if (arg > fix_val(0.7))
 		temp = FIX_HALF_PI - fix_atan(fix_div(temp, arg));
 	else
 		temp = fix_atan(fix_div(arg, temp));
@@ -393,7 +393,7 @@ fixed_t fix_sinh(fixed_t arg)
 	}
 
 	temp = fix_mul(sign, (fix_exp(arg) - fix_exp(-arg))) >> 1;
-	
+
 	return temp;
 }
 
