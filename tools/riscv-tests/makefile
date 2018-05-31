@@ -6,39 +6,40 @@ SERIAL_DEV=/dev/ttyUSB0
 CFLAGS_STRIP = -fdata-sections -ffunction-sections
 LDFLAGS_STRIP = --gc-sections
 
-GCC_RISCV = riscv64-unknown-elf-gcc -march=RV32I -O2 -c -msoft-float -nostdinc -fno-builtin -ffixed-s10 -ffixed-s11 -I ./../../hf_risc_test/include -DCPU_SPEED=${F_CLK} $(CFLAGS_STRIP) -DDEBUG_PORT
-AS_RISCV = riscv64-unknown-elf-as -m32
-LD_RISCV = riscv64-unknown-elf-ld -melf32lriscv
-DUMP_RISCV = riscv64-unknown-elf-objdump #-Mno-aliases
-READ_RISCV = riscv64-unknown-elf-readelf
-OBJ_RISCV = riscv64-unknown-elf-objcopy
-SIZE_RISCV = riscv64-unknown-elf-size
+GCC_riscv = riscv32-unknown-elf-gcc -march=rv32i -mabi=ilp32 -Wall -O2 -c -ffreestanding -nostdlib -ffixed-s10 -ffixed-s11 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN -D__RISCVEL $(CFLAGS_STRIP) #-DDEBUG_PORT #-ffixed-s10 -ffixed-s11 -mrvc -fPIC -DDEBUG_PORT
+AS_riscv = riscv32-unknown-elf-as -march=rv32i -mabi=ilp32 #-fPIC
+LD_riscv = riscv32-unknown-elf-ld -melf32lriscv $(LDFLAGS_STRIP)
+DUMP_riscv = riscv32-unknown-elf-objdump -Mno-aliases
+READ_riscv = riscv32-unknown-elf-readelf
+OBJ_riscv = riscv32-unknown-elf-objcopy
+SIZE_riscv = riscv32-unknown-elf-size
 
 TEST_OBJS = $(addsuffix .o,$(basename $(wildcard tests/*.S)))
 
 all:
 
 simple: $(TEST_OBJS)
-	$(GCC_RISCV) -o test.o test.S
-	$(LD_RISCV) -Thf-risc.ld -Map test.map -N -o test.axf \
+	$(GCC_riscv) test.S -o test.o
+	$(LD_riscv) -T../../software/lib/riscv/hf-risc.ld -Map test.map -N -o test.elf \
 		test.o $(TEST_OBJS)
-	$(DUMP_RISCV) --disassemble --reloc test.axf > test.lst
-	$(DUMP_RISCV) -h test.axf > test.sec
-	$(DUMP_RISCV) -s test.axf > test.cnt
-	$(OBJ_RISCV) -O binary test.axf test.bin
-	$(SIZE_RISCV) test.axf
-	mv test.axf code.axf
+	$(DUMP_riscv) --disassemble --reloc test.elf > test.lst
+	$(DUMP_riscv) -h test.elf > test.sec
+	$(DUMP_riscv) -s test.elf > test.cnt
+	$(OBJ_riscv) -O binary test.elf test.bin
+	$(SIZE_riscv) test.elf
+	mv test.elf code.elf
 	mv test.bin code.bin
 	mv test.lst code.lst
 	mv test.sec code.sec
 	mv test.cnt code.cnt
 	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > boot.txt
+	
 
 tests/%.o: tests/%.S tests/riscv_test.h tests/test_macros.h
-	$(GCC_RISCV) -o $@ -DTEST_FUNC_NAME=$(notdir $(basename $<)) \
+	$(GCC_riscv) -o $@ -DTEST_FUNC_NAME=$(notdir $(basename $<)) \
 		-DTEST_FUNC_TXT='"$(notdir $(basename $<))"' -DTEST_FUNC_RET=$(notdir $(basename $<))_ret $<
 
 clean:
-	-rm -rf *.o *.axf *.map *.lst *.sec *.cnt *.txt *.bin *~
+	-rm -rf *.o *.elf *.axf *.map *.lst *.sec *.cnt *.txt *.bin *~
 	-rm -rf tests/*.o

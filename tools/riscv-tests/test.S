@@ -1,4 +1,8 @@
-start:
+	.text
+	.align 2
+
+	.global _entry
+_entry:
 	/* zero-initialize all registers */
 
 	addi x1, zero, 0
