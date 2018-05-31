@@ -255,9 +255,9 @@ fixed_t fix_sin(fixed_t rad)
 {
 	fixed_t sine;
 
-	while (rad < -FIX_PI)
+	if (rad < -FIX_PI)
 		rad += FIX_TWO_PI;
-	while (rad > FIX_PI)
+	else if (rad > FIX_PI)
 		rad -= FIX_TWO_PI;
 
 	if (rad < 0)
