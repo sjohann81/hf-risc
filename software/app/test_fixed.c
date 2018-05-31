@@ -1,7 +1,8 @@
 #include <hf-risc.h>
 #include <fixed.h>
 
-fixed_t epsilon(void){
+fixed_t epsilon(void)
+{
 	fixed_t x = fix_val(1.0);
 
 	while ((fix_val(1.0) + fix_div(x, fix_val(2.0))) > fix_val(1.0))
@@ -10,7 +11,8 @@ fixed_t epsilon(void){
 	return x;
 }
 
-void doit(fixed_t a, fixed_t x){
+void doit(fixed_t a, fixed_t x)
+{
 	char buf[30], buf2[30];
 
 	fixtoa(a, buf, 6); fixtoa(x, buf2, 6);
@@ -50,7 +52,8 @@ void doit(fixed_t a, fixed_t x){
 	printf("\n");
 }
 
-void testfp(void){
+void testfp(void)
+{
 	int i;
 	fixed_t a, x;
 	char buf[30];
@@ -59,14 +62,15 @@ void testfp(void){
 	printf("\nmachine epsilon: %s", buf);
 
 	a = fix_div(fix_val(3.0), fix_val(4.0));
-	for (i = 3; i > -7; i--){
+	for (i = 3; i > -7; i--) {
 		x = fix_pow(fix_val(3.0), fix_val(i));
 		doit(a, x);
 	}
 
 }
 
-int testmath(){
+int testmath()
+{
 	int8_t buf[30], buf2[30];
 	float angle, degrees[] = {0.0, 30.0, 45.0, 60.0, 90.0, 120.0, 135.0, 150.0, 180.0, 210.0, 225.0, 240.0, 270.0, 300.0, 315.0, 330.0, 360.0};
 	int32_t i, angles = sizeof(degrees) / sizeof(float);
@@ -84,7 +88,7 @@ int testmath(){
 	fixtoa(fix_pow(fix_val(2.0), fix_val(3.0)), buf, 6);
 	printf("pow (2,3): %s\n", buf);
 
-	for (i = 0; i < angles; i++){
+	for (i = 0; i < angles; i++) {
 		angle = degrees[i];
 		ftoa(angle, buf2, 2);
 
@@ -113,7 +117,8 @@ int testmath(){
 	return 0;
 }
 
-int main(void){
+int main(void)
+{
 	testfp();
 	testmath();
 

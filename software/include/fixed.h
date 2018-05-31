@@ -56,12 +56,12 @@ fixed_t fix_mul(fixed_t x, fixed_t y)
 	uint32_t neg = 0, a, b, c, d;
 	fixed_t res;
 
-	if (x < 0){
+	if (x < 0) {
 		x = -x;
 		neg = 1;
 	}
 
-	if (y < 0){
+	if (y < 0) {
 		y = -y;
 		neg = neg ^ 1;
 	}
@@ -80,12 +80,12 @@ fixed_t fix_div(fixed_t x, fixed_t y)
 	uint32_t neg = 0;
 	fixed_t res;
 
-	if (x < 0){
+	if (x < 0) {
 		x = -x;
 		neg = 1;
 	}
 
-	if (y < 0){
+	if (y < 0) {
 		y = -y;
 		neg = neg ^ 1;
 	}
@@ -105,7 +105,7 @@ void fixtoa(fixed_t a, char *str, int32_t dec)
 	int8_t tmp[20];
 	uint32_t fr, ip;
 
-	if (a < 0){
+	if (a < 0) {
 		str[slen++] = '-';
 		a = -a;
 	}
@@ -139,15 +139,15 @@ fixed_t fix_sqrt(fixed_t a)
 	if (a == 0 || a == FIX_ONE)
 		return a;
 
-	if (a < FIX_ONE && a > 6){
+	if (a < FIX_ONE && a > 6) {
 		inv = 1;
 		a = fix_div(FIX_ONE, a);
 	}
 
-	if (a > FIX_ONE){
+	if (a > FIX_ONE) {
 		s = a;
 		itr = 0;
-		while (s > 0){
+		while (s > 0) {
 			s >>= 2;
 			itr++;
 		}
@@ -289,17 +289,16 @@ static fixed_t xatan(fixed_t arg)
 	fixed_t p3 = fix_val( 268.425481955039737941);
 	fixed_t p2 = fix_val(1153.029351540485011543);
 	fixed_t p1 = fix_val(1780.406316433196971055);
-	fixed_t p0 = fix_val( 896.7859740366386196);
+	fixed_t p0 = fix_val( 896.785974036638619625);
 	fixed_t q4 = fix_val(  58.956970508444622228);
 	fixed_t q3 = fix_val( 536.265374031215315104);
 	fixed_t q2 = fix_val(1666.783814881633718452);
 	fixed_t q1 = fix_val(2079.334974445409812873);
-	fixed_t q0 = fix_val( 896.785974036638619625);
 	fixed_t argsq, value;
 
 	argsq = fix_mul(arg, arg);
 	value = fix_mul((fix_mul((fix_mul((fix_mul(p4, argsq) + p3), argsq) + p2), argsq) + p1), argsq) + p0;
-	value = fix_div(value, (fix_mul((fix_mul((fix_mul((fix_mul((argsq + q4), argsq) + q3), argsq) + q2), argsq) + q1), argsq) + q0));
+	value = fix_div(value, (fix_mul((fix_mul((fix_mul((fix_mul((argsq + q4), argsq) + q3), argsq) + q2), argsq) + q1), argsq) + p0));
 
 	return fix_mul(value, arg);
 }
@@ -348,7 +347,7 @@ fixed_t fix_asin(fixed_t arg)
 	fixed_t sign, temp;
 
 	sign = fix_val(1.0);
-	if (arg < fix_val(0.0)){
+	if (arg < fix_val(0.0)) {
 		arg = -arg;
 		sign = fix_val(-1.0);
 	}
@@ -379,12 +378,12 @@ fixed_t fix_sinh(fixed_t arg)
 	fixed_t temp, sign;
 
 	sign = fix_val(1.0);
-	if (arg < fix_val(0.0)){
+	if (arg < fix_val(0.0)) {
 		arg = - arg;
 		sign = fix_val(-1.0);
 	}
 
-	if (arg > fix_val(21.0)){
+	if (arg > fix_val(21.0)) {
 		temp = fix_exp(arg) >> 1;
 		if (sign > 0)
 			return temp;
@@ -417,7 +416,7 @@ fixed_t fix_tanh(fixed_t arg)
 	fixed_t sign, temp;
 
 	sign = fix_val(1.0);
-	if (arg < fix_val(0.0)){
+	if (arg < fix_val(0.0)) {
 		arg = -arg;
 		sign = fix_val(-1.0);
 	}
