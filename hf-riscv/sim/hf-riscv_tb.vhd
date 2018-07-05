@@ -57,7 +57,7 @@ begin
 		end if;
 	end process;
 
-	-- HF-RISC core
+	-- HF-RISCV core
 	core: entity work.datapath
 	port map(	clock => clock_in,
 			reset => reset,

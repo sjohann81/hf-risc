@@ -7,7 +7,7 @@ entity tb is
 end tb;
 
 architecture tb of tb is
-	signal clock, reset, bmode, hmode, wr, rd, stall, spi_cs, spi_clk, spi_mosi, spi_miso, hold_n: std_logic := '0';
+	signal clock, reset, burst, bmode, hmode, wr, rd, data_ack, stall, spi_cs, spi_clk, spi_mosi, spi_miso, hold_n: std_logic := '0';
 	signal addr_in: std_logic_vector(23 downto 0);
 	signal data_in, data_out: std_logic_vector(31 downto 0);
 begin
@@ -27,6 +27,7 @@ begin
 
 	addr_in <= x"001000";
 	data_in <= x"aa556699";
+	burst <= '0';
 	bmode <= '0';
 	hmode <= '0';
 
@@ -38,10 +39,12 @@ begin
 			addr_i => addr_in,
 			data_i => data_in,
 			data_o => data_out,
+			burst_i => burst,
 			bmode_i => bmode,
 			hmode_i => hmode,
 			wr_i => wr,
 			rd_i => rd,
+			data_ack_o => data_ack,
 			cpu_stall_o => stall,
 			spi_cs_n_o => spi_cs,
 			spi_clk_o => spi_clk,

@@ -1,4 +1,4 @@
--- HF-RISCV v1.4
+-- HF-RISCV v1.5
 -- Sergio Johann Filho, 2015 - 2016
 --
 -- *This is a quick and dirty organization of a 3-stage pipelined RISC-V microprocessor. All registers / memory
@@ -305,7 +305,7 @@ begin
 	data_write_mem <= data_out_cpu;
 	data_we_mem_s <= data_w_cpu when data_access_cpu = '1' and periph_access = '0' else "0000";
 	data_we_mem <= data_we_mem_s;
-	
+
 	stall_cpu <= stall;
 
 	-- interrupts and peripherals

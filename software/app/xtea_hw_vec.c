@@ -1,6 +1,8 @@
 #include <hf-risc.h>
 
-#define RUNS	1
+#define RUNS		1
+#define DO_SW		0
+#define SMALL_TEST	0
 
 struct xtea_test_s {
 	uint32_t key[4];
@@ -14,7 +16,8 @@ union xtea_test {
 };
 
 const union xtea_test vector[] = {
-/*	{0x80000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x057e8c05, 0x50151937},
+#if SMALL_TEST == 0
+	{0x80000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x057e8c05, 0x50151937},
 	{0x40000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x89598070, 0x902cd40e},
 	{0x20000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x5fb5b0ad, 0x37e48ad6},
 	{0x10000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x3af684a7, 0x5a5147fb},
@@ -205,7 +208,8 @@ const union xtea_test vector[] = {
 	{0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000008, 0xf9736451, 0x7e73138d},
 	{0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000004, 0x75177a2a, 0x6db3458b},
 	{0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000002, 0x59bbf3ab, 0xd6e7b32f},
-	{0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000001, 0x47186468, 0xd1d2343d},*/
+	{0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000001, 0x47186468, 0xd1d2343d},
+#endif
 	{0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xdee9d4d8, 0xf7131ed9},
 	{0x01010101, 0x01010101, 0x01010101, 0x01010101, 0x01010101, 0x01010101, 0xc2eca7ce, 0xc9b7f992},
 	{0x02020202, 0x02020202, 0x02020202, 0x02020202, 0x02020202, 0x02020202, 0x6dbba048, 0xda4980d5},
@@ -475,7 +479,7 @@ the code takes 64 bits of data in v[0] and v[1] and 128 bits of key in key[0] - 
 
 recommended number of rounds is 32 (2 Feistel-network rounds are performed on each iteration).
 */
- 
+
 void encipher(uint32_t num_rounds, uint32_t v[2], uint32_t const key[4])
 {
 	uint32_t i;
@@ -488,7 +492,7 @@ void encipher(uint32_t num_rounds, uint32_t v[2], uint32_t const key[4])
 	}
 	v[0] = v0; v[1] = v1;
 }
- 
+
 void decipher(uint32_t num_rounds, uint32_t v[2], uint32_t const key[4])
 {
 	uint32_t i;
@@ -505,7 +509,7 @@ void decipher(uint32_t num_rounds, uint32_t v[2], uint32_t const key[4])
 
 /*
 hardware XTEA block cipher (driver)
- 
+
 this implementation of XTEA uses 32 rounds (2 Feistel-network rounds per iteration).
 the number of rounds is fixed in hardware.
 */
@@ -517,13 +521,13 @@ void xtea_hw_encipher(uint32_t v[2], uint32_t const key[4])
 	XTEA_KEY1 = key[1];
 	XTEA_KEY2 = key[2];
 	XTEA_KEY3 = key[3];
-	
+
 	XTEA_IN0 = v[0];
 	XTEA_IN1 = v[1];
 	XTEA_CONTROL = 0x3;
 	while (!(XTEA_CONTROL & 0x4));
 	XTEA_CONTROL = 0x0;
-	
+
 	v[0] = XTEA_OUT0;
 	v[1] = XTEA_OUT1;
 }
@@ -535,13 +539,13 @@ void xtea_hw_decipher(uint32_t v[2], uint32_t const key[4])
 	XTEA_KEY1 = key[1];
 	XTEA_KEY2 = key[2];
 	XTEA_KEY3 = key[3];
-	
+
 	XTEA_IN0 = v[0];
 	XTEA_IN1 = v[1];
 	XTEA_CONTROL = 0x1;
 	while (!(XTEA_CONTROL & 0x4));
 	XTEA_CONTROL = 0x0;
-	
+
 	v[0] = XTEA_OUT0;
 	v[1] = XTEA_OUT1;
 }
@@ -562,7 +566,7 @@ void xtea_hw_encipher_fast(uint32_t v[2])
 	XTEA_CONTROL = 0x3;
 	while (!(XTEA_CONTROL & 0x4));
 	XTEA_CONTROL = 0x0;
-	
+
 	v[0] = XTEA_OUT0;
 	v[1] = XTEA_OUT1;
 }
@@ -575,7 +579,7 @@ void xtea_hw_decipher_fast(uint32_t v[2])
 	XTEA_CONTROL = 0x1;
 	while (!(XTEA_CONTROL & 0x4));
 	XTEA_CONTROL = 0x0;
-	
+
 	v[0] = XTEA_OUT0;
 	v[1] = XTEA_OUT1;
 }
@@ -586,15 +590,16 @@ int main(void){
 	uint32_t esw_ok = 0, esw_fl = 0, ehw_ok = 0, ehw_fl = 0;
 	uint32_t dsw_ok = 0, dsw_fl = 0, dhw_ok = 0, dhw_fl = 0;
 	uint32_t sw_time, hw_time;
-	
+
 	for (k = 0; k < RUNS; k++){
+#if DO_SW == 1
 		printf("\nXTEA verification (software)\n");
 		printf("============================\n");
-		
+
 		for (i = 0; i < sizeof(vector) / sizeof(struct xtea_test_s); i++){
 			printf("\nkey: %08x%08x%08x%08x\nplaintext:       %08x%08x\nciphertext:      %08x%08x\n",
-				vector[i].s.key[0], vector[i].s.key[1], vector[i].s.key[2], vector[i].s.key[3], 
-				vector[i].s.plaintext[0], vector[i].s.plaintext[1],  
+				vector[i].s.key[0], vector[i].s.key[1], vector[i].s.key[2], vector[i].s.key[3],
+				vector[i].s.plaintext[0], vector[i].s.plaintext[1],
 				vector[i].s.ciphertext[0], vector[i].s.ciphertext[1]);
 			memcpy(&test, &vector[i], sizeof(test));
 
@@ -622,14 +627,15 @@ int main(void){
 				dsw_fl++;
 			}
 		}
+#endif
 
 		printf("\nXTEA verification (hardware)\n");
 		printf("============================\n");
-		
+
 		for (i = 0; i < sizeof(vector) / sizeof(struct xtea_test_s); i++){
 			printf("\nkey: %08x%08x%08x%08x\nplaintext:       %08x%08x\nciphertext:      %08x%08x\n",
-				vector[i].s.key[0], vector[i].s.key[1], vector[i].s.key[2], vector[i].s.key[3], 
-				vector[i].s.plaintext[0], vector[i].s.plaintext[1],  
+				vector[i].s.key[0], vector[i].s.key[1], vector[i].s.key[2], vector[i].s.key[3],
+				vector[i].s.plaintext[0], vector[i].s.plaintext[1],
 				vector[i].s.ciphertext[0], vector[i].s.ciphertext[1]);
 			memcpy(&test, &vector[i], sizeof(test));
 
@@ -660,7 +666,7 @@ int main(void){
 
 		printf("\nXTEA speed (software / hardware)\n");
 		printf("================================\n");
-		
+
 		sw_time = COUNTER;
 		for (i = 0; i < sizeof(vector) / sizeof(struct xtea_test_s); i++){
 			memcpy(&test, &vector[i], sizeof(test));
@@ -668,7 +674,7 @@ int main(void){
 			decipher(32, test.s.plaintext, test.s.key);
 		}
 		sw_time = COUNTER - sw_time;
-		
+
 		printf("software took %d cycles\n", sw_time);
 
 		hw_time = COUNTER;
@@ -678,9 +684,9 @@ int main(void){
 			xtea_hw_decipher(test.s.plaintext, test.s.key);
 		}
 		hw_time = COUNTER - hw_time;
-		
+
 		printf("hardware took %d cycles (naive approach)\n", hw_time);
-		
+
 		hw_time = COUNTER;
 		xtea_hw_setkey(vector[0].s.key);
 		for (i = 0; i < sizeof(vector) / sizeof(struct xtea_test_s); i++){
@@ -688,14 +694,16 @@ int main(void){
 			xtea_hw_decipher_fast(test.s.plaintext);
 		}
 		hw_time = COUNTER - hw_time;
-		
+
 		printf("hardware took %d cycles\n", hw_time);
 	}
-	
+
 	printf("\nStatistics:\n");
 	printf("===========\n");
+#if DO_SW == 1
 	printf("encipher (sw): %d pass, %d fail\n", esw_ok, esw_fl);
 	printf("decipher (sw): %d pass, %d fail\n", dsw_ok, dsw_fl);
+#endif
 	printf("encipher (hw): %d pass, %d fail\n", ehw_ok, ehw_fl);
 	printf("decipher (hw): %d pass, %d fail\n", dhw_ok, dhw_fl);
 

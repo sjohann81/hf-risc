@@ -27,7 +27,7 @@ begin
 
 	spi_core: entity work.spi_master
 	generic map(
-		WORD_SIZE => 8
+		BYTE_SIZE => 8
 	)
 	port map(	clk_i => clock,
 			rst_i => reset,

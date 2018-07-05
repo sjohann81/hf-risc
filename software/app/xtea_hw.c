@@ -10,7 +10,7 @@ recommended number of rounds is 32 (2 Feistel-network rounds are performed on ea
 */
 
 const uint32_t xtea_key[4] = {0xf0e1d2c3, 0xb4a59687, 0x78695a4b, 0x3c2d1e0f};
- 
+
 void encipher(uint32_t num_rounds, uint32_t v[2], uint32_t const key[4]){
 	uint32_t i;
 	uint32_t v0 = v[0], v1 = v[1], sum = 0, delta = 0x9E3779B9;
@@ -22,7 +22,7 @@ void encipher(uint32_t num_rounds, uint32_t v[2], uint32_t const key[4]){
 	}
 	v[0] = v0; v[1] = v1;
 }
- 
+
 void decipher(uint32_t num_rounds, uint32_t v[2], uint32_t const key[4]){
 	uint32_t i;
 	uint32_t v0 = v[0], v1 = v[1], delta = 0x9E3779B9, sum = delta * num_rounds;
@@ -36,9 +36,9 @@ void decipher(uint32_t num_rounds, uint32_t v[2], uint32_t const key[4]){
 }
 
 int main(void){
-	int msg[2] = {0x12345678, 0x90123456};
-	int cycles;
-	
+	uint32_t msg[2] = {0x12345678, 0x90123456};
+	uint32_t cycles;
+
 	printf("message: %8x%8x\n", msg[0], msg[1]);
 	cycles = COUNTER;
 	encipher(32, msg, xtea_key);
@@ -84,6 +84,6 @@ int main(void){
 	msg[1] = XTEA_OUT1;
 
 	printf("decipher: %8x%8x, %d cycles\n", msg[0], msg[1], cycles);
-	
+
 	return 0;
 }

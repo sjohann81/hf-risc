@@ -8,6 +8,9 @@
 -- this controller needs some small changes. The controller assumes that
 -- the chip is configured to burst (sequential) data mode by default (which
 -- is not true for the 23x256 family of chips.
+-- Traffic to / from SRAM is performed in 32 bit words (4 SPI 8 bit words) or
+-- multiple (burst) of 32 bit words. For single word access, a half word or
+-- byte can be individually accessed. In this case burst mode must be deselected.
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -15,16 +18,21 @@ use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
 entity spi_sram_ctrl is
+	generic (
+		BURST_SIZE: integer := 4
+	);
 	port (	-- core interface
 		clk_i: in std_logic;
 		rst_i: in std_logic;
 		addr_i: in std_logic_vector(23 downto 0);
 		data_i: in std_logic_vector(31 downto 0);
 		data_o: out std_logic_vector(31 downto 0);
+		burst_i: in std_logic;					-- data in burst mode
 		bmode_i: in std_logic;					-- byte access
 		hmode_i: in std_logic;					-- half word access
 		wr_i: in std_logic;
 		rd_i: in std_logic;
+		data_ack_o: out std_logic;				-- signals the last byte of a word
 		cpu_stall_o: out std_logic;
 		-- SPI interface
 		spi_cs_n_o: out std_logic;
@@ -40,14 +48,14 @@ architecture spi_sram_ctrl_arch of spi_sram_ctrl is
 	signal data_o_reg: std_logic_vector(31 downto 0);
 	signal cmd_counter: std_logic;
 	signal addr_counter: std_logic_vector(1 downto 0);
-	signal data_counter: std_logic_vector(2 downto 0);
+	signal data_counter: std_logic_vector(2**BURST_SIZE downto 0);
 	signal data_in, data_out: std_logic_vector(7 downto 0);
 	signal wren, data_valid, bmode, hmode, cpu_stall: std_logic;
 
 begin
 	spi_core: entity work.spi_master
 	generic map(
-		WORD_SIZE => 8
+		BYTE_SIZE => 8
 	)
 	port map(	clk_i => clk_i,
 			rst_i => rst_i,
@@ -73,6 +81,7 @@ begin
 			data_in <= (others => '0');
 			wren <= '0';
 			spi_cs_n_o <= '1';
+			data_ack_o <= '0';
 			cpu_stall <= '0';
 			bmode <= '0';
 			hmode <= '0';
@@ -82,12 +91,14 @@ begin
 					cmd_counter <= '0';
 					addr_counter <= (others => '0');
 					data_o_reg <= (others => '0');
-					if (hmode_i = '1' and bmode_i = '0') then
-						data_counter <= "010";
+					if (hmode_i = '1' and bmode_i = '0' and burst_i = '0') then
+						data_counter(1 downto 0) <= "10";
+						data_counter(2**BURST_SIZE downto 2) <= (others => '0');
 						bmode <= '0';
 						hmode <= '1';
-					elsif (hmode_i = '0' and bmode_i = '1') then
-						data_counter <= "011";
+					elsif (hmode_i = '0' and bmode_i = '1' and burst_i = '0') then
+						data_counter(1 downto 0) <= "11";
+						data_counter(2**BURST_SIZE downto 2) <= (others => '0');
 						bmode <= '1';
 						hmode <= '0';
 					else
@@ -97,6 +108,7 @@ begin
 					end if;
 					wren <= '0';
 					spi_cs_n_o <= '0';
+					data_ack_o <= '0';
 					cpu_stall <= '1';
 				when cmd_write =>
 					if (data_valid = '0') then
@@ -131,14 +143,15 @@ begin
 					end if;
 				when data_phase =>
 					if (data_valid = '0') then
-						case data_counter is
-							when "000" => 	data_in <= data_i(31 downto 24);
+						case data_counter(1 downto 0) is
+							when "00" => 	data_in <= data_i(31 downto 24);
 									data_o_reg(31 downto 24) <= data_out;
-							when "001" =>	data_in <= data_i(23 downto 16);
+									data_ack_o <= '0';
+							when "01" =>	data_in <= data_i(23 downto 16);
 									data_o_reg(23 downto 16) <= data_out;
-							when "010" => 	data_in <= data_i(15 downto 8);
+							when "10" => 	data_in <= data_i(15 downto 8);
 									data_o_reg(15 downto 8) <= data_out;
-							when "011" => 	data_in <= data_i(7 downto 0);
+							when "11" => 	data_in <= data_i(7 downto 0);
 									if bmode = '1' then
 										data_o_reg <= data_out & data_out & data_out & data_out;
 									elsif hmode = '1' then
@@ -146,6 +159,7 @@ begin
 									else
 										data_o_reg(7 downto 0) <= data_out;
 									end if;
+									data_ack_o <= '1';
 							when others => null;
 						end case;
 						wren <= '1';
@@ -196,11 +210,19 @@ begin
 						state <= data_phase;
 					end if;
 				when data_phase =>
-					if (data_counter < 4) then
-						state <= data_phase;
+					if (burst_i = '1') then
+						if (data_counter < (4 * BURST_SIZE)) then
+							state <= data_phase;
+						else
+							state <= ready;
+						end if;
 					else
-						state <= ready;
-					end if;
+						if (data_counter < 4) then
+							state <= data_phase;
+						else
+							state <= ready;
+						end if;
+					end if;		
 				when ready =>
 					if (wr_i = '1' or rd_i = '1') then
 						state <= start;

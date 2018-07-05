@@ -17,7 +17,7 @@ end tb;
 architecture tb of tb is
 	signal clock_in, reset, stall_cpu, data, stall, stall_sig: std_logic := '0';
 	signal uart_read, uart_write: std_logic;
-	signal boot_enable_n, ram_enable_n, irq_cpu, irq_ack_cpu, exception_cpu, data_b_cpu, data_h_cpu, data_access_cpu, ram_dly: std_logic;
+	signal boot_enable_n, ram_enable_n, irq_cpu, irq_ack_cpu, exception_cpu, burst, data_b_cpu, data_h_cpu, data_access_cpu, ram_dly: std_logic;
 	signal address, data_read, data_write, data_read_boot, data_read_ram, data_read_sram, irq_vector_cpu, address_cpu, data_in_cpu, data_out_cpu: std_logic_vector(31 downto 0);
 	signal ext_irq: std_logic_vector(7 downto 0);
 	signal data_we, data_w_n_ram, data_w_cpu: std_logic_vector(3 downto 0);
@@ -44,6 +44,7 @@ begin
 	data_read_sram when address(31 downto 28) = "0110" or stall_dly2 = '1' else data_read_ram;
 	data_w_n_ram <= not data_we;
 	hold_n <= '1';
+	burst <= '0';
 
 	process(clock_in, reset, stall_sram)
 	begin
@@ -58,7 +59,7 @@ begin
 		end if;
 	end process;
 
-	-- HF-RISC core
+	-- HF-RISCV core
 	core: entity work.datapath
 	port map(	clock => clock_in,
 			reset => reset,
@@ -115,10 +116,12 @@ begin
 			addr_i => address(23 downto 0),
 			data_i => data_write,
 			data_o => data_read_sram,
+			burst_i => burst,
 			bmode_i => data_b_cpu,
 			hmode_i => data_h_cpu,
 			wr_i => wr,
 			rd_i => rd,
+			data_ack_o => open,
 			cpu_stall_o => stall_sram,
 			spi_cs_n_o => spi_cs,
 			spi_clk_o => spi_clk,
@@ -285,7 +288,7 @@ begin
 		if reset = '1' then
 		elsif clock_in'event and clock_in = '0' then
 			assert address /= x"e0000000" report "end of simulation" severity failure;
---			assert (address < x"50000000") or (address >= x"f0000000") report "out of memory region" severity failure;
+			assert (address < x"70000000") or (address >= x"f0000000") report "out of memory region" severity failure;
 			assert address /= x"40000100" report "handling IRQ" severity warning;
 		end if;
 	end process;

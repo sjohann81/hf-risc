@@ -2,7 +2,7 @@
 -- description:   SPI master interface
 -- date:          03/2018
 -- author:        Sergio Johann Filho <sergio.filho@pucrs.br>
--- 
+--
 -- This is a simple SPI master interface that works in SPI MODE 0.
 -- Chip select logic is not included in this design and should be
 -- implemented externally.
@@ -14,13 +14,13 @@ use ieee.std_logic_arith.all;
 
 entity spi_master is
 	generic (
-		WORD_SIZE: integer := 8
+		BYTE_SIZE: integer := 8
 	);
 	port (	-- core interface
 		clk_i: in std_logic;
 		rst_i: in std_logic;
-		data_i: in std_logic_vector(WORD_SIZE-1 downto 0);	-- parallel data in (clocked on rising spi_clk after last bit)
-		data_o: out std_logic_vector(WORD_SIZE-1 downto 0);	-- parallel data output (clocked on rising spi_clk after last bit)
+		data_i: in std_logic_vector(BYTE_SIZE-1 downto 0);	-- parallel data in (clocked on rising spi_clk after last bit)
+		data_o: out std_logic_vector(BYTE_SIZE-1 downto 0);	-- parallel data output (clocked on rising spi_clk after last bit)
 		wren_i: in std_logic;					-- data write enable, starts transmission when interface is idle
 		data_valid_o: out std_logic;				-- data valid (read / write finished)
 		-- SPI interface
@@ -33,8 +33,8 @@ end spi_master;
 architecture spi_master_arch of spi_master is
 	type states is (idle, data1, clock1, data2, clock2, done);
 	signal state: states;
-	signal data_i_reg, data_o_reg: std_logic_vector(WORD_SIZE-1 downto 0);
-	signal counter: std_logic_vector(WORD_SIZE-1 downto 0);
+	signal data_i_reg, data_o_reg: std_logic_vector(BYTE_SIZE-1 downto 0);
+	signal counter: std_logic_vector(BYTE_SIZE-1 downto 0);
 begin
 	process(clk_i, rst_i)
 	begin
@@ -54,12 +54,12 @@ begin
 					data_valid_o <= '0';
 					data_i_reg <= data_i;
 				when data1 =>
-					spi_mosi_o <= data_i_reg(WORD_SIZE-1);
+					spi_mosi_o <= data_i_reg(BYTE_SIZE-1);
 				when clock1 =>
-					data_i_reg <= data_i_reg(WORD_SIZE-2 downto 0) & '0';
+					data_i_reg <= data_i_reg(BYTE_SIZE-2 downto 0) & '0';
 					spi_clk_o <= '1';
 				when data2 =>
-					data_o_reg <= data_o_reg(WORD_SIZE-2 downto 0) & spi_miso_i;
+					data_o_reg <= data_o_reg(BYTE_SIZE-2 downto 0) & spi_miso_i;
 				when clock2 =>
 					spi_clk_o <= '0';
 					data_o <= data_o_reg;
@@ -90,7 +90,7 @@ begin
 				when data2 =>
 					state <= clock2;
 				when clock2 =>
-					if (counter < WORD_SIZE-1) then
+					if (counter < BYTE_SIZE-1) then
 						state <= data1;
 					else
 						state <= done;
