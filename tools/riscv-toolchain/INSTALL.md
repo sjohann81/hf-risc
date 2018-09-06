@@ -10,7 +10,7 @@ In order to build the cross toolchain, first install all needed software package
 
 ### Build procedure
 
-The /build_riscv_toolchain/ script will automate the whole process of downloading, configuring and building basic binary tools and the compiler. All we need to do is create a working directory and copy the build script before starting the whole process.
+The `build_riscv_toolchain` script will automate the whole process of downloading, configuring and building basic binary tools and the compiler. All we need to do is create a working directory and copy the build script before starting the whole process.
 
 	$ mkdir riscv-tools && cd riscv-tools
 	$ cp ../build_riscv_toolchain .
@@ -27,17 +27,17 @@ Now go do something else. The process will take between 15 minutes to 1 hour, de
 
 	$ ls riscv32-unknown-elf/gcc-7.1.0/bin/
 
-If, among other files, the /riscv32-unknown-elf-gcc/ executable is present then we are ok.
+If, among other files, the `riscv32-unknown-elf-gcc` executable is present then we are ok.
 
 ### Installation
 
-The tools can be installed in any directory. Most of the time, the toolchain can be shared among users, so it makes sense to install the toolchain in the /usr/local directory. To install, just move the /risc32-unknown-elf/ directory the its place. We need root permissions for this step. We will also create a symbolic link to the toolchain so we can keep multiple versions of the same tools in the system.
+The tools can be installed in any directory. Most of the time, the toolchain can be shared among users, so it makes sense to install the toolchain in the `/usr/local` directory. To install, just move the `risc32-unknown-elf` directory the its place. We need root permissions for this step. We will also create a symbolic link to the toolchain so we can keep multiple versions of the same tools in the system.
 
 	$ sudo mv riscv32-unknown-elf /usr/local
 	$ cd /usr/local/riscv32-unknown-elf
 	$ sudo ln -s gcc-7.1.0 gcc
 
-One last step is to update the PATH environment variable. This can be done in the current terminal or we can update the /.bashrc/ script found in the home directory of the current user.
+One last step is to update the PATH environment variable. This can be done in the current terminal or we can update the `.bashrc` script found in the home directory of the current user.
 
 	$ cd ~
 	$ echo "export PATH=$PATH:/usr/local/riscv32-unknown-elf/gcc/bin" >> .bashrc
@@ -56,3 +56,4 @@ To test the toolchain,
 	Thread model: single
 	gcc version 7.1.0 (GCC)
 
+If something along this lines is printed, we are all set.
