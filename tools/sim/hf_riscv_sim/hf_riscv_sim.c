@@ -47,7 +47,7 @@ int32_t log_enabled = 0;
 
 void dumpregs(state *s){
 	int32_t i;
-	
+
 	for (i = 0; i < 32; i+=4){
 		printf("\nr%02d [%08x] r%02d [%08x] r%02d [%08x] r%02d [%08x]", \
 		i, s->r[i], i+1, s->r[i+1], i+2, s->r[i+2], i+3, s->r[i+3]);
@@ -150,7 +150,7 @@ static void mem_write(state *s, int32_t size, uint32_t address, uint32_t value){
 	}
 
 	ptr = (uint32_t *)(s->mem + (address % MEM_SIZE));
-	
+
 	switch(size){
 		case 4:
 			if(address & 3){
@@ -184,7 +184,7 @@ void cycle(state *s){
 	int32_t *r = s->r;
 	uint32_t *u = (uint32_t *)s->r;
 	uint32_t ptr_l, ptr_s;
-	
+
 	if (s->status && (s->cause & s->mask)){
 		s->epc = s->pc_next;
 		s->pc = s->vector;
@@ -206,7 +206,7 @@ void cycle(state *s){
 	imm_s = ((inst & 0xf80) >> 7) | ((inst & 0xfe000000) >> 20);
 	imm_sb = ((inst & 0xf00) >> 7) | ((inst & 0x7e000000) >> 20) | ((inst & 0x80) << 4) | ((inst & 0x80000000) >> 19);
 	imm_u = inst & 0xfffff000;
-	imm_uj = ((inst & 0x7fe00000) >> 20) | ((inst & 0x100000) >> 9) | (inst & 0xff000) | ((inst & 0x80000000) >> 11); 
+	imm_uj = ((inst & 0x7fe00000) >> 20) | ((inst & 0x100000) >> 9) | (inst & 0xff000) | ((inst & 0x80000000) >> 11);
 	if (inst & 0x80000000){
 		imm_i |= 0xfffff000;
 		imm_s |= 0xfffff000;
@@ -297,22 +297,22 @@ void cycle(state *s){
 			break;
 		default: goto fail;
 	}
-	
+
 	s->pc = s->pc_next;
 	s->pc_next = s->pc_next + 4;
 	s->status = s->status_dly[0];
 	for (i = 0; i < 3; i++)
 		s->status_dly[i] = s->status_dly[i+1];
-	
+
 	s->cycles++;
 	s->counter++;
 	if ((s->compare2 & 0xffffff) == (s->counter & 0xffffff)) s->cause |= 0x20;		/*IRQ_COMPARE2*/
 	if (s->compare == s->counter) s->cause |= 0x10;						/*IRQ_COMPARE*/
-	if (!(s->counter & 0x10000)) s->cause |= 0x8; else s->cause &= 0xfff7;			/*IRQ_COUNTER2_NOT*/
-	if (s->counter & 0x10000) s->cause |= 0x4; else s->cause &= 0xfffb;			/*IRQ_COUNTER2*/
-	if (!(s->counter & 0x40000)) s->cause |= 0x2; else s->cause &= 0xfffd;			/*IRQ_COUNTER_NOT*/
-	if (s->counter & 0x40000) s->cause |= 0x1; else s->cause &= 0xfffe;			/*IRQ_COUNTER*/
-	
+	if (!(s->counter & 0x10000)) s->cause |= 0x8; else s->cause &= 0xfffffff7;		/*IRQ_COUNTER2_NOT*/
+	if (s->counter & 0x10000) s->cause |= 0x4; else s->cause &= 0xfffffffb;			/*IRQ_COUNTER2*/
+	if (!(s->counter & 0x40000)) s->cause |= 0x2; else s->cause &= 0xfffffffd;		/*IRQ_COUNTER_NOT*/
+	if (s->counter & 0x40000) s->cause |= 0x1; else s->cause &= 0xfffffffe;			/*IRQ_COUNTER*/
+
 	return;
 fail:
 	printf("\ninvalid opcode (pc=0x%x opcode=0x%x)", s->pc, inst);
