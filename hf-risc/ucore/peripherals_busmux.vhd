@@ -65,14 +65,18 @@
 --
 -- Memory map:
 --
--- ROM					0x00000000 - 0x1fffffff (512MB)
--- System				0x20000000 - 0x3fffffff (512MB)
+-- ROM / Flash				0x00000000 - 0x1fffffff (512MB)
+-- Reserved				0x20000000 - 0x3fffffff (512MB)
 -- SRAM					0x40000000 - 0x5fffffff (512MB)
 -- External RAM	/ device		0x60000000 - 0x9fffffff (1GB)
 -- External RAM / device		0xa0000000 - 0xdfffffff (1GB)		(uncached)
--- External Peripheral			0xe0000000 - 0xefffffff (256MB)		(uncached)
--- Peripheral (core)			0xf0000000 - 0xf7ffffff (128MB)		(uncached)
--- Peripheral (extended)		0xf8000000 - 0xffffffff (128MB)		(uncached)
+-- Reserved				0xe0000000 - 0xe0ffffff (16MB)
+-- Peripheral (SoC segment 0)		0xe1000000 - 0xe1ffffff (16MB)		(uncached)
+-- Peripheral (SoC segment 1)		0xe2000000 - 0xe3ffffff (32MB)		(uncached)
+-- Peripheral (SoC segment 2)		0xe4000000 - 0xe7ffffff (64MB)		(uncached)
+-- Peripheral (SoC segment 3)		0xe8000000 - 0xefffffff (128MB)		(uncached)
+-- Peripheral (core)			0xf0000000 - 0xf0ffffff (16MB)		(uncached)
+-- Reserved				0xf1000000 - 0xffffffff (240MB)
 --
 --   IRQ_VECTOR			0xf0000000
 --   IRQ_CAUSE			0xf0000010
