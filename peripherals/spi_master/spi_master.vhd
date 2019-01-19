@@ -21,8 +21,8 @@ entity spi_master is
 		rst_i: in std_logic;
 		data_i: in std_logic_vector(BYTE_SIZE-1 downto 0);	-- parallel data in (clocked on rising spi_clk after last bit)
 		data_o: out std_logic_vector(BYTE_SIZE-1 downto 0);	-- parallel data output (clocked on rising spi_clk after last bit)
-		wren_i: in std_logic;					-- data write enable, starts transmission when interface is idle
 		data_valid_o: out std_logic;				-- data valid (read / write finished)
+		wren_i: in std_logic;					-- data write enable, starts transmission when interface is idle
 		-- SPI interface
 		spi_clk_o: out std_logic;				-- spi bus sck
 		spi_mosi_o: out std_logic;				-- spi bus mosi output
@@ -33,16 +33,14 @@ end spi_master;
 architecture spi_master_arch of spi_master is
 	type states is (idle, data1, clock1, data2, clock2, done);
 	signal state: states;
-	signal data_i_reg, data_o_reg: std_logic_vector(BYTE_SIZE-1 downto 0);
+	signal data_reg: std_logic_vector(BYTE_SIZE-1 downto 0);
 	signal counter: std_logic_vector(BYTE_SIZE-1 downto 0);
 begin
 	process(clk_i, rst_i)
 	begin
 		if rst_i = '1' then
-			data_i_reg <= (others => '0');
-			data_o_reg <= (others => '0');
+			data_reg <= (others => '0');
 			counter <= (others => '0');
-			data_o <= (others => '0');
 			data_valid_o <= '0';
 			spi_clk_o <= '0';
 			spi_mosi_o <= '0';
@@ -50,26 +48,30 @@ begin
 			case state is
 				when idle =>
 					counter <= (others => '0');
-					data_o <= (others => '0');
+					spi_clk_o <= '0';
+					spi_mosi_o <= '0';
 					data_valid_o <= '0';
-					data_i_reg <= data_i;
+					data_reg <= data_i;
 				when data1 =>
-					spi_mosi_o <= data_i_reg(BYTE_SIZE-1);
+					data_valid_o <= '0';
+					spi_mosi_o <= data_reg(BYTE_SIZE-1);
 				when clock1 =>
-					data_i_reg <= data_i_reg(BYTE_SIZE-2 downto 0) & '0';
 					spi_clk_o <= '1';
 				when data2 =>
-					data_o_reg <= data_o_reg(BYTE_SIZE-2 downto 0) & spi_miso_i;
+					data_reg <= data_reg(BYTE_SIZE-2 downto 0) & spi_miso_i;
 				when clock2 =>
 					spi_clk_o <= '0';
-					data_o <= data_o_reg;
 					counter <= counter + 1;
 				when done =>
+					counter <= (others => '0');
 					data_valid_o <= '1';
+					spi_mosi_o <= '0';
 				when others => null;
 			end case;
 		end if;
 	end process;
+
+	data_o <= data_reg;
 
 	process(clk_i, rst_i, state, counter, wren_i)
 	begin
@@ -80,8 +82,6 @@ begin
 				when idle =>
 					if (wren_i = '1') then
 						state <= data1;
-					else
-						state <= idle;
 					end if;
 				when data1 =>
 					state <= clock1;
@@ -98,8 +98,6 @@ begin
 				when done =>
 					if (wren_i = '0') then
 						state <= idle;
-					else
-						state <= done;
 					end if;
 				when others => null;
 			end case;

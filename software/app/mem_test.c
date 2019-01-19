@@ -217,14 +217,14 @@ int main(void)
 	printf("\nmemory address bus test");
 	addr2 = (uint32_t)memTestAddressBus((uint8_t *)addr, len);
 	if (addr2 != 0)
-		printf("failed! address: %08x", addr2);
+		printf(" failed! address: %08x", addr2);
 	else
 		printf(" ok.");
 
 	printf("\nmemory device is");
 	addr2 = (uint32_t)memTestDevice((uint8_t *)addr, len);
 	if (addr2 != 0)
-		printf("defective! address: %08x", addr2);
+		printf(" defective! address: %08x", addr2);
 	else
 		printf(" ok.");
 

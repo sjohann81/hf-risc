@@ -33,8 +33,8 @@ begin
 			rst_i => reset,
 			data_i => input,
 			data_o => output,
-			wren_i => we,
 			data_valid_o => valid,
+			wren_i => we,
 			spi_clk_o => spi_clk,
 			spi_mosi_o => spi_mosi,
 			spi_miso_i => spi_miso
