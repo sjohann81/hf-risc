@@ -45,15 +45,20 @@ Example / default SoC peripherals (segment 0)
 
 Segment 0 base		- 0xe1000000
 	S0STATUS	- 0xe1000000	(future use) - can be used to identify hw capability. each bit represents presence of a peripheral.
-	S0CAUSE		- 0xe1000400	(bit: ..., 4 - I2C, 3 - SPI, 2 - UART, 1 - timer, 0 - GPIO)
+	S0CAUSE		- 0xe1000400	(bit: ..., 5 - I2C, 4 - SPI, 3 - UART, 2 - timer, 1 - GPIO, 0 - base)
 	S0CAUSE_INV	- 0xe1000800	(invert CAUSE bit, before mask)
 	S0MASK		- 0xe1000C00
+	
+	DEBUG0		- 0xe100d000
+	DEBUG1		- 0xe100d400
+	DEBUG2		- 0xe100d800
+	DEBUG3		- 0xe100dc00
 
 GPIO base		- 0xe1010000
 	GPIOSTATUS	- 0xe1010000	(future use) - can be used to identify hw capability. each bit represents presence of a peripheral.
 	GPIOCAUSE	- 0xe1010400	(bit: ..., 3 - PIND, 2 - PINC, 1 - PINB, 0 - PINA)
 	GPIOCAUSE_INV	- 0xe1010800
-	GPIOMASK	- 0xe1010C00
+	GPIOMASK	- 0xe1010c00
 	
 	PORTA		- 0xe1014000	(read/write register, port output)
 	PINA		- 0xe1014010	(read register, port input)
@@ -62,70 +67,67 @@ GPIO base		- 0xe1010000
 
 	PORTB		- 0xe1014400
 	PORTC		- 0xe1014800
-	PORTD		- 0xe1014C00
+	PORTD		- 0xe1014c00
 	PORTE		- 0xe1015000
 	PORTF		- 0xe1015400
 	PORTG		- 0xe1015800
-	PORTH		- 0xe1015C00
+	PORTH		- 0xe1015c00
 
 	
 timers base		- 0xe1020000
 	TIMERSTATUS	- 0xe1020000	(future use)
-	TIMERCAUSE	- 0xe1020400	(bit: 8 - COUNTER(18), ... 1 - TIMER1, 0 - TIMER0)
+	TIMERCAUSE	- 0xe1020400	(bit: 8 - ... 1 - TIMER1, 0 - TIMER0)
 	TIMERCAUSE_INV	- 0xe1020800
-	TIMERMASK	- 0xe1020C00
+	TIMERMASK	- 0xe1020c00
 	
 	TIMER0		- 0xe1024000	(read/write register)
-	TIMER0_OVF	- 0xe1024010	(read/write register, resets timer when overflow, inverts irq bit)
+	TIMER0_CTCM	- 0xe1024010	(read/write register, compare timer, clear on match. inverts irq bit.)
 	
 	TIMER1		- 0xe1024400
 	TIMER2		- 0xe1024800
-	TIMER3		- 0xe1024C00
+	TIMER3		- 0xe1024c00
 	TIMER4		- 0xe1025000
 	TIMER5		- 0xe1025400
 	TIMER6		- 0xe1025800
-	TIMER7		- 0xe1025C00
-
-	COUNTER		- 0xe1026000
+	TIMER7		- 0xe1025c00
 
 UART base		- 0xe1030000
 	UARTSTATUS	- 0xe1030000	(future use)
 	UARTCAUSE	- 0xe1030400
 	UARTCAUSE_INV	- 0xe1030800
-	UARTMASK	- 0xe1030C00
+	UARTMASK	- 0xe1030c00
 	
 	UART0		- 0xe1034000
 	UART1		- 0xe1034400
 	UART2		- 0xe1034800
-	UART3		- 0xe1034C00
+	UART3		- 0xe1034c00
 	UART4		- 0xe1035000
 	UART5		- 0xe1035400
 	UART6		- 0xe1035800
-	UART7		- 0xe1035C00
+	UART7		- 0xe1035c00
 
 SPI base		- 0xe1040000
 	SPISTATUS	- 0xe1040000	(future use)
 	SPICAUSE	- 0xe1040400
 	SPICAUSE_INV	- 0xe1040800
-	SPIMASK		- 0xe1040C00
+	SPIMASK		- 0xe1040c00
 	
 	SPI1		- 0xe1044000
 	SPI2		- 0xe1044400
 	SPI3		- 0xe1044800
-	SPI4		- 0xe1044C00
+	SPI4		- 0xe1044c00
 
 I2C base		- 0xe1050000
 	I2CSTATUS	- 0xe1050000	(future use)
 	I2CCAUSE	- 0xe1050400
 	I2CCAUSE_INV	- 0xe1050800
-	I2CMASK		- 0xe1050C00
+	I2CMASK		- 0xe1050c00
 	
 	I2C0		- 0xe1054000
 	I2C1		- 0xe1054400
 	I2C2		- 0xe1054800
-	I2C3		- 0xe1054C00
+	I2C3		- 0xe1054c00
 	
 PWM base		- 0xe1060000
 DAC base		- 0xe1070000
 ADC base		- 0xe1080000
-
