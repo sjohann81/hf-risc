@@ -91,14 +91,16 @@ timers base		- 0xe1020000
 	TIMER0		- 0xe1024000	(special, read only up counter)
 
 	TIMER1		- 0xe1024400	(read/write register)									PA0 out
-	TIMER1_CTC	- 0xe1024410	(read/write register, compare timer, clear on match. inverts output on clear.)		PA0 out, alternate function 01
-	TIMER1_OCR	- 0xe1024420	(read/write register, output compare register. used for PWM generation. output		PA0 out, alternate function 10
-					is set until the timer reaches OCR, than it is clear.)
+	TIMER1_PRE	- 0xe1024410
+	TIMER1_CTC	- 0xe1024420	(read/write register, compare timer, clear on match. inverts output on clear.)		PA0 out, alternate function 01
+	TIMER1_OCR	- 0xe1024430	(read/write register, output compare register. used for PWM generation. output		PA0 out, alternate function 10
+					is set until the timer reaches OCR, then it is clear.)
 
 	TIMER2		- 0xe1024800												PA1 out
-	TIMER2_CTC	- 0xe1024810	(read/write register, compare timer, clear on match. inverts output on clear.)		PA1 out, alternate function 01
-	TIMER2_OCR	- 0xe1024820	(read/write register, output compare register. used for PWM generation. output		PA1 out, alternate function 10
-					is set until the timer reaches OCR, than it is clear.)
+	TIMER2_PRE	- 0xe1024410
+	TIMER2_CTC	- 0xe1024820	(read/write register, compare timer, clear on match. inverts output on clear.)		PA1 out, alternate function 01
+	TIMER2_OCR	- 0xe1024830	(read/write register, output compare register. used for PWM generation. output		PA1 out, alternate function 10
+					is set until the timer reaches OCR, then it is clear.)
 
 	TIMER3		- 0xe1024c00
 	TIMER4		- 0xe1025000
@@ -158,3 +160,23 @@ pin alternate functions (PAALTCFG0):
 11 - fourth function or cascade to PAALTCFG1 for additional functions
 - the same set of functions is available on the lower part (8 LSBs) and the higher part (8 MSBs). this way,
 specific alternate functions can be moved to the higher part, freeing up pins on the lower part.
+
+timers prescaler:
+- the prescaler source is taken from the counter (timer0) register. the value of this register indexes a given bit
+  on this register, and can be used to slow the counters down:
+  000 0 - clk / 2	<=
+  000 1 - clk / 4
+  001 0 - clk / 8	<=
+  001 1 - clk / 16
+  010 0 - clk / 32	<=
+  010 1 - clk / 64
+  011 0 - clk / 128	<=
+  011 1 - clk / 256
+  100 0 - clk / 512	<=
+  100 1 - clk / 1024
+  101 0 - clk / 2048	<=
+  101 1 - clk / 4096
+  110 0 - clk / 8192	<=
+  110 1 - clk / 16384
+  111 0 - clk / 32768	<=
+  111 1 - clk / 65536
