@@ -28,7 +28,7 @@ major classes:
 3 - segment 2
 4 - segment 3
 
-For segments, each one has cause and mask registers. The cause register holds interrupts from specific groups. Each group has also cause and mask registers. An interrupt to the core (CAUSE) happens when a segment cause and mask result are not zero. An interrupt appear on the segment cause register when a group cause and mask result are not zero. This way, specific peripherals from a group can be masked (on group cause and mask registers), a whole group can be masked (on segment cause and mask registers) and a whole segment can be masked (on the core CAUSE and MASK registers).
+For segments, each one has cause and mask registers. The cause register holds interrupts from specific groups. Each group has also cause and mask registers. An interrupt to the core (CAUSE) happens when a segment cause and mask result are not zero. An interrupt appear on the segment cause register when a group cause and mask result are not zero. This way, specific peripherals from a group can be masked (on group cause and mask registers), a whole group can be masked (on segment cause and mask registers) and a whole segment can be masked (on the core CAUSE and MASK registers). Segment interrupt mask is optional. In this case interrupts must be masked directly in the class (group) mask and pass through the segment interrupt requests directly (unmasked).
 
 Peripheral addresses have the following meaning:
 
