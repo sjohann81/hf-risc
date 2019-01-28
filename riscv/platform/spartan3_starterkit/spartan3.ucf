@@ -3,7 +3,7 @@ NET "clk_in" TNM_NET = "clk_in";
 TIMESPEC TS_clk_in = PERIOD "clk_in" 20 ns;
 NET "reset_in" LOC = "M13";
 
-NET "int_in" LOC = "L13";
+#NET "int_in" LOC = "L13";
 
 NET "uart_write" LOC = "R13";	#RX
 NET "uart_read" LOC = "T13";	#TX
