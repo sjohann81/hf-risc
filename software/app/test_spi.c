@@ -1,4 +1,5 @@
 #include <hf-risc.h>
+#include <spi.h>
 
 int main(void){
 	int i;
@@ -8,7 +9,7 @@ int main(void){
 	
 	spi_start();
 	for (i = 0; i < 10; i++)
-		buf[i] = spi_sendrecv(buf[i]);
+		buf[i] = spi_transfer(buf[i]);
 	spi_stop();
 	
 	return 0;

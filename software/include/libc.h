@@ -81,14 +81,11 @@ int32_t printf(const int8_t *fmt, ...);
 int32_t sprintf(int8_t *out, const int8_t *fmt, ...);
 
 /*
-auxiliary routines / interrupt management
+auxiliary routines
 */
 void uart_init(uint32_t baud);
 void delay_ms(uint32_t msec);
 void delay_us(uint32_t usec);
-void interrupt_handler(uint32_t cause, uint32_t *stack);
-void interrupt_register(uint32_t mask, funcptr ptr);
-uint32_t exception_handler(uint32_t service, uint32_t value, uint32_t epc, uint32_t opcode);
 void panic(void);
 
 /* IEEE single-precision definitions */

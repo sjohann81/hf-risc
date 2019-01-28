@@ -2,22 +2,14 @@
 
 volatile int32_t cmpcount=0, ccount=0;
 
-void compare_handler(void){
-	uint32_t val;
-
-	cmpcount++;
-	val = COUNTER;
-	val += (CPU_SPEED/1000) * 3;		// 3 ms @ 25MHz
-	COMPARE = val;
+void timer0b_handler(void)
+{
+	ccount++;
 }
 
-void counter_handler(void){
-	uint32_t m;
-
-	ccount++;
-	m = IRQ_MASK;								// read interrupt mask
-	m ^= (IRQ_COUNTER | IRQ_COUNTER_NOT);				// toggle timer interrupt mask
-	IRQ_MASK = m;								// write to irq mask register
+void timer1ctc_handler(void)
+{
+	cmpcount++;
 }
 
 char text[]="Testing...\n";
@@ -120,15 +112,14 @@ int main(void)
 	short short_buf[16];
 	long long_buf[16];
 
-	interrupt_register(IRQ_COMPARE, (funcptr)compare_handler);
-	interrupt_register(IRQ_COUNTER, (funcptr)counter_handler);
-	interrupt_register(IRQ_COUNTER_NOT, (funcptr)counter_handler);
-
-	COMPARE = COUNTER + (CPU_SPEED/1000) * 5;
-	IRQ_MASK = IRQ_COMPARE | IRQ_COUNTER;
-	IRQ_STATUS = 1;
+	TIMER1PRE = TIMERPRE_DIV4;
+	TIMER1 = TIMERSET;
+	TIMER1 = 0;
+	TIMER1CTC = 18750;
 
 	cmpcount=0; ccount=0;
+
+	TIMERMASK |= (MASK_TIMER0B | MASK_TIMER1CTC);
 
 	while(1){
 

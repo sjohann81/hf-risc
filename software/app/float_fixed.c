@@ -97,51 +97,51 @@ int main()
 	
 	printf("\nfloat / fixed point speed test\n");
 	
-	cycles = COUNTER;
+	cycles = TIMER0;
 	vfl = testfloat_add(minfl, maxfl, stepfl);
-	cycles = COUNTER - cycles;
+	cycles = TIMER0 - cycles;
 	ftoa(vfl, buf, 6);
 	printf("float add: %d cycles - %s\n", cycles, buf);
 
-	cycles = COUNTER;
+	cycles = TIMER0;
 	vfx = testfixed_add(minfx, maxfx, stepfx);
-	cycles = COUNTER - cycles;
+	cycles = TIMER0 - cycles;
 	fixtoa(vfx, buf, 6);
 	printf("fixed add: %d cycles - %s\n", cycles, buf);
 	
-	cycles = COUNTER;
+	cycles = TIMER0;
 	vfl = testfloat_sub(minfl, maxfl, stepfl);
-	cycles = COUNTER - cycles;
+	cycles = TIMER0 - cycles;
 	ftoa(vfl, buf, 6);
 	printf("float sub: %d cycles - %s\n", cycles, buf);
 
-	cycles = COUNTER;
+	cycles = TIMER0;
 	vfx = testfixed_sub(minfx, maxfx, stepfx);
-	cycles = COUNTER - cycles;
+	cycles = TIMER0 - cycles;
 	fixtoa(vfx, buf, 6);
 	printf("fixed sub: %d cycles - %s\n", cycles, buf);
 
-	cycles = COUNTER;
+	cycles = TIMER0;
 	vfl = testfloat_mul(minfl, maxfl, stepfl);
-	cycles = COUNTER - cycles;
+	cycles = TIMER0 - cycles;
 	ftoa(vfl, buf, 6);
 	printf("float mul: %d cycles - %s\n", cycles, buf);
 
-	cycles = COUNTER;
+	cycles = TIMER0;
 	vfx = testfixed_mul(minfx, maxfx, stepfx);
-	cycles = COUNTER - cycles;
+	cycles = TIMER0 - cycles;
 	fixtoa(vfx, buf, 6);
 	printf("fixed mul: %d cycles - %s\n", cycles, buf);
 
-	cycles = COUNTER;
+	cycles = TIMER0;
 	vfl = testfloat_div(minfl, maxfl, stepfl);
-	cycles = COUNTER - cycles;
+	cycles = TIMER0 - cycles;
 	ftoa(vfl, buf, 6);
 	printf("float div: %d cycles - %s\n", cycles, buf);
 
-	cycles = COUNTER;
+	cycles = TIMER0;
 	vfx = testfixed_div(minfx, maxfx, stepfx);
-	cycles = COUNTER - cycles;
+	cycles = TIMER0 - cycles;
 	fixtoa(vfx, buf, 6);
 	printf("fixed div: %d cycles - %s\n", cycles, buf);
 

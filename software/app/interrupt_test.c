@@ -1,69 +1,51 @@
 #include <hf-risc.h>
 
-volatile int32_t ccount=0, ccount2=0, cmpcount=0, cmp2count=0;
-
-/*
-ISRs - interrupt service routines
-*/
-void counter_handler(void){						// 10.48ms @ 25MHz
-	uint32_t m;
-
-	ccount++;
-	m = IRQ_MASK;								// read interrupt mask
-	m ^= (IRQ_COUNTER | IRQ_COUNTER_NOT);				// toggle timer interrupt mask
-	IRQ_MASK = m;								// write to irq mask register
+void timer0a_handler(void)
+{
+	printf("TIMER0A\n");
 }
 
-void counter_handler2(void){						// 2.62ms @ 25MHz
-	uint32_t m;
-
-	ccount2++;
-	m = IRQ_MASK;								// read interrupt mask
-	m ^= (IRQ_COUNTER2 | IRQ_COUNTER2_NOT);				// toggle timer interrupt mask
-	IRQ_MASK = m;								// write to irq mask register
+void timer0b_handler(void)
+{
+	printf("TIMER0B\n");
 }
 
-void compare_handler(void){
-	uint32_t val;
-
-	cmpcount++;
-	val = COUNTER;
-	val += (CPU_SPEED/1000) * 5;		// 5 ms @ 25MHz
-	COMPARE = val;						// update compare reg, clear irq
+void timer1ctc_handler(void)
+{
+	printf("TIMER1CTC\n");
 }
 
-void compare2_handler(void){
-	uint32_t val;
+void timer1ocr_handler(void)
+{
+	printf("TIMER1OCR\n");
+}
 
-	cmp2count++;
-	val = COUNTER;
-	val += (CPU_SPEED/1000) * 1;		// 1 ms @ 25MHz
-	COMPARE2 = val;						// update compare2 reg, clear irq
+void porta_handler(void)
+{
+	printf("PAIN: %04x\n", PAIN);
 }
 
 int main(void){
-	// register ISRs
-	interrupt_register(IRQ_COUNTER, counter_handler);
-	interrupt_register(IRQ_COUNTER_NOT, counter_handler);
-	interrupt_register(IRQ_COUNTER2, counter_handler2);
-	interrupt_register(IRQ_COUNTER2_NOT, counter_handler2);
-	interrupt_register(IRQ_COMPARE, compare_handler);
-	interrupt_register(IRQ_COMPARE2, compare2_handler);
+	TIMER1PRE = TIMERPRE_DIV4;
 
-	// initialize compare registers, clear compare irqs
-	COMPARE = COUNTER + (CPU_SPEED/1000) * 5;
-	COMPARE2 = COUNTER + (CPU_SPEED/1000) * 1;
+	/* unlock TIMER1 for reset */
+	TIMER1 = TIMERSET;
+	TIMER1 = 0;
+	
+	/* TIMER1 PWM duty cycle, 80% */
+	TIMER1OCR = 8000;
+	TIMER1CTC = 10000;
 
-	// set interrupt mask (unmask peripheral interrupts)
-	IRQ_MASK = (IRQ_COUNTER | IRQ_COUNTER2 | IRQ_COMPARE | IRQ_COMPARE2);
-
-	// global interrupts enable
-	IRQ_STATUS = 1;
-
-	ccount=0; ccount2=0; cmpcount=0; cmp2count=0;
-
+	/* enable interrupt masks for TIMER0 and TIMER1 CTC and OCR events */
+	TIMERMASK |= (MASK_TIMER0A | MASK_TIMER0B | MASK_TIMER1CTC | MASK_TIMER1OCR);
+	/* enable interrupt mask for PORTA inputs */
+	GPIOMASK |= MASK_PAIN;
+	/* enable PORTA input pin 3 mask */
+	PAINMASK |= MASK_P3; 
+	/* configure alternate function for PORTA pin 0 output (TIMER1 output, PWM generation) */ 
+	PAALTCFG0 |= MASK_PWM0;
+	
 	for(;;){
-		printf("\ninterrupts -> counter18: %d counter16: %d compare: %d compare2: %d", ccount, ccount2, cmpcount, cmp2count);
+		printf(".");
 	}
 }
-

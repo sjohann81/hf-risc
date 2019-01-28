@@ -29,7 +29,11 @@ $BSS_CLEAR:
 	la	$k1, _isr
 	li	$k0, 0xf0000000
 	sw	$k1, 0($k0)
-	
+
+	# enable global interrupts
+	jal	irq_enable
+	nop
+
 	# jump to main
 	jal	main
 	nop
@@ -83,7 +87,7 @@ _isr:
 	lw	$a0,  0x10($a1)		# read IRQ_CAUSE
 	lw	$a2,  0x20($a1)		# read IRQ_MASK
 	and	$a0,  $a0, $a2		# pass CAUSE and MASK and the stack pointer to the C handler
-	jal	interrupt_handler	# jump to C handler
+	jal	irq_handler		# jump to C handler
 	addiu	$a1,  $sp, 0
 
 	# restore all temporary registers

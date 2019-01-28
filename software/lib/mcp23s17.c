@@ -9,12 +9,12 @@
 
 void mcp23s17_dir(uint8_t device, uint8_t bank, uint8_t reg){
 	spi_start();
-	spi_sendrecv(MCP23x17_ADDR | ((device & 0x07) << 1));
+	spi_transfer(MCP23x17_ADDR | ((device & 0x07) << 1));
 	if (bank)
-		spi_sendrecv(MCP23x17_IODIRB);
+		spi_transfer(MCP23x17_IODIRB);
 	else
-		spi_sendrecv(MCP23x17_IODIRA);
-	spi_sendrecv(reg);
+		spi_transfer(MCP23x17_IODIRA);
+	spi_transfer(reg);
 	spi_stop();
 }
 
@@ -22,12 +22,12 @@ uint8_t mcp23s17_read(uint8_t device, uint8_t bank){
 	uint8_t reg;
 
 	spi_start();
-	spi_sendrecv(MCP23x17_ADDR | ((device & 0x07) << 1) | 0x01);
+	spi_transfer(MCP23x17_ADDR | ((device & 0x07) << 1) | 0x01);
 	if (bank)
-		spi_sendrecv(MCP23x17_GPIOB);
+		spi_transfer(MCP23x17_GPIOB);
 	else
-		spi_sendrecv(MCP23x17_GPIOA);
-	reg = spi_sendrecv(0);
+		spi_transfer(MCP23x17_GPIOA);
+	reg = spi_transfer(0);
 	spi_stop();
 
 	return reg;
@@ -35,23 +35,23 @@ uint8_t mcp23s17_read(uint8_t device, uint8_t bank){
 
 void mcp23s17_write(uint8_t device, uint8_t bank, uint8_t reg){
 	spi_start();
-	spi_sendrecv(MCP23x17_ADDR | ((device & 0x07) << 1));
+	spi_transfer(MCP23x17_ADDR | ((device & 0x07) << 1));
 	if (bank)
-		spi_sendrecv(MCP23x17_GPIOB);
+		spi_transfer(MCP23x17_GPIOB);
 	else
-		spi_sendrecv(MCP23x17_GPIOA);
-	spi_sendrecv(reg);
+		spi_transfer(MCP23x17_GPIOA);
+	spi_transfer(reg);
 	spi_stop();
 }
 
 void mcp23s17_inten(uint8_t device, uint8_t bank, uint8_t reg){
 	spi_start();
-	spi_sendrecv(MCP23x17_ADDR | ((device & 0x07) << 1));
+	spi_transfer(MCP23x17_ADDR | ((device & 0x07) << 1));
 	if (bank)
-		spi_sendrecv(MCP23x17_GPINTENB);
+		spi_transfer(MCP23x17_GPINTENB);
 	else
-		spi_sendrecv(MCP23x17_GPINTENA);
-	spi_sendrecv(reg);
+		spi_transfer(MCP23x17_GPINTENA);
+	spi_transfer(reg);
 	spi_stop();
 }
 
@@ -62,9 +62,9 @@ void mcp23s17_init(uint8_t device, uint8_t portdir_a, uint8_t portdir_b){
 
 	// configure device, enable device addressing
 	spi_start();
-	spi_sendrecv(MCP23x17_ADDR | ((device & 0x07) << 1));
-	spi_sendrecv(MCP23x17_IOCON);
-	spi_sendrecv(0x00
+	spi_transfer(MCP23x17_ADDR | ((device & 0x07) << 1));
+	spi_transfer(MCP23x17_IOCON);
+	spi_transfer(0x00
 			| (0 << MCP23x17_IOCON_BANK)
 			| (0 << MCP23x17_IOCON_MIRROR)
 			| (0 << MCP23x17_IOCON_SEQOP)
@@ -83,9 +83,9 @@ void mcp23s17_init(uint8_t device, uint8_t portdir_a, uint8_t portdir_b){
 
 	// enable weak internal pull-ups on both ports
 	spi_start();
-	spi_sendrecv(MCP23x17_ADDR | ((device & 0x07) << 1));
-	spi_sendrecv(MCP23x17_GPPUA);
-	spi_sendrecv(0xff);
-	spi_sendrecv(0xff);
+	spi_transfer(MCP23x17_ADDR | ((device & 0x07) << 1));
+	spi_transfer(MCP23x17_GPPUA);
+	spi_transfer(0xff);
+	spi_transfer(0xff);
 	spi_stop();
 }

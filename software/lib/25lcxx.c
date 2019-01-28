@@ -22,10 +22,10 @@ uint8_t spi_eeprom_readbyte(uint16_t addr){
 	uint8_t data;
 	
 	spi_start();
-	spi_sendrecv(CMD_READ);
-	spi_sendrecv(addr >> 8);
-	spi_sendrecv(addr & 0xff);
-	data = spi_sendrecv(0);
+	spi_transfer(CMD_READ);
+	spi_transfer(addr >> 8);
+	spi_transfer(addr & 0xff);
+	data = spi_transfer(0);
 	spi_stop();
 	
 	return data;
@@ -36,11 +36,11 @@ void spi_eeprom_read(uint16_t addr, uint8_t *buf, uint16_t size){
 	uint16_t i;
 	
 	spi_start();
-	spi_sendrecv(CMD_READ);
-	spi_sendrecv(addr >> 8);
-	spi_sendrecv(addr & 0xff);
+	spi_transfer(CMD_READ);
+	spi_transfer(addr >> 8);
+	spi_transfer(addr & 0xff);
 	for(i = 0; i < size; i++)
-		buf[i] = spi_sendrecv(0);
+		buf[i] = spi_transfer(0);
 	spi_stop();
 }
 
@@ -48,14 +48,14 @@ void spi_eeprom_writepage(uint16_t page, uint8_t *data){
 	uint16_t i;
 	
 	spi_start();
-	spi_sendrecv(CMD_WREN);
+	spi_transfer(CMD_WREN);
 	spi_stop();
 	spi_start();
-	spi_sendrecv(CMD_WRITE);
-	spi_sendrecv((page * PAGE_SIZE) >> 8);
-	spi_sendrecv((page * PAGE_SIZE) & 0xff);
+	spi_transfer(CMD_WRITE);
+	spi_transfer((page * PAGE_SIZE) >> 8);
+	spi_transfer((page * PAGE_SIZE) & 0xff);
 	for (i = 0; i < PAGE_SIZE; i++)
-		spi_sendrecv(data[i]);
+		spi_transfer(data[i]);
 	spi_stop();
 	delay_ms(10);
 }

@@ -20,7 +20,10 @@ BSS_CLEAR:
 	la	s11, _isr
 	li	s10, 0xf0000000
 	sw	s11, 0(s10)
-	
+
+	# enable global interrupts
+	jal	ra, irq_enable
+
 	# jump to main
 	jal	ra, main
 
@@ -62,8 +65,8 @@ _isr:
 	and	a0, a0, a2		# pass CAUSE and MASK and the stack pointer to the C handler
 	addi	a1, sp, 0
 	beq	a0, zero, _exception	# it's an exception, not an interrupt
-	jal	ra, interrupt_handler	# jump to C handler
-_restore:	
+	jal	ra, irq_handler		# jump to C handler
+_restore:
 	lw	a0, 16(sp)
 	lw	a1, 20(sp)
 _restore_exception:
