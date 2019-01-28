@@ -91,7 +91,7 @@ int32_t main(void){
 		switch(ch){
 // TODO: init cache!
 			case 'u':
-				ptr1 = (uint8_t *)ADDR_RAM_BASE;
+				ptr1 = (uint8_t *)RAM_BASE;
 				goto waiting;
 			case 'U':
 				printstr("\naddress (hex):");
@@ -119,7 +119,7 @@ int32_t main(void){
 // TODO: set the stack pointer to the end of the according region (e.g. scratch pad, external RAM ...)
 				break;
 			case 'b':
-				funcPtr = (void (*)(void *))(ADDR_RAM_BASE);
+				funcPtr = (void (*)(void *))(RAM_BASE);
 				goto booting;
 			case 'B':
 				printstr("\naddress (hex):");

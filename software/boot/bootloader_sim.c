@@ -6,7 +6,7 @@ int32_t main(void){
 
 	printf("boot\n");
 
-	funcPtr = (void (*)(void *))(ADDR_RAM_BASE);
+	funcPtr = (void (*)(void *))(RAM_BASE);
 	funcPtr();
 
 	return 0;

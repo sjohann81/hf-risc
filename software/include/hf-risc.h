@@ -20,12 +20,18 @@ typedef unsigned long			size_t;
 #define _ei(S)				interrupt_set(S)
 
 /* memory address map */
-#define ADDR_ROM_BASE			0x00000000
-#define ADDR_RAM_BASE			0x40000000
-#define ADDR_RESERVED_BASE		0x80000000
+#define ROM_BASE			0x00000000
+#define SYSTEM_BASE			0x20000000
+#define RAM_BASE			0x40000000
+#define EXTERNAL_BASE			0x60000000
+#define EXTERNAL_UNCACHED_BASE		0xa0000000
+#define S0_BASE				0xe1000000
+#define S1_BASE				0xe2000000
+#define S2_BASE				0xe4000000
+#define S3_BASE				0xe8000000
+#define INT_CONTROL_BASE		0xf0000000
 
 /* interrupt controller addresses and irq lines */
-#define INT_CONTROL_BASE		0xf0000000
 #define IRQ_VECTOR			(*(volatile uint32_t *)(INT_CONTROL_BASE + 0x000))
 #define IRQ_CAUSE			(*(volatile uint32_t *)(INT_CONTROL_BASE + 0x010))
 #define IRQ_MASK			(*(volatile uint32_t *)(INT_CONTROL_BASE + 0x020))
@@ -47,7 +53,6 @@ typedef unsigned long			size_t;
 /* peripheral addresses */
 
 /* Segment 0 registers */
-#define S0_BASE				0xe1000000
 #define S0CAUSE				(*(volatile uint32_t *)(S0_BASE + 0x0400))
 #define S0CAUSEINV			(*(volatile uint32_t *)(S0_BASE + 0x0800))
 #define S0MASK				(*(volatile uint32_t *)(S0_BASE + 0x0c00))
@@ -86,7 +91,7 @@ typedef unsigned long			size_t;
 #define MASK_SPI1H			0x003f0000
 
 /* GPIO registers */
-#define GPIO_BASE			0xe1010000
+#define GPIO_BASE			(S0_BASE + 0x10000)
 #define GPIOCAUSE			(*(volatile uint32_t *)(GPIO_BASE + 0x0400))
 #define GPIOCAUSEINV			(*(volatile uint32_t *)(GPIO_BASE + 0x0800))
 #define GPIOMASK			(*(volatile uint32_t *)(GPIO_BASE + 0x0c00))
@@ -134,7 +139,7 @@ typedef unsigned long			size_t;
 #define MASK_P15			(1 << 15)
 
 /* Timer registers */
-#define TIMER_BASE			0xe1020000
+#define TIMER_BASE			(S0_BASE + 0x20000)
 #define TIMERCAUSE			(*(volatile uint32_t *)(TIMER_BASE + 0x0400))
 #define TIMERCAUSEINV			(*(volatile uint32_t *)(TIMER_BASE + 0x0800))
 #define TIMERMASK			(*(volatile uint32_t *)(TIMER_BASE + 0x0c00))
@@ -197,7 +202,7 @@ typedef unsigned long			size_t;
 #define TIMERPRE_DIV16384		0x07
 
 /* UART registers */
-#define UART_BASE			0xe1030000
+#define UART_BASE			(S0_BASE + 0x30000)
 #define UARTCAUSE			(*(volatile uint32_t *)(UART_BASE + 0x0400))
 #define UARTCAUSEINV			(*(volatile uint32_t *)(UART_BASE + 0x0800))
 #define UARTMASK			(*(volatile uint32_t *)(UART_BASE + 0x0c00))
@@ -236,7 +241,7 @@ typedef unsigned long			size_t;
 #define MASK_UART7_WRITEBUSY		(1 << 15)
 
 /* SPI registers */
-#define SPI_BASE			0xe1040000
+#define SPI_BASE			(S0_BASE + 0x40000)
 #define SPICAUSE			(*(volatile uint32_t *)(SPI_BASE + 0x0400))
 #define SPICAUSEINV			(*(volatile uint32_t *)(SPI_BASE + 0x0800))
 #define SPIMASK				(*(volatile uint32_t *)(SPI_BASE + 0x0c00))
@@ -246,7 +251,7 @@ typedef unsigned long			size_t;
 #define SPI3				(*(volatile uint32_t *)(SPI_BASE + 0x4c00))
 
 /* I2C registers */
-#define I2C_BASE			0xe1050000
+#define I2C_BASE			(S0_BASE + 0x50000)
 #define I2CCAUSE			(*(volatile uint32_t *)(I2C_BASE + 0x0400))
 #define I2CCAUSEINV			(*(volatile uint32_t *)(I2C_BASE + 0x0800))
 #define I2CMASK				(*(volatile uint32_t *)(I2C_BASE + 0x0c00))
@@ -256,7 +261,7 @@ typedef unsigned long			size_t;
 #define I2C3				(*(volatile uint32_t *)(I2C_BASE + 0x4c00))
 
 /* DAC registers */
-#define DAC_BASE			0xe1060000
+#define DAC_BASE			(S0_BASE + 0x60000)
 #define DACCAUSE			(*(volatile uint32_t *)(DAC_BASE + 0x0400))
 #define DACCAUSEINV			(*(volatile uint32_t *)(DAC_BASE + 0x0800))
 #define DACMASK				(*(volatile uint32_t *)(DAC_BASE + 0x0c00))
@@ -266,7 +271,7 @@ typedef unsigned long			size_t;
 #define DAC3				(*(volatile uint32_t *)(DAC_BASE + 0x4c00))
 
 /* ADC registers */
-#define ADC_BASE			0xe1070000
+#define ADC_BASE			(S0_BASE + 0x70000)
 #define ADCCAUSE			(*(volatile uint32_t *)(ADC_BASE + 0x0400))
 #define ADCCAUSEINV			(*(volatile uint32_t *)(ADC_BASE + 0x0800))
 #define ADCMASK				(*(volatile uint32_t *)(ADC_BASE + 0x0c00))
@@ -287,5 +292,4 @@ typedef unsigned long			size_t;
 #define XTEA_OUT1			(*(volatile uint32_t *)(XTEA_BASE + 0x080))
 
 #include <libc.h>
-#include <interrupt.h>
 #include <math.h>
