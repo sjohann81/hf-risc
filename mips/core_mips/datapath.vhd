@@ -12,11 +12,14 @@ entity datapath is
 		irq_vector:	in std_logic_vector(31 downto 0);
 		irq:		in std_logic;
 		irq_ack:	out std_logic;
+		exception:	out std_logic;
 
 		address:	out std_logic_vector(31 downto 0);
 		data_in:	in std_logic_vector(31 downto 0);
 		data_out:	out std_logic_vector(31 downto 0);
 		data_w:		out std_logic_vector(3 downto 0);
+		data_b:		out std_logic;
+		data_h:		out std_logic;
 		data_access:	out std_logic
 	);
 end datapath;
@@ -84,6 +87,8 @@ begin
 		reg_to_mem_ctl_r = '0' and mem_to_reg_ctl_r = '0' else '0';
 
 	irq_ack <= irq_ack_s_dly;
+	
+	exception <= '0';
 
 	process(clock, reset, irq, irq_ack_s, mem_to_reg_ctl_r, mwait, stall)
 	begin
@@ -284,6 +289,8 @@ begin
 	jump_taken <= '1' when jump_ctl_r /= "00" else '0';								-- J, JAL, JR, JALR
 
 	address <= result when data_access_s = '1' and mwait = '1' else pc;
+	data_b <= '1' when mem_read_ctl_r = "01" or mem_write_ctl_r = "01" else '0';
+	data_h <= '1' when mem_read_ctl_r = "10" or mem_write_ctl_r = "10" else '0';
 	data_access_s <= '1' when reg_to_mem_ctl_r = '1' or mem_to_reg_ctl_r = '1' else '0';
 	mwait <= '1' when data_access_s = '1' and data_access_s_dly = '0' else '0';
 	data_access <= mwait;
