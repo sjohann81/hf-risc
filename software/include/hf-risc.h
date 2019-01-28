@@ -1,5 +1,5 @@
 /* file:          hf-risc.h
- * description:   basic C type abstraction and HAL for HF-RISC
+ * description:   hardware abstraction layer (HAL) definitions for HF-RISC
  * date:          01/2019
  * author:        Sergio Johann Filho <sergio.filho@pucrs.br>
  */
