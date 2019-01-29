@@ -40,13 +40,13 @@ int main(void){
 	int cycles;
 	
 	printf("message: %8x%8x\n", msg[0], msg[1]);
-	cycles = COUNTER;
+	cycles = TIMER0;
 	encipher(32, msg, xtea_key);
-	cycles = COUNTER - cycles;
+	cycles = TIMER0 - cycles;
 	printf("encipher: %8x%8x, %d cycles\n", msg[0], msg[1], cycles);
-	cycles = COUNTER;
+	cycles = TIMER0;
 	decipher(32, msg, xtea_key);
-	cycles = COUNTER - cycles;
+	cycles = TIMER0 - cycles;
 	printf("decipher: %8x%8x, %d cycles\n", msg[0], msg[1], cycles);
 	
 	return 0;

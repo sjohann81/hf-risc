@@ -40,13 +40,13 @@ int main(void){
 	uint32_t cycles;
 
 	printf("message: %8x%8x\n", msg[0], msg[1]);
-	cycles = COUNTER;
+	cycles = TIMER0;
 	encipher(32, msg, xtea_key);
-	cycles = COUNTER - cycles;
+	cycles = TIMER0 - cycles;
 	printf("encipher: %8x%8x, %d cycles\n", msg[0], msg[1], cycles);
-	cycles = COUNTER;
+	cycles = TIMER0;
 	decipher(32, msg, xtea_key);
-	cycles = COUNTER - cycles;
+	cycles = TIMER0 - cycles;
 	printf("decipher: %8x%8x, %d cycles\n", msg[0], msg[1], cycles);
 
 	printf("message: %8x%8x\n", msg[0], msg[1]);
@@ -57,20 +57,20 @@ int main(void){
 	XTEA_KEY2 = xtea_key[2];
 	XTEA_KEY3 = xtea_key[3];
 
-	cycles = COUNTER;
+	cycles = TIMER0;
 	XTEA_IN0 = msg[0];
 	XTEA_IN1 = msg[1];
 	XTEA_CONTROL = 0x3;
 	while (!(XTEA_CONTROL & 0x4));
 	XTEA_CONTROL = 0x0;
-	cycles = COUNTER - cycles;
+	cycles = TIMER0 - cycles;
 
 	msg[0] = XTEA_OUT0;
 	msg[1] = XTEA_OUT1;
 
 	printf("encipher: %8x%8x, %d cycles\n", msg[0], msg[1], cycles);
 
-	cycles = COUNTER;
+	cycles = TIMER0;
 
 	XTEA_IN0 = msg[0];
 	XTEA_IN1 = msg[1];
@@ -78,7 +78,7 @@ int main(void){
 	while (!(XTEA_CONTROL & 0x4));
 	XTEA_CONTROL = 0x0;
 
-	cycles = COUNTER - cycles;
+	cycles = TIMER0 - cycles;
 
 	msg[0] = XTEA_OUT0;
 	msg[1] = XTEA_OUT1;

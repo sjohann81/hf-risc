@@ -250,10 +250,10 @@ void main(void){
 	volatile unsigned int cycles;
 
 	printf("\nFDCT benchmark");
-	cycles = COUNTER;
+	cycles = TIMER0;
 	_main();
-	cycles = COUNTER - cycles;
+	cycles = TIMER0 - cycles;
 	printf("\nWCET: %d cycles\n", cycles);
-	panic();
+	
 }
 

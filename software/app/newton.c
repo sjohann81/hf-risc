@@ -1,4 +1,5 @@
 #include <hf-risc.h>
+#include <math.h>
 
 /*
 f1(x) : x^6 - x^5 + 3x^4 - x^2 - 3 = 0

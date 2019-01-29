@@ -89,23 +89,23 @@ void main(void){
 	uint32_t crc2, ops;
 	uint64_t crc3;
 
-	time = COUNTER;
+	time = TIMER0;
 	crc1 = crc16(str, strlen(str));
-	time = COUNTER - time;
+	time = TIMER0 - time;
 	printf("crc16: %8x, %d cycles\n", crc1, time);
-	time = COUNTER;
+	time = TIMER0;
 	crc2 = crc32(str, strlen(str));
-	time = COUNTER - time;
+	time = TIMER0 - time;
 	printf("crc32: %8x, %d cycles\n", crc2, time);
-	time = COUNTER;
+	time = TIMER0;
 	crc3 = crc64(str, strlen(str));
-	time = COUNTER - time;
+	time = TIMER0 - time;
 	printf("crc64: %8x%8x, %d cycles\n", (uint32_t)(crc3 >> 32), (uint32_t)(crc3 & 0xffffffff), time);
 
 	xz_crc32_init();
-	time = COUNTER;
+	time = TIMER0;
 	crc2 = xz_crc32(str, strlen(str), 0);
-	time = COUNTER - time;
+	time = TIMER0 - time;
 	printf("crc32 (table): %8x, %d cycles\n", crc2, time);
 
 	return;

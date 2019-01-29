@@ -667,33 +667,33 @@ int main(void){
 		printf("\nXTEA speed (software / hardware)\n");
 		printf("================================\n");
 
-		sw_time = COUNTER;
+		sw_time = TIMER0;
 		for (i = 0; i < sizeof(vector) / sizeof(struct xtea_test_s); i++){
 			memcpy(&test, &vector[i], sizeof(test));
 			encipher(32, test.s.plaintext, vector[i].s.key);
 			decipher(32, test.s.plaintext, test.s.key);
 		}
-		sw_time = COUNTER - sw_time;
+		sw_time = TIMER0 - sw_time;
 
 		printf("software took %d cycles\n", sw_time);
 
-		hw_time = COUNTER;
+		hw_time = TIMER0;
 		for (i = 0; i < sizeof(vector) / sizeof(struct xtea_test_s); i++){
 			memcpy(&test, &vector[i], sizeof(test));
 			xtea_hw_encipher(test.s.plaintext, vector[i].s.key);
 			xtea_hw_decipher(test.s.plaintext, test.s.key);
 		}
-		hw_time = COUNTER - hw_time;
+		hw_time = TIMER0 - hw_time;
 
 		printf("hardware took %d cycles (naive approach)\n", hw_time);
 
-		hw_time = COUNTER;
+		hw_time = TIMER0;
 		xtea_hw_setkey(vector[0].s.key);
 		for (i = 0; i < sizeof(vector) / sizeof(struct xtea_test_s); i++){
 			xtea_hw_encipher_fast(test.s.plaintext);
 			xtea_hw_decipher_fast(test.s.plaintext);
 		}
-		hw_time = COUNTER - hw_time;
+		hw_time = TIMER0 - hw_time;
 
 		printf("hardware took %d cycles\n", hw_time);
 	}

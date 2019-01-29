@@ -51,9 +51,9 @@ int main(void){
 	for(i=0; i<ELEMENTS; i++)
 		printf("%d ", v[i]);
 	
-	time = COUNTER;
+	time = TIMER0;
 	sort(v, ELEMENTS);
-	time = COUNTER - time;
+	time = TIMER0 - time;
 
 	printf("\n\nsorted elements (%d cycles): ", time);
 	for(i=0; i<ELEMENTS; i++)
@@ -66,9 +66,9 @@ int main(void){
 	for(i=0; i<ELEMENTS; i++)
 		printf("%d ", v[i]);
 	
-	time = COUNTER;
+	time = TIMER0;
 	qsort(v, 0, ELEMENTS-1);
-	time = COUNTER - time;
+	time = TIMER0 - time;
 
 	printf("\n\nsorted elements (%d cycles): ", time);
 	for(i=0; i<ELEMENTS; i++)

@@ -33,7 +33,7 @@
 */
 CORETIMETYPE barebones_clock() {
 	//#error "You must implement a method to measure time in barebones_clock()! This function should return current time.\n"
-	return (COUNTER / 100);
+	return (TIMER0 / 100);
 }
 /* Define : TIMER_RES_DIVIDER
 	Divider to trade off timer resolution and total time that can be measured.

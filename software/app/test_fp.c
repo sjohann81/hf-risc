@@ -1,4 +1,5 @@
 #include <hf-risc.h>
+#include <math.h>
 
 float epsilon(void){
 	float x = 1.0f;
