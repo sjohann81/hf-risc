@@ -15,11 +15,11 @@ entity hfrisc_soc is
 end hfrisc_soc;
 
 architecture top_level of hfrisc_soc is
-	signal clock, boot_enable, ram_enable_n, stall, stall_cpu, irq_cpu, irq_ack_cpu, exception_cpu, data_b_cpu, data_h_cpu, data_access_cpu, ram_dly, rff1, reset: std_logic;
-	signal address, data_read, data_write, data_read_boot, data_read_ram, irq_vector_cpu, address_cpu, data_in_cpu, data_out_cpu: std_logic_vector(31 downto 0);
+	signal clock, boot_enable, ram_enable_n, stall, ram_dly, rff1, reset: std_logic;
+	signal address, data_read, data_write, data_read_boot, data_read_ram: std_logic_vector(31 downto 0);
 	signal ext_irq: std_logic_vector(7 downto 0);
-	signal data_we, data_w_n_ram, data_w_cpu: std_logic_vector(3 downto 0);
-	
+	signal data_we, data_w_n_ram: std_logic_vector(3 downto 0);
+
 	signal periph, periph_dly, periph_wr, periph_irq: std_logic;
 	signal data_read_periph, data_read_periph_s, data_write_periph: std_logic_vector(31 downto 0);
 	signal gpioa_in, gpioa_out, gpioa_ddr: std_logic_vector(7 downto 0);
@@ -71,55 +71,23 @@ begin
 	uart_write <= gpioa_out(2);
 
 	-- HF-RISCV core
-	core: entity work.datapath
-	port map(	clock => clock,
-			reset => reset,
-			stall => stall,
-			irq_vector => irq_vector_cpu,
-			irq => irq_cpu,
-			irq_ack => irq_ack_cpu,
-			exception => exception_cpu,
-			address => address_cpu,
-			data_in => data_in_cpu,
-			data_out => data_out_cpu,
-			data_w => data_w_cpu,
-			data_b => data_b_cpu,
-			data_h => data_h_cpu,
-			data_access => data_access_cpu
+	processor: entity work.processor
+	port map(	clk_i => clock,
+			rst_i => reset,
+			stall_i => stall,
+			addr_o => address,
+			data_i => data_read,
+			data_o => data_write,
+			data_w_o => data_we,
+			extio_in => ext_irq,
+			extio_out => open
 	);
 
-
-	-- interrupt controller
-	int_control: entity work.interrupt_controller
-	port map(
-		clock => clock,
-		reset => reset,
-
-		stall => stall,
-
-		irq_vector_cpu => irq_vector_cpu,
-		irq_cpu => irq_cpu,
-		irq_ack_cpu => irq_ack_cpu,
-		exception_cpu => exception_cpu,
-		address_cpu => address_cpu,
-		data_in_cpu => data_in_cpu,
-		data_out_cpu => data_out_cpu,
-		data_w_cpu => data_w_cpu,
-		data_access_cpu => data_access_cpu,
-
-		addr_mem => address,
-		data_read_mem => data_read,
-		data_write_mem => data_write,
-		data_we_mem => data_we,
-		extio_in => ext_irq,
-		extio_out => open
-	);
-	
-	data_read_periph <= data_read_periph_s(31 downto 0);
-	data_write_periph <= data_write(31 downto 0);
-	periph_wr <= '1' when data_w_cpu /= "0000" else '0';
+	data_read_periph <= data_read_periph_s;
+	data_write_periph <= data_write;
+	periph_wr <= '1' when data_we /= "0000" else '0';
 	periph <= '1' when address(31 downto 28) = x"e" else '0';
-	
+
 	peripherals: entity work.peripherals
 	port map(
 		clk_i => clock,
@@ -136,7 +104,7 @@ begin
 	);
 
 	-- instruction and data memory (boot RAM)
-	boot_ram: entity work.ram 
+	boot_ram: entity work.ram
 	generic map (memory_type => "DEFAULT")
 	port map (
 		clk			=> clock,
@@ -161,7 +129,7 @@ begin
 		data_i	=> data_write(7 downto 0),
 		data_o	=> data_read_ram(7 downto 0)
 	);
-		
+
 	memory0ub: entity work.bram
 	generic map (	memory_file => memory_file,
 					data_width => 8,
@@ -175,7 +143,7 @@ begin
 		data_i	=> data_write(15 downto 8),
 		data_o	=> data_read_ram(15 downto 8)
 	);
-		
+
 	memory1lb: entity work.bram
 	generic map (	memory_file => memory_file,
 					data_width => 8,
@@ -189,7 +157,7 @@ begin
 		data_i	=> data_write(23 downto 16),
 		data_o	=> data_read_ram(23 downto 16)
 	);
-		
+
 	memory1ub: entity work.bram
 	generic map (	memory_file => memory_file,
 					data_width => 8,
