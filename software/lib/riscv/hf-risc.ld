@@ -2,7 +2,7 @@ ENTRY(_entry)
 
 /* specify HF-RISC memory areas */
 
-MEMORY 
+MEMORY
 {
 rom		: ORIGIN = 0x00000000, LENGTH = 256M	/* ROM area*/
 ram		: ORIGIN = 0x40000000, LENGTH = 256M	/* RAM area. */
@@ -15,7 +15,7 @@ _stack = 0x4ffffffc;
 
 /* now define the output sections  */
 
-SECTIONS 
+SECTIONS
 {
 	. = 0;
 
@@ -45,7 +45,7 @@ SECTIONS
 		_gp = . + 0x800;
 		*(.sdata)
 		*(.sdata.*)
-		. = ALIGN(16); 
+		. = ALIGN(16);
 	} > ram
 
 	_edata = .;
@@ -53,9 +53,9 @@ SECTIONS
 	.bss :
 	{
 		_bss_start = .;
-		*(.sbss) 
-		*(.sbss.*) 
-		*(.bss) 
+		*(.sbss)
+		*(.sbss.*)
+		*(.bss)
 		*(.bss.*)
 		. = ALIGN(4);
 		_bss_end = . ;
