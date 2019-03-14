@@ -179,8 +179,6 @@ void irq0_handler(void)
 
 			do {
 				if (irq & 0x1) {
-					/* call irq handler */
-					gpio_vector[i]();
 					/* toggle interrupt cause */
 					switch (i) {
 					case 0:
@@ -202,6 +200,8 @@ void irq0_handler(void)
 					default:
 						break;
 					};
+					/* call irq handler */
+					gpio_vector[i]();
 				}
 				irq >>= 1;
 				++i;
@@ -212,10 +212,10 @@ void irq0_handler(void)
 
 			do {
 				if (irq & 0x1) {
-					/* call irq handler */
-					timer_vector[i]();
 					/* toggle interrupt cause */
 					TIMERCAUSEINV ^= (irq & 0x1) << i;
+					/* call irq handler */
+					timer_vector[i]();
 				}
 				irq >>= 1;
 				++i;
@@ -239,11 +239,11 @@ void irq_enable(void)
 {
 #ifndef DEBUG_PORT
 	uint16_t d;
-	
+
 	d = (uint16_t)(CPU_SPEED / 57600);
 	UART0DIV = d;
 	UART0 = 0;
-	
+
 	PAALTCFG0 |= MASK_UART0;
 #endif
 	/* enable mask for Segment 0 (tied to IRQ0 line) */
