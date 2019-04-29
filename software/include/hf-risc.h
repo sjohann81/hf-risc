@@ -292,3 +292,4 @@ typedef unsigned long			size_t;
 #define XTEA_OUT1			(*(volatile uint32_t *)(XTEA_BASE + 0x080))
 
 #include <libc.h>
+#include <malloc.h>

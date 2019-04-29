@@ -165,7 +165,7 @@ static void mem_write(state *s, int32_t size, uint32_t address, uint32_t value){
 		case TIMER1_OCR:	s->timer1_ocr = value & 0xffff; return;
 		case UARTCAUSE_INV:	s->uartcause_inv = value & 0xff; return;
 		case UARTMASK:		s->uartmask = value & 0xff; return;
-		
+
 		case EXIT_TRAP:
 			fflush(stdout);
 			if (log_enabled)
@@ -435,6 +435,7 @@ int main(int argc, char *argv[]){
 	s->pc = SRAM_BASE;
 	s->pc_next = s->pc + 4;
 	s->mem = &sram[0];
+	s->r[2] = MEM_SIZE - 4;
 
 	for(;;){
 		cycle(s);

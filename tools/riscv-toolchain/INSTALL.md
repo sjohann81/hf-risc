@@ -25,7 +25,7 @@ And now we are ready to build the cross toolchain. All software packages will be
 
 Now go do something else. The process will take between 15 minutes to 1 hour, depending on your host machine. After the process completes, you can check if the new compiler and tools were built:
 
-	$ ls riscv32-unknown-elf/gcc-7.1.0/bin/
+	$ ls riscv32-unknown-elf/gcc-8.3.0/bin/
 
 If, among other files, the `riscv32-unknown-elf-gcc` executable is present then we are ok.
 
@@ -35,7 +35,7 @@ The tools can be installed in any directory. Most of the time, the toolchain can
 
 	$ sudo mv riscv32-unknown-elf /usr/local
 	$ cd /usr/local/riscv32-unknown-elf
-	$ sudo ln -s gcc-7.1.0 gcc
+	$ sudo ln -s gcc-8.3.0 gcc
 
 One last step is to update the PATH environment variable. This can be done in the current terminal or we can update the `.bashrc` script found in the home directory of the current user.
 
@@ -50,10 +50,10 @@ To test the toolchain,
 	$ riscv32-unknown-elf-gcc -v
 
 	Using built-in specs.
-	COLLECT_GCC=riscv32-unknown-elf-gcc	COLLECT_LTO_WRAPPER=/usr/local/riscv32-unknown-elf/gcc-7.1.0/bin/../libexec/gcc/riscv32-unknown-elf/7.1.0/lto-wrapper
+	COLLECT_GCC=riscv32-unknown-elf-gcc	COLLECT_LTO_WRAPPER=/usr/local/riscv32-unknown-elf/gcc-8.3.0/bin/../libexec/gcc/riscv32-unknown-elf/8.3.0/lto-wrapper
 	Target: riscv32-unknown-elf
-	Configured with: /home/sergio/Downloads/tools/riscv-toolchain/source/gcc-7.1.0/configure --prefix=/home/sergio/Downloads/tools/riscv-toolchain/riscv32-unknown-elf/gcc-7.1.0 --target=riscv32-unknown-elf --disable-shared --disable-threads --enable-tls --enable-languages=c,c++ --with-newlib --disable-libmudflap --disable-libssp --disable-libquadmath --disable-libgomp --disable-nls --disable-multilibs
+	Configured with: /home/sergio/Downloads/tools/riscv-toolchain/source/gcc-8.3.0/configure --prefix=/home/sergio/Downloads/tools/riscv-toolchain/riscv32-unknown-elf/gcc-8.3.0 --target=riscv32-unknown-elf --disable-shared --disable-threads --enable-tls --enable-languages=c,c++ --with-newlib --disable-libmudflap --disable-libssp --disable-libquadmath --disable-libgomp --disable-nls --disable-multilibs
 	Thread model: single
-	gcc version 7.1.0 (GCC)
+	gcc version 8.3.0 (GCC)
 
 If something along this lines is printed, we are all set.

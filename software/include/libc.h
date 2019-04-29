@@ -22,6 +22,18 @@ constants, tests and transformations
 #define isalnum(c)		(isalpha(c)||isdigit(c))
 #define min(a,b)		((a)<(b)?(a):(b))
 
+extern unsigned long _stack_start;  /* Start of the STACK memory. */
+extern unsigned long _stack_end;    /* End of the STACK memory. */
+extern unsigned long _heap_start;   /* Start of the HEAP memory. */
+extern unsigned long _heap_end;     /* End of the HEAP memory (one byte past the last byte of this memory). */
+extern unsigned long _sidata;       /* Start address for the contents initialization of the .data
+                                       section. defined in linker script. */
+extern unsigned long _sdata;        /* Start address for the .data section, defined in linker script */
+extern unsigned long _edata;        /* End address for the .data section, defined in linker script. */
+extern unsigned long _sbss;         /* Start address for the .bss section, defined in linker script. */
+extern unsigned long _ebss;         /* End address for the .bss section, defined in linker script. */
+extern unsigned long _end;          /* Start address of the heap memory, defined in linker script. */
+
 #if BIG_ENDIAN
 
 #define htons(n) (n)
