@@ -107,6 +107,10 @@ eeprom_sim:
 	printf "%08x\n" `stat -L -c %s code.txt` >> eeprom.txt
 	cat code.txt >> eeprom.txt
 
+base64: crt
+	$(GCC_$(ARCH)) -o base64.o app/base64.c
+	@$(MAKE) --no-print-directory link
+
 coremark: crt
 	$(GCC_$(ARCH)) -o core_list_join.o app/coremark/core_list_join.c
 	$(GCC_$(ARCH)) -o core_main.o app/coremark/core_main.c -DFLAGS_STR=\"'$(GCC_$(ARCH))'\" -Dee_printf=printf
