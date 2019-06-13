@@ -24,6 +24,16 @@
 
 #define S0CAUSE				0xe1000400
 
+#define GPIOCAUSE			0xe1010400
+#define GPIOCAUSEINV			0xe1010800
+#define GPIOMASK			0xe1010c00
+
+#define PADDR				0xe1014000
+#define PAOUT				0xe1014010
+#define PAIN				0xe1014020
+#define PAININV				0xe1014030
+#define PAINMASK			0xe1014040
+
 #define TIMERCAUSE			0xe1020400
 #define TIMERCAUSE_INV			0xe1020800
 #define TIMERMASK			0xe1020c00
@@ -52,6 +62,8 @@ typedef struct {
 	int8_t *mem;
 	uint32_t vector, cause, mask, status, status_dly[4], epc;
 	uint32_t s0cause;
+	uint32_t gpiocause, gpiocause_inv, gpiomask;
+	uint32_t paddr, paout, pain, pain_inv, pain_mask;
 	uint32_t timercause, timercause_inv, timermask;
 	uint32_t timer0, timer1, timer1_pre, timer1_ctc, timer1_ocr;
 	uint32_t uartcause, uartcause_inv, uartmask;
@@ -100,6 +112,14 @@ static int32_t mem_read(state *s, int32_t size, uint32_t address){
 		case IRQ_STATUS:	return s->status;
 		case IRQ_EPC:		return s->epc;
 		case S0CAUSE:		return s->s0cause;
+		case GPIOCAUSE:		return s->gpiocause;
+		case GPIOCAUSEINV:	return s->gpiocause_inv;
+		case GPIOMASK:		return s->gpiomask;
+		case PADDR:		return s->paddr;
+		case PAOUT:		return s->paout;
+		case PAIN:		return s->pain;
+		case PAININV:		return s->pain_inv;
+		case PAINMASK:		return s->pain_mask;
 		case TIMERCAUSE:	return s->timercause;
 		case TIMERCAUSE_INV:	return s->timercause_inv;
 		case TIMERMASK:		return s->timermask;
@@ -156,6 +176,14 @@ static void mem_write(state *s, int32_t size, uint32_t address, uint32_t value){
 		case IRQ_MASK:		s->mask = value; return;
 		case IRQ_STATUS:	if (value == 0){ s->status = 0; for (i = 0; i < 4; i++) s->status_dly[i] = 0; }else{ s->status_dly[3] = value; } return;
 		case IRQ_EPC:		s->epc = value; return;
+		case GPIOCAUSE:		s->gpiocause = value & 0xffff; return;
+		case GPIOCAUSEINV:	s->gpiocause_inv = value & 0xffff; return;
+		case GPIOMASK:		s->gpiomask = value & 0xffff; return;
+		case PADDR:		s->paddr = value & 0xffff; return;
+		case PAOUT:		s->paout = value & 0xffff; return;
+//		case PAIN:		s->gpiocause = value & 0xffff; return;
+		case PAININV:		s->pain_inv = value & 0xffff; return;
+		case PAINMASK:		s->pain_mask = value & 0xffff; return;
 		case TIMERCAUSE_INV:	s->timercause_inv = value & 0xff; return;
 		case TIMERMASK:		s->timermask = value & 0xff; return;
 		case TIMER0:		return;
@@ -339,6 +367,7 @@ void cycle(state *s){
 	for (i = 0; i < 3; i++)
 		s->status_dly[i] = s->status_dly[i+1];
 
+	s->gpiocause = (s->pain ^ s->pain_inv) & s->pain_mask ? 0x01 : 0x00;
 	if (s->timer0 & 0x10000) {
 		s->timercause |= 0x01;
 	} else {
@@ -358,7 +387,8 @@ void cycle(state *s){
 	} else {
 		s->timercause &= 0xf7;
 	}
-	s->s0cause = (s->timercause ^ s->timercause_inv) & s->timermask ? 0x04 : 0x00;
+	s->s0cause = (s->gpiocause ^ s->gpiocause_inv) & s->gpiomask ? 0x02 : 0x00;
+	s->s0cause |= (s->timercause ^ s->timercause_inv) & s->timermask ? 0x04 : 0x00;
 	s->cause = s->s0cause ? 0x01 : 0x00;
 
 	s->cycles++;
@@ -438,6 +468,11 @@ int main(int argc, char *argv[]){
 	s->r[2] = MEM_SIZE - 4;
 
 	for(;;){
+		if (s->timer0 & 0x80000) {
+			s->pain |= 0x8;
+		} else {
+			s->pain &= ~0x8;
+		}
 		cycle(s);
 	}
 
