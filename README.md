@@ -9,7 +9,7 @@ HF-RISC is a small 32-bit, in order, 3-stage pipelined MIPS / RISC-V microcontro
 - DECODE: An instruction is fed into the decoding / control logic and values are registered for the next stage. Pipeline stalls, as well as bubble insertion is performed in this stage.
 - EXECUTE: The register file is accessed and the ALU calculates the result. Data access is performed (loads and stores) or simply the result (or pc) is written to the register file (normal operations). Branch target and its outcome are calculated.
 
-![alt text](https://github.com/sjohann81/hf-risc/docs/pipeline_simple.png "HF-RISC pipeline")
+![alt text](https://github.com/sjohann81/hf-risc/blob/master/docs/pipeline_simple.png "HF-RISC pipeline")
 
 In essence, the current pipeline arrangement is very similar to an ARM7TDMI MCU. The short pipeline and position of all functional units were design decisions that avoid the use of forwarding paths and stalls, minimizing logic complexity and CPI. This design is a compromise between performance, area and complexity. Only the absolutely *needed* MIPS-I opcodes are implemented in one version of the processor based on the MIPS ISA. This core was implemented with the C programming language in mind, so opcodes which cause overflows on integer operations (add, addi, sub) were not included for obvious reasons. The resulting ISA on the MIPS version is very similar to the RV32I base instruction set of the RISC-V architecture, being this subset conceived around 2008. Some architectural features:
 
