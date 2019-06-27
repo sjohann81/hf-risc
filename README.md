@@ -3,11 +3,13 @@
 ---
 ### Description
 
-HF-RISC is a small 32-bit, in order, 3-stage pipelined MIPS / RISC-V microcontroller designed at the Embedded Systems Group (GSE) of the Faculty of Informatics, PUCRS, Brazil. All registers / memory accesses are synchronized to the rising edge of clock. The core can be easily integrated into several applications, and interfaces directly to standard synchronous memories. Pipeline stages are: 
+HF-RISC is a small 32-bit, in order, 3-stage pipelined MIPS / RISC-V microcontroller designed at the Embedded Systems Group (GSE) of the Faculty of Informatics, PUCRS, Brazil. All registers / memory accesses are synchronized to the rising edge of clock. The core can be easily integrated into several applications, and interfaces directly to standard synchronous memories. Pipeline stages are:
 
 - FETCH: Instruction memory is accessed (address is PC), data becomes available in one cycle. PC is updated.
 - DECODE: An instruction is fed into the decoding / control logic and values are registered for the next stage. Pipeline stalls, as well as bubble insertion is performed in this stage.
 - EXECUTE: The register file is accessed and the ALU calculates the result. Data access is performed (loads and stores) or simply the result (or pc) is written to the register file (normal operations). Branch target and its outcome are calculated.
+
+![alt text](https://github.com/sjohann81/hf-risc/docs/pipeline_simple.png "HF-RISC pipeline")
 
 In essence, the current pipeline arrangement is very similar to an ARM7TDMI MCU. The short pipeline and position of all functional units were design decisions that avoid the use of forwarding paths and stalls, minimizing logic complexity and CPI. This design is a compromise between performance, area and complexity. Only the absolutely *needed* MIPS-I opcodes are implemented in one version of the processor based on the MIPS ISA. This core was implemented with the C programming language in mind, so opcodes which cause overflows on integer operations (add, addi, sub) were not included for obvious reasons. The resulting ISA on the MIPS version is very similar to the RV32I base instruction set of the RISC-V architecture, being this subset conceived around 2008. Some architectural features:
 
@@ -96,4 +98,4 @@ Example prototype platforms are available for both HF-RISC and HF-RISCV cores on
 
 If a multiplier is used (not included in this design) the score is around 2.1 Coremark/MHz.
 
-*HF-RISCV doesn't include the multiply/divide (M) extension (pure RV32I) and doesn't include dalayed branches as found on MIPS. This sacrifices performance a bit, but simplifies the ISA for deeper pipelines and OOO execution. Based on several experiments, the inclusion of the M module will boost the performance of this core beyond the HF-RISC version, even without branch prediction. 
+*HF-RISCV doesn't include the multiply/divide (M) extension (pure RV32I) and doesn't include dalayed branches as found on MIPS. This sacrifices performance a bit, but simplifies the ISA for deeper pipelines and OOO execution. Based on several experiments, the inclusion of the M module will boost the performance of this core beyond the HF-RISC version, even without branch prediction.
