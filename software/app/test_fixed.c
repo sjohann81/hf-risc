@@ -117,10 +117,41 @@ int testmath()
 	return 0;
 }
 
+void testconv(void)
+{
+	int i;
+	fixed_t val_fix[5];
+	float val_float[5] = {-225.12345, -99.555, 0.0, 99.666, 225.12345};
+	float val_float2[5];
+	char buf[30];
+
+	for (i = 0; i < 5; i++) {
+		val_fix[i] = float_to_fix(val_float[i]);
+		val_float2[i] = fix_to_float(val_fix[i]);
+	}
+
+	printf("float values:\n");
+	for (i = 0; i < 5; i++) {
+		ftoa(val_float[i], buf, 6);
+		printf("[%s] ", buf);
+	}
+	printf("\nfloat_to_fix() values:\n");
+	for (i = 0; i < 5; i++) {
+		fixtoa(val_fix[i], buf, 6);
+		printf("[%s] ", buf);
+	}
+	printf("\nfix_to_float() values:\n");
+	for (i = 0; i < 5; i++) {
+		ftoa(val_float2[i], buf, 6);
+		printf("[%s] ", buf);
+	}
+}
+
 int main(void)
 {
 	testfp();
 	testmath();
+	testconv();
 
 	return 0;
 }
