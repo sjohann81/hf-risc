@@ -51,6 +51,27 @@ typedef	int64_t	fixedd_t;
 
 #else
 
+fixed_t float_to_fix(float val)
+{
+	int32_t ip, fp;
+
+	ip = (int32_t)val;
+	fp = (int32_t)((val - (float)ip) * (float)FIX_FBITS);
+
+	return ((ip << (32 - FIX_IBITS)) | (fp));
+}
+
+float fix_to_float(fixed_t val)
+{
+	float ip, fp;
+
+	ip = (float)(val >> FIX_IBITS);
+	// FIXME!!!
+	fp = ((float)(val & FIX_FMASK)) / 65535.0;
+
+	return ip + fp;
+}
+
 fixed_t fix_mul(fixed_t x, fixed_t y)
 {
 	uint32_t neg = 0, a, b, c, d;
