@@ -1,5 +1,5 @@
 -- file:          minimal_soc.vhd
--- description:   basic SoC peripherals
+-- description:   basic SoC with peripherals
 -- date:          01/2019
 -- author:        Sergio Johann Filho <sergio.filho@pucrs.br>
 --

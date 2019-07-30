@@ -1,5 +1,5 @@
--- file:          basic_soc_uart.vhd
--- description:   basic SoC peripherals
+-- file:          minimal_soc_uart.vhd
+-- description:   minimal SoC with peripherals, including a UART
 -- date:          01/2019
 -- author:        Sergio Johann Filho <sergio.filho@pucrs.br>
 --
@@ -44,7 +44,7 @@ architecture peripherals_arch of peripherals is
 	signal int_gpioa, int_timer1_ocr, int_timer1_ctc, tmr1_pulse, tmr1_dly, tmr1_dly2: std_logic;
 	signal paalt0, paalt2: std_logic;
 
-	signal int_uart, uart0_tx, uart0_rx, uart0_enable_w, uart0_enable_r, uart0_write_busy, uart0_data_avail: std_logic;	
+	signal int_uart, uart0_tx, uart0_rx, uart0_enable_w, uart0_enable_r, uart0_write_busy, uart0_data_avail: std_logic;
 	signal uartcause, uartcause_inv, uartmask: std_logic_vector(3 downto 0);
 	signal uart0_data_read, uart0_data_write: std_logic_vector(7 downto 0);
 	signal uart0_divisor: std_logic_vector(15 downto 0);
@@ -277,7 +277,7 @@ begin
 							when others =>
 							end case;
 						when others =>
-						end case;	
+						end case;
 					when others =>
 					end case;
 				when others =>
@@ -332,7 +332,7 @@ begin
 
 	tmr1_pulse <= '1' when tmr1_dly /= tmr1_dly2 else '0';
 	int_timer1_ocr <= '1' when timer1 < timer1_ocr else '0';
-	
+
 	uart0: entity work.uart
 	port map(
 		clk		=> clk_i,
