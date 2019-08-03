@@ -5,6 +5,11 @@ void porta_handler(void)
 	printf("PAIN: %04x\n", PAIN);
 }
 
+void portb_handler(void)
+{
+	printf("PBIN: %04x\n", PBIN);
+}
+
 void timer0a_handler(void)
 {
 	printf("TIMER0A\n");
@@ -38,10 +43,12 @@ int main(void){
 
 	/* enable interrupt masks for TIMER0 and TIMER1 CTC and OCR events */
 	TIMERMASK |= (MASK_TIMER0A | MASK_TIMER0B | MASK_TIMER1CTC | MASK_TIMER1OCR);
-	/* enable interrupt mask for PORTA inputs */
-	GPIOMASK |= MASK_PAIN;
+	/* enable interrupt mask for PORTA and PORTB inputs */
+	GPIOMASK |= MASK_PAIN | MASK_PBIN;
 	/* enable PORTA input pin 3 mask */
 	PAINMASK |= MASK_P3;
+	/* enable PORTB input pins 10 and 2 mask */
+	PBINMASK |= MASK_P10 | MASK_P2;
 	/* configure alternate function for PORTA pin 0 output (TIMER1 output, PWM generation) */
 	PAALTCFG0 |= MASK_PWM0;
 

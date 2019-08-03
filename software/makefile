@@ -19,7 +19,7 @@ READ_mips = mips-elf-readelf
 OBJ_mips = mips-elf-objcopy
 SIZE_mips = mips-elf-size
 
-GCC_riscv = riscv32-unknown-elf-gcc -march=rv32i -mabi=ilp32 -Wall -O2 -c -mstrict-align -ffreestanding -nostdlib -ffixed-s10 -ffixed-s11 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) #-DDEBUG_PORT #-ffixed-s10 -ffixed-s11 -mno-div -mrvc -fPIC -DDEBUG_PORT
+GCC_riscv = riscv32-unknown-elf-gcc -march=rv32i -mabi=ilp32 -Wall -O2 -c -mstrict-align -ffreestanding -nostdlib -ffixed-s10 -ffixed-s11 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) -DDEBUG_PORT #-ffixed-s10 -ffixed-s11 -mno-div -mrvc -fPIC -DDEBUG_PORT
 AS_riscv = riscv32-unknown-elf-as -march=rv32i -mabi=ilp32 #-fPIC
 LD_riscv = riscv32-unknown-elf-ld -melf32lriscv $(LDFLAGS_STRIP)
 DUMP_riscv = riscv32-unknown-elf-objdump -Mno-aliases
@@ -125,6 +125,10 @@ core_test: crt
 	$(GCC_$(ARCH)) -o core_test.o app/core_test.c
 	@$(MAKE) --no-print-directory link
 
+encode: crt
+	$(GCC_$(ARCH)) -o encode.o app/encode.c
+	@$(MAKE) --no-print-directory link
+
 euler: crt
 	$(GCC_$(ARCH)) -o euler.o app/euler.c
 	@$(MAKE) --no-print-directory link
@@ -214,6 +218,10 @@ test_spi: crt
 
 xtea: crt
 	$(GCC_$(ARCH)) -o xtea.o app/xtea.c
+	@$(MAKE) --no-print-directory link
+
+xtea2: crt
+	$(GCC_$(ARCH)) -o xtea2.o app/xtea2.c
 	@$(MAKE) --no-print-directory link
 
 xtea_hw: crt
