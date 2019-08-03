@@ -13,6 +13,8 @@ entity processor is
 		data_i:		in std_logic_vector(31 downto 0);
 		data_o:		out std_logic_vector(31 downto 0);
 		data_w_o:	out std_logic_vector(3 downto 0);
+		
+		data_mode_o:	out std_logic_vector(2 downto 0);
 
 		extio_in:	in std_logic_vector(7 downto 0);
 		extio_out:	out std_logic_vector(7 downto 0)
@@ -24,6 +26,8 @@ architecture arch_processor of processor is
 	signal irq_vector_cpu, address_cpu, data_in_cpu, data_out_cpu: std_logic_vector(31 downto 0);
 	signal data_w_cpu: std_logic_vector(3 downto 0);
 begin
+	data_mode_o <= data_b_cpu & data_h_cpu & data_access_cpu;
+
 	-- HF-RISC core
 	core: entity work.datapath
 	port map(	clock => clk_i,

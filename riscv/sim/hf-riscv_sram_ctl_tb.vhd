@@ -15,12 +15,20 @@ entity tb is
 end tb;
 
 architecture tb of tb is
-	signal clock_in, reset, stall_cpu, data, stall, stall_sig: std_logic := '0';
+	signal clock_in, reset, data, stall, stall_sig: std_logic := '0';
 	signal uart_read, uart_write: std_logic;
-	signal boot_enable_n, ram_enable_n, irq_cpu, irq_ack_cpu, exception_cpu, burst, data_b_cpu, data_h_cpu, data_access_cpu, ram_dly: std_logic;
-	signal address, data_read, data_write, data_read_boot, data_read_ram, data_read_sram, irq_vector_cpu, address_cpu, data_in_cpu, data_out_cpu: std_logic_vector(31 downto 0);
+	signal boot_enable_n, ram_enable_n, ram_dly: std_logic;
+	signal address, data_read, data_write, data_read_boot, data_read_ram: std_logic_vector(31 downto 0);
 	signal ext_irq: std_logic_vector(7 downto 0);
-	signal data_we, data_w_n_ram, data_w_cpu: std_logic_vector(3 downto 0);
+	signal data_we, data_w_n_ram: std_logic_vector(3 downto 0);
+
+	signal periph, periph_dly, periph_wr, periph_irq: std_logic;
+	signal data_read_periph, data_read_periph_s, data_write_periph: std_logic_vector(31 downto 0);
+	signal gpioa_in, gpioa_out, gpioa_ddr: std_logic_vector(7 downto 0);
+	signal gpio_sig: std_logic := '0';
+	
+	signal data_read_sram: std_logic_vector(31 downto 0);
+	signal data_mode: std_logic_vector(2 downto 0);
 	signal wr, rd, stall_dly, stall_dly2, stall_sram, spi_cs, spi_clk, spi_mosi, spi_miso, hold_n: std_logic := '0';
 begin
 
@@ -32,84 +40,87 @@ begin
 		wait for 20 ns;
 	end process;
 
+	process
+	begin
+		wait for 4 ms;
+		gpio_sig <= not gpio_sig;
+		wait for 100 us;
+		gpio_sig <= not gpio_sig;
+	end process;
+
+	gpioa_in <= "0000" & gpio_sig & "000";
+
+	process
+	begin
+		stall <= not stall;
+		wait for 123 ns;
+		stall <= not stall;
+		wait for 123 ns;
+	end process;
+
 	reset <= '0', '1' after 5 ns, '0' after 500 ns;
-	stall_sig <= stall_sram;
-	ext_irq <= x"00";
-	uart_read <= '1';
-	boot_enable_n <= '0' when (address(31 downto 28) = "0000" and stall_cpu = '0') or reset = '1' else '1';
-	ram_enable_n <= '0' when (address(31 downto 28) = "0100" and stall_cpu = '0') or reset = '1' else '1';
+	ext_irq <= "0000000" & periph_irq;
+
+	boot_enable_n <= '0' when (address(31 downto 28) = "0000" and stall_sig = '0') or reset = '1' else '1';
+	ram_enable_n <= '0' when (address(31 downto 28) = "0100" and stall_sig = '0') or reset = '1' else '1';
 	rd <= '1' when (address(31 downto 28) = "0110" and data_we = "0000" and stall_dly2 = '0') else '0';
 	wr <= '1' when (address(31 downto 28) = "0110" and data_we /= "0000" and stall_dly2 = '0') else '0';
-	data_read <= data_read_boot when address(31 downto 28) = "0000" and ram_dly = '0' else
-	data_read_sram when address(31 downto 28) = "0110" or stall_dly2 = '1' else data_read_ram;
+	data_read <= data_read_periph when periph = '1' or periph_dly = '1' else data_read_boot when address(31 downto 28) = "0000" and ram_dly = '0' else
+			data_read_sram when address(31 downto 28) = "0110" or stall_dly2 = '1' else data_read_ram;
 	data_w_n_ram <= not data_we;
-	hold_n <= '1';
 	burst <= '0';
+	stall_sig <= stall_sram;
 
 	process(clock_in, reset, stall_sram)
 	begin
 		if reset = '1' then
 			ram_dly <= '0';
+			periph_dly <= '0';
 			stall_dly <= '0';
 			stall_dly2 <= '0';
 		elsif clock_in'event and clock_in = '1' then
 			ram_dly <= not ram_enable_n;
+			periph_dly <= periph;
 			stall_dly <= stall_sram;
 			stall_dly2 <= stall_dly;
 		end if;
 	end process;
 
 	-- HF-RISCV core
-	core: entity work.datapath
-	port map(	clock => clock_in,
-			reset => reset,
-			stall => stall_cpu,
-			irq_vector => irq_vector_cpu,
-			irq => irq_cpu,
-			irq_ack => irq_ack_cpu,
-			exception => exception_cpu,
-			address => address_cpu,
-			data_in => data_in_cpu,
-			data_out => data_out_cpu,
-			data_w => data_w_cpu,
-			data_b => data_b_cpu,
-			data_h => data_h_cpu,
-			data_access => data_access_cpu
+	processor: entity work.processor
+	port map(	clk_i => clock_in,
+			rst_i => reset,
+			stall_i => stall_sig,
+			addr_o => address,
+			data_i => data_read,
+			data_o => data_write,
+			data_w_o => data_we,
+			data_mode_o => data_mode,
+			extio_in => ext_irq,
+			extio_out => open
 	);
 
-	-- peripherals / busmux logic
-	peripherals_busmux: entity work.busmux
-	generic map(
-		log_file => log_file,
-		uart_support => uart_support
-	)
+	data_read_periph <= data_read_periph_s(7 downto 0) & data_read_periph_s(15 downto 8) & data_read_periph_s(23 downto 16) & data_read_periph_s(31 downto 24);
+	data_write_periph <= data_write(7 downto 0) & data_write(15 downto 8) & data_write(23 downto 16) & data_write(31 downto 24);
+	periph_wr <= '1' when data_we /= "0000" else '0';
+	periph <= '1' when address(31 downto 28) = x"e" else '0';
+
+	peripherals: entity work.peripherals
 	port map(
-		clock => clock_in,
-		reset => reset,
-
-		stall => stall_sig,
-
-		stall_cpu => stall_cpu,
-		irq_vector_cpu => irq_vector_cpu,
-		irq_cpu => irq_cpu,
-		irq_ack_cpu => irq_ack_cpu,
-		exception_cpu => exception_cpu,
-		address_cpu => address_cpu,
-		data_in_cpu => data_in_cpu,
-		data_out_cpu => data_out_cpu,
-		data_w_cpu => data_w_cpu,
-		data_access_cpu => data_access_cpu,
-
-		addr_mem => address,
-		data_read_mem => data_read,
-		data_write_mem => data_write,
-		data_we_mem => data_we,
-		extio_in => ext_irq,
-		extio_out => open,
-		uart_read => uart_read,
-		uart_write => uart_write
+		clk_i => clock_in,
+		rst_i => reset,
+		addr_i => address,
+		data_i => data_write_periph,
+		data_o => data_read_periph_s,
+		sel_i => periph,
+		wr_i => periph_wr,
+		irq_o => periph_irq,
+		gpioa_in => gpioa_in,
+		gpioa_out => gpioa_out,
+		gpioa_ddr => gpioa_ddr
 	);
-
+	
+	
 	sram_ctrl_core: entity work.spi_sram_ctrl
 	port map(	clk_i => clock_in,
 			rst_i => reset,
@@ -256,7 +267,7 @@ begin
 	-- debug process
 	debug:
 	if uart_support = "no" generate
-		process(clock_in, address_cpu)
+		process(clock_in, address)
 			file store_file : text open write_mode is "debug.txt";
 			variable hex_file_line : line;
 			variable c : character;
@@ -264,7 +275,7 @@ begin
 			variable line_length : natural := 0;
 		begin
 			if clock_in'event and clock_in = '1' then
-				if address_cpu = x"f00000d0" and data = '0' then
+				if address = x"f00000d0" and data = '0' then
 					data <= '1';
 					index := conv_integer(data_write(30 downto 24));
 					if index /= 10 then
@@ -288,8 +299,8 @@ begin
 		if reset = '1' then
 		elsif clock_in'event and clock_in = '0' then
 			assert address /= x"e0000000" report "end of simulation" severity failure;
-			assert (address < x"70000000") or (address >= x"f0000000") report "out of memory region" severity failure;
-			assert address /= x"40000100" report "handling IRQ" severity warning;
+			assert (address < x"50000000") or (address >= x"e0000000") report "out of memory region" severity failure;
+			assert address /= x"40000104" report "handling IRQ" severity warning;
 		end if;
 	end process;
 

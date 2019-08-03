@@ -79,6 +79,7 @@ begin
 			data_i => data_read,
 			data_o => data_write,
 			data_w_o => data_we,
+			data_mode_o => open,
 			extio_in => ext_irq,
 			extio_out => open
 	);
