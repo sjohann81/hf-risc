@@ -9,6 +9,7 @@ SERIAL_DEV=/dev/ttyUSB0
 # compiler flags
 CFLAGS_STRIP = -fdata-sections -ffunction-sections
 LDFLAGS_STRIP = --gc-sections
+LD_SCRIPT = hf-risc.ld
 
 CFLAGS_NO_HW_MULDIV = -mnohwmult -mnohwdiv -ffixed-lo -ffixed-hi
 GCC_mips = mips-elf-gcc -Wall -O2 -c -mips2 -mno-branch-likely -mpatfree -mfix-r4000 -mno-check-zero-division -msoft-float -ffreestanding -nostdlib -fomit-frame-pointer -G 0 -I ./include -DCPU_SPEED=${F_CLK} -DBIG_ENDIAN $(CFLAGS_NO_HW_MULDIV) $(CFLAGS_STRIP) #-DDEBUG_PORT
@@ -46,7 +47,7 @@ crt:
 	$(GCC_$(ARCH)) -o malloc.o lib/malloc.c
 
 link:
-	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc.ld -Map test.map -N -o test.elf *.o
+	$(LD_$(ARCH)) -Tlib/$(ARCH)/$(LD_SCRIPT) -Map test.map -N -o test.elf *.o
 	$(DUMP_$(ARCH)) --disassemble --reloc test.elf > test.lst
 	$(DUMP_$(ARCH)) -h test.elf > test.sec
 	$(DUMP_$(ARCH)) -s test.elf > test.cnt

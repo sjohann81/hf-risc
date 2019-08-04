@@ -7,7 +7,7 @@ use ieee.numeric_std.all;
 
 entity tb is
 	generic(
-		address_width: integer := 16;
+		address_width: integer := 13;
 		memory_file : string := "code.txt";
 		log_file: string := "out.txt";
 		uart_support : string := "no"
@@ -29,7 +29,7 @@ architecture tb of tb is
 	
 	signal data_read_sram: std_logic_vector(31 downto 0);
 	signal data_mode: std_logic_vector(2 downto 0);
-	signal wr, rd, stall_dly, stall_dly2, stall_sram, spi_cs, spi_clk, spi_mosi, spi_miso, hold_n: std_logic := '0';
+	signal burst, wr, rd, stall_dly, stall_dly2, stall_sram, spi_cs, spi_clk, spi_mosi, spi_miso, hold_n: std_logic := '0';
 begin
 
 	process						--25Mhz system clock
@@ -68,6 +68,7 @@ begin
 	data_read <= data_read_periph when periph = '1' or periph_dly = '1' else data_read_boot when address(31 downto 28) = "0000" and ram_dly = '0' else
 			data_read_sram when address(31 downto 28) = "0110" or stall_dly2 = '1' else data_read_ram;
 	data_w_n_ram <= not data_we;
+	hold_n <= '1';
 	burst <= '0';
 	stall_sig <= stall_sram;
 
@@ -128,8 +129,8 @@ begin
 			data_i => data_write,
 			data_o => data_read_sram,
 			burst_i => burst,
-			bmode_i => data_b_cpu,
-			hmode_i => data_h_cpu,
+			bmode_i => data_mode(2),
+			hmode_i => data_mode(1),
 			wr_i => wr,
 			rd_i => rd,
 			data_ack_o => open,
@@ -299,7 +300,7 @@ begin
 		if reset = '1' then
 		elsif clock_in'event and clock_in = '0' then
 			assert address /= x"e0000000" report "end of simulation" severity failure;
-			assert (address < x"50000000") or (address >= x"e0000000") report "out of memory region" severity failure;
+			assert (address < x"70000000") or (address >= x"e0000000") report "out of memory region" severity failure;
 			assert address /= x"40000104" report "handling IRQ" severity warning;
 		end if;
 	end process;
