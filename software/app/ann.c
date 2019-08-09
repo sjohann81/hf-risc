@@ -25,6 +25,11 @@ struct neural_net_s {
 	struct neural_net_weights_s weights;
 };
 
+float sigmoid(float val)
+{
+	return 1.0 / (1.0 + exp(-val));
+}
+
 void init(struct neural_net_s *net, char input[N_PATTERNS][INPUT_NEURONS], char target[N_PATTERNS][OUTPUT_NEURONS])
 {
 	int i, j;
@@ -39,23 +44,15 @@ void init(struct neural_net_s *net, char input[N_PATTERNS][INPUT_NEURONS], char 
 
 void infer(struct neural_net_s *net, int p)
 {
-	char buf[30];
 	int i, j;
 	float acc;
-
-	printf("\ninput (%02d): ", p);
-	for (i = 0; i < INPUT_NEURONS; i++)
-		printf("%d", net->input[p][i]);
-	printf(" target: ");
-	for (i = 0; i < OUTPUT_NEURONS; i++)
-		printf("%d", net->target[p][i]);
 
 	// compute hidden layer activations
 	for (i = 0; i < HIDDEN_NEURONS; i++) {
 		acc = net->weights.hidden_weights[INPUT_NEURONS][i];
 		for (j = 0; j < INPUT_NEURONS; j++)
 			acc += net->input[p][j] * net->weights.hidden_weights[j][i];
-		net->hidden[i] = 1.0 / (1.0 + exp(-acc));
+		net->hidden[i] = sigmoid(acc);
 	}
 
 	// compute output layer activations and calculate errors
@@ -63,21 +60,32 @@ void infer(struct neural_net_s *net, int p)
 		acc = net->weights.output_weights[HIDDEN_NEURONS][i];
 		for (j = 0; j < HIDDEN_NEURONS; j++)
 			acc += net->hidden[j] * net->weights.output_weights[j][i];
-		net->output[i] = 1.0 / (1.0 + exp(-acc));
-	}
-	printf(" output: ");
-	for (i = 0; i < OUTPUT_NEURONS; i++) {
-		ftoa(net->output[i], buf, 4);
-		printf("%s ", buf);
+		net->output[i] = sigmoid(acc);
 	}
 }
 
 void show_training(struct neural_net_s *net)
 {
-	int p;
+	int i, p;
+	char buf[30];
 
-	for (p = 0; p < N_PATTERNS; p++)
+	for (p = 0; p < N_PATTERNS; p++) {
+		printf("\ninput (%02d): ", p);
+		for (i = 0; i < INPUT_NEURONS; i++)
+			printf("%d", net->input[p][i]);
+		printf(" target: ");
+		for (i = 0; i < OUTPUT_NEURONS; i++)
+			printf("%d", net->target[p][i]);
+
 		infer(net, p);
+
+		printf(" output: ");
+		for (i = 0; i < OUTPUT_NEURONS; i++) {
+			ftoa(net->output[i], buf, 4);
+			printf("%s ", buf);
+		}
+	}
+	printf("\n");
 }
 
 void train(struct neural_net_s *net)
@@ -134,7 +142,7 @@ void train(struct neural_net_s *net)
 				acc = net->weights.hidden_weights[INPUT_NEURONS][i];
 				for (j = 0; j < INPUT_NEURONS; j++)
 					acc += net->input[p][j] * net->weights.hidden_weights[j][i];
-				net->hidden[i] = 1.0 / (1.0 + exp(-acc));
+				net->hidden[i] = sigmoid(acc);
 			}
 
 			// feedforward: compute output layer activation errors
@@ -142,7 +150,7 @@ void train(struct neural_net_s *net)
 				acc = net->weights.output_weights[HIDDEN_NEURONS][i];
 				for (j = 0; j < HIDDEN_NEURONS; j++)
 					acc += net->hidden[j] * net->weights.output_weights[j][i];
-				net->output[i] = 1.0 / (1.0 + exp(-acc));
+				net->output[i] = sigmoid(acc);
 				output_delta[i] = (net->target[p][i] - net->output[i]) * net->output[i] * (1.0 - net->output[i]);
 				error += 0.5 * (net->target[p][i] - net->output[i]) * (net->target[p][i] - net->output[i]);
 			}
@@ -178,7 +186,7 @@ void train(struct neural_net_s *net)
 
 		if ((epoch % STATUS_CYCLES) == 0) {
 			ftoa(error, buf, 6);
-			printf("\n\nepoch: %d, error: %s", epoch, buf);
+			printf("\nepoch: %d, error: %s", epoch, buf);
 			show_training(net);
 		}
 
