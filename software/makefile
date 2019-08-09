@@ -9,7 +9,7 @@ SERIAL_DEV=/dev/ttyUSB0
 # compiler flags
 CFLAGS_STRIP = -fdata-sections -ffunction-sections
 LDFLAGS_STRIP = --gc-sections
-LD_SCRIPT = hf-risc.ld
+LD_SCRIPT = hf-risc_sram_test.ld
 
 CFLAGS_NO_HW_MULDIV = -mnohwmult -mnohwdiv -ffixed-lo -ffixed-hi
 GCC_mips = mips-elf-gcc -Wall -O2 -c -mips2 -mno-branch-likely -mpatfree -mfix-r4000 -mno-check-zero-division -msoft-float -ffreestanding -nostdlib -fomit-frame-pointer -G 0 -I ./include -DCPU_SPEED=${F_CLK} -DBIG_ENDIAN $(CFLAGS_NO_HW_MULDIV) $(CFLAGS_STRIP) #-DDEBUG_PORT
@@ -20,7 +20,7 @@ READ_mips = mips-elf-readelf
 OBJ_mips = mips-elf-objcopy
 SIZE_mips = mips-elf-size
 
-GCC_riscv = riscv32-unknown-elf-gcc -march=rv32i -mabi=ilp32 -Wall -O2 -c -mstrict-align -ffreestanding -nostdlib -ffixed-s10 -ffixed-s11 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) -DDEBUG_PORT #-ffixed-s10 -ffixed-s11 -mno-div -mrvc -fPIC -DDEBUG_PORT
+GCC_riscv = riscv32-unknown-elf-gcc -march=rv32i -mabi=ilp32 -Wall -O2 -c -mstrict-align -ffreestanding -nostdlib -ffixed-s10 -ffixed-s11 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) #-DDEBUG_PORT #-ffixed-s10 -ffixed-s11 -mno-div -mrvc -fPIC -DDEBUG_PORT
 AS_riscv = riscv32-unknown-elf-as -march=rv32i -mabi=ilp32 #-fPIC
 LD_riscv = riscv32-unknown-elf-ld -melf32lriscv $(LDFLAGS_STRIP)
 DUMP_riscv = riscv32-unknown-elf-objdump -Mno-aliases
@@ -107,6 +107,10 @@ eeprom_sim:
 	echo "b16b00b5" > eeprom.txt
 	printf "%08x\n" `stat -L -c %s code.txt` >> eeprom.txt
 	cat code.txt >> eeprom.txt
+
+ann: crt
+	$(GCC_$(ARCH)) -o ann.o app/ann.c
+	@$(MAKE) --no-print-directory link
 
 base64: crt
 	$(GCC_$(ARCH)) -o base64.o app/base64.c
