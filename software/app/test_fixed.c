@@ -75,6 +75,8 @@ int testmath()
 	float angle, degrees[] = {0.0, 30.0, 45.0, 60.0, 90.0, 120.0, 135.0, 150.0, 180.0, 210.0, 225.0, 240.0, 270.0, 300.0, 315.0, 330.0, 360.0};
 	int32_t i, angles = sizeof(degrees) / sizeof(float);
 
+	fixtoa(fix_div(fix_val(355.0), fix_val(113.0)), buf, 6);
+	printf("\naprox. pi: %s", buf);
 	fixtoa(fix_mul(fix_div(fix_val(1.0), fix_val(9.0)), fix_val(9.0)), buf, 6);
 	printf("\n(1.0 / 9.0) * 9.0: %s\n", buf);
 	fixtoa(fix_sqrt(fix_val(2.0)), buf, 6);

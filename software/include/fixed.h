@@ -51,21 +51,6 @@ typedef	int64_t	fixedd_t;
 
 #else
 
-fixed_t float_to_fix(float val)
-{
-	return fix_val(val);
-}
-
-float fix_to_float(fixed_t val)
-{
-	float ip, fp;
-
-	ip = (float)(val >> FIX_IBITS);
-	fp = ((float)(val & FIX_FMASK)) / ((float)(1 << FIX_FBITS));
-
-	return ip + fp;
-}
-
 fixed_t fix_mul(fixed_t x, fixed_t y)
 {
 	uint32_t neg = 0, a, b, c, d;
@@ -113,6 +98,21 @@ fixed_t fix_div(fixed_t x, fixed_t y)
 	return (neg ? -res : res);
 }
 #endif
+
+fixed_t float_to_fix(float val)
+{
+	return fix_val(val);
+}
+
+float fix_to_float(fixed_t val)
+{
+	float ip, fp;
+
+	ip = (float)(val >> FIX_IBITS);
+	fp = ((float)(val & FIX_FMASK)) / ((float)(1 << FIX_FBITS));
+
+	return ip + fp;
+}
 
 void fixtoa(fixed_t a, char *str, int32_t dec)
 {
