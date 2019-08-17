@@ -267,8 +267,8 @@ void irq_handler(uint32_t cause, uint32_t *stack)
 	} while (cause);
 }
 
-uint32_t exception_handler(uint32_t service, uint32_t value, uint32_t epc, uint32_t opcode)
+void exception_handler(int32_t service, int32_t arg0, int32_t arg1, int32_t arg2)
 {
 	/* for testing purposes, right now */
-	return ((service & 0xffff) << 16) + value;
+	printf("syscall: %d, [arg0: %d, arg1: %d, arg2: %d]", service, arg0, arg1, arg2);
 }

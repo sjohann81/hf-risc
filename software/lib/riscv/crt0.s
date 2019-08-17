@@ -91,14 +91,11 @@ _restore_exception:
 	lw	s10, -4(sp)
 	jalr	zero, s10		# context restored, continue
 _exception:
-	addi	s10, s10, -4		# s10 is IRQ_EPC-4, actual EPC is IRQ_EPC-8
-	lw	s11, 0(s10)		# read opcode
-	# pass syscall parameters on a0 and a1 from stack
-	lw	a0, 16(sp)
+	# pass syscall code and parameters to the exception handler
+	addi	a0, a7, 0
 	lw	a1, 20(sp)
-	# pass EPC and syscall opcodes on a2 and a3
-	addi	a2, s10, 0
-	addi	a3, s11, 0
+	lw	a2, 24(sp)
+	lw	a3, 28(sp)
 	# call exception handler. return values will be at a0 and a1
 	jal	ra, exception_handler
 	jal	zero, _restore_exception
@@ -147,4 +144,11 @@ longjmp:
 	lw    sp, 48(a0)
 	lw    ra, 52(a0)
 	ori  a0, a1, 0
+	ret
+
+# system call interface: syscall(service, arg0, arg1, arg2, arg3)
+	.global syscall			
+syscall:
+	addi	a7, a0, 0
+	ecall
 	ret

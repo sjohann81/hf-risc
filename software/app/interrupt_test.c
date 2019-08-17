@@ -52,6 +52,8 @@ int main(void){
 	/* configure alternate function for PORTA pin 0 output (TIMER1 output, PWM generation) */
 	PAALTCFG0 |= MASK_PWM0;
 
+	syscall(555, 7, 8, 9);
+
 	for(;;){
 		printf(".");
 //		delay_ms(1);

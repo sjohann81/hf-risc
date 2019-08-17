@@ -60,7 +60,7 @@ typedef struct {
 	int32_t r[32];
 	uint32_t pc, pc_next;
 	int8_t *mem;
-	uint32_t vector, cause, mask, status, status_dly[4], epc;
+	uint32_t vector, cause, mask, status, status_dly[4], epc, exception;
 	uint32_t s0cause;
 	uint32_t gpiocause, gpiocause_inv, gpiomask;
 	uint32_t paddr, paout, pain, pain_inv, pain_mask;
@@ -248,11 +248,12 @@ void cycle(state *s){
 	uint32_t *u = (uint32_t *)s->r;
 	uint32_t ptr_l, ptr_s;
 
-	if (s->status && (s->cause & s->mask)){
+	if ((s->status && (s->cause & s->mask)) || s->exception){
 		s->epc = s->pc_next;
 		s->pc = s->vector;
 		s->pc_next = s->vector + 4;
 		s->status = 0;
+		s->exception = 0;
 		for (i = 0; i < 4; i++)
 			s->status_dly[i] = 0;
 	}
@@ -355,6 +356,20 @@ void cycle(state *s){
 					break;
 				case 0x6: r[rd] = r[rs1] | r[rs2]; break;							/* OR */
 				case 0x7: r[rd] = r[rs1] & r[rs2]; break;							/* AND */
+				default: goto fail;
+			}
+			break;
+		case 0x73:
+			switch(funct3){
+				case 0:
+					switch(imm_i){
+						case 0:										/* SCALL */
+							s->exception = 1;
+							break;
+						case 1:	bp(s, inst); break;							/* SBREAK */
+						default: goto fail;
+					}
+					break;
 				default: goto fail;
 			}
 			break;
@@ -466,6 +481,7 @@ int main(int argc, char *argv[]){
 	s->pc_next = s->pc + 4;
 	s->mem = &sram[0];
 	s->r[2] = MEM_SIZE - 4;
+	s->exception = 0;
 
 	for(;;){
 		if (s->timer0 & 0x80000) {

@@ -189,3 +189,10 @@ longjmp:
 	.set reorder
 .end longjmp
 
+
+	.global syscall
+	.ent syscall
+syscall:
+	nop
+	jr	$ra
+.end syscall

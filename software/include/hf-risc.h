@@ -291,5 +291,7 @@ typedef unsigned long			size_t;
 #define XTEA_OUT0			(*(volatile uint32_t *)(XTEA_BASE + 0x070))
 #define XTEA_OUT1			(*(volatile uint32_t *)(XTEA_BASE + 0x080))
 
+extern void syscall(int32_t service, int32_t arg0, int32_t arg1, int32_t arg2);
+
 #include <libc.h>
 #include <malloc.h>
