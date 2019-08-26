@@ -27,7 +27,7 @@ begin
 	spi_miso <= '0', '1' after 2460 ns, '0' after 3000 ns, '1' after 6050 ns, '1' after 6250 ns, '1' after 6450 ns, '1' after 6650 ns, '0' after 6850 ns, '0' after 7050 ns, '0' after 7250 ns, '0' after 7450 ns, '1' after 7650 ns, '1' after 7850 ns, '0' after 8050 ns, '0' after 8250 ns, '0' after 8450 ns, '0' after 8650 ns, '1' after 8850 ns, '1' after 9050 ns;
 	spi_clk_i <= '0', '1' after 6100 ns, '0' after 6300 ns, '1' after 6500 ns, '0' after 6700 ns, '1' after 6900 ns, '0' after 7100 ns, '1' after 7300 ns, '0' after 7500 ns, '1' after 7700 ns, '0' after 7900 ns, '1' after 8100 ns, '0' after 8300 ns, '1' after 8500 ns, '0' after 8700 ns, '1' after 8900 ns, '0' after 9100 ns;
 	input <= x"a1";
-	clk_div <= "000";
+	clk_div <= "001";
 
 
 
