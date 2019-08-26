@@ -146,7 +146,7 @@ longjmp:
 	ori  a0, a1, 0
 	ret
 
-# system call interface: syscall(service, arg0, arg1, arg2, arg3)
+# system call interface: syscall(service, arg0, arg1, arg2)
 	.global syscall			
 syscall:
 	addi	a7, a0, 0

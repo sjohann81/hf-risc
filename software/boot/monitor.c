@@ -68,10 +68,13 @@ int32_t main(void){
 	void (*funcPtr)();
 	uint8_t *ptr1;
 	uint16_t d;
-	
+
 	d = (uint16_t)(CPU_SPEED / 57600);
 	UART0DIV = d;
 	UART0 = 0;
+
+	PADDR |= MASK_P2;
+	PADDR &= ~MASK_P3;
 	PAALTCFG0 |= MASK_UART0;
 
 	printstr("\nHF-RISC bootloader - ");
@@ -98,7 +101,7 @@ int32_t main(void){
 				addr = getnum();
 				ptr1 = (uint8_t *)addr;
 			waiting:
-				printstr("\nwaiting for binary...");				
+				printstr("\nwaiting for binary...");
 				ch = getchar();
 				for(i = 0; ; i++){
 					ptr1[i] = (uint8_t)ch;
