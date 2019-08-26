@@ -110,7 +110,7 @@ timers base		- 0xe1020000
 
 UART base		- 0xe1030000
 	UARTSTATUS	- 0xe1030000	(future use)
-	UARTCAUSE	- 0xe1030400
+	UARTCAUSE	- 0xe1030400	(bit: ... 3 - UART1 write busy, 2 - UART1 data avail, 1 - UART0 write busy, 0 - UART0 data avail)
 	UARTCAUSE_INV	- 0xe1030800
 	UARTMASK	- 0xe1030c00
 
@@ -128,14 +128,18 @@ UART base		- 0xe1030000
 
 SPI base		- 0xe1040000
 	SPISTATUS	- 0xe1040000	(future use)
-	SPICAUSE	- 0xe1040400
+	SPICAUSE	- 0xe1040400	(bit: ... 1 - SPI1 data valid, 0 - SPI0 data valid)
 	SPICAUSE_INV	- 0xe1040800
 	SPIMASK		- 0xe1040c00
 
-	SPI0		- 0xe1044000												PA4 / PA12 (sel), PA5 / PA13 (clk), PA6 / PA14 (mosi), PA7 / PA15 (miso), alternate function 10 (SPI0 / SPI0H)
-	SPI1		- 0xe1044400												PA0 / PA8 (sel), PA1 / PA9 (clk), PA2 / PA10 (mosi), PA3 / PA11 (miso), alternate function 11 (SPI1 / SPI1H)
+	SPI0		- 0xe1044000												PA4 / PA12 (ssn), PA5 / PA13 (clk), PA6 / PA14 (mosi), PA7 / PA15 (miso), alternate function 10 (SPI0 / SPI0H)
+	SPI0CTRL	- 0xe1044010
+	SPI1		- 0xe1044400												PA0 / PA8 (ssn), PA1 / PA9 (clk), PA2 / PA10 (mosi), PA3 / PA11 (miso), alternate function 11 (SPI1 / SPI1H)
+	SPI1CTRL	- 0xe1044410
 	SPI2		- 0xe1044800
+	SPI2CTRL	- 0xe1044810
 	SPI3		- 0xe1044c00
+	SPI3CTRL	- 0xe1044c10
 
 I2C base		- 0xe1050000
 	I2CSTATUS	- 0xe1050000	(future use)
@@ -143,8 +147,8 @@ I2C base		- 0xe1050000
 	I2CCAUSE_INV	- 0xe1050800
 	I2CMASK		- 0xe1050c00
 
-	I2C0		- 0xe1054000
-	I2C1		- 0xe1054400
+	I2C0		- 0xe1054000												PA6 / PA14 (scl), PA7, PA15 (sda), alternate function 01 (I2C0 / I2CH)
+	I2C1		- 0xe1054400												PA2 / PA3 (scl), PA10, PA11 (sda), alternate function 10 (I2C1 / I2CH)
 	I2C2		- 0xe1054800
 	I2C3		- 0xe1054c00
 

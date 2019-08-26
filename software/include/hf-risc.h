@@ -246,9 +246,47 @@ typedef unsigned long			size_t;
 #define SPICAUSEINV			(*(volatile uint32_t *)(SPI_BASE + 0x0800))
 #define SPIMASK				(*(volatile uint32_t *)(SPI_BASE + 0x0c00))
 #define SPI0				(*(volatile uint32_t *)(SPI_BASE + 0x4000))
+#define SPI0CTRL			(*(volatile uint32_t *)(SPI_BASE + 0x4010))
 #define SPI1				(*(volatile uint32_t *)(SPI_BASE + 0x4400))
+#define SPI1CTRL			(*(volatile uint32_t *)(SPI_BASE + 0x4410))
 #define SPI2				(*(volatile uint32_t *)(SPI_BASE + 0x4800))
+#define SPI2CTRL			(*(volatile uint32_t *)(SPI_BASE + 0x4810))
 #define SPI3				(*(volatile uint32_t *)(SPI_BASE + 0x4c00))
+#define SPI3CTRL			(*(volatile uint32_t *)(SPI_BASE + 0x4c10))
+
+#define MASK_SPI0_DATAVALID		(1 << 0)
+#define MASK_SPI1_DATAVALID		(1 << 1)
+#define MASK_SPI2_DATAVALID		(1 << 2)
+#define MASK_SPI3_DATAVALID		(1 << 3)
+
+#define SPI0_SSN			(2 << 8)
+#define SPI0_CLK			(2 << 10)
+#define SPI0_MOSI			(2 << 12)
+#define SPI0_MISO			(2 << 14)
+#define SPI0H_SSN			(2 << 24)
+#define SPI0H_CLK			(2 << 26)
+#define SPI0H_MOSI			(2 << 28)
+#define SPI0H_MISO			(2 << 30)
+#define SPI1_SSN			(3 << 0)
+#define SPI1_CLK			(3 << 2)
+#define SPI1_MOSI			(3 << 4)
+#define SPI1_MISO			(3 << 6)
+#define SPI1H_SSN			(3 << 16)
+#define SPI1H_CLK			(3 << 18)
+#define SPI1H_MOSI			(3 << 20)
+#define SPI1H_MISO			(3 << 22)
+
+#define SPI_DATA_XFER			(1 << 0)
+#define SPI_DATA_VALID			(1 << 1)
+
+#define SPI_CLK_DIV4			0x000
+#define SPI_CLK_DIV8			0x008
+#define SPI_CLK_DIV16			0x018
+#define SPI_CLK_DIV32			0x038
+#define SPI_CLK_DIV64			0x078
+#define SPI_CLK_DIV128			0x0f8
+#define SPI_CLK_DIV256			0x1f8
+#define SPI_CLK_DIV512			0x3f8
 
 /* I2C registers */
 #define I2C_BASE			(S0_BASE + 0x50000)
