@@ -1,0 +1,51 @@
+HF-RISCV SoC files for simulation / prototyping
+-----------------------------------------------
+
+(basic SoC)
+
+simulation:
+-----------
+
+hf-risc/riscv/core_rv32i/*
+hf-risc/riscv/sim/boot_ram.vhd
+hf-risc/riscv/sim/ram.vhd
+hf-risc/riscv/sim/boot.txt (put in the simulator project directory, along with code.txt)
+hf-risc/riscv/sim/hf-riscv_basic_standard_soc_tb.vhd
+hf-risc/devices/peripherals/basic_soc.vhd
+hf-risc/devices/controllers/uart/uart.vhd
+
+prototyping:
+------------
+hf-risc/riscv/core_rv32i/*
+hf-risc/riscv/platform/rams/*
+hf-risc/riscv/platform/spartan3e_nexys2/spartan3e_nexys2_standard_soc.vhd
+hf-risc/devices/peripherals/basic_soc.vhd
+hf-risc/devices/controllers/uart/uart.vhd
+
+
+(complete SoC)
+
+simulation:
+-----------
+
+hf-risc/riscv/core_rv32i/*
+hf-risc/riscv/sim/boot_ram.vhd
+hf-risc/riscv/sim/ram.vhd
+hf-risc/riscv/sim/boot.txt (put in the simulator project directory, along with code.txt)
+hf-risc/riscv/sim/hf-riscv_basic_standard_soc_ext_sram_tb.vhd
+hf-risc/devices/peripherals/standard_soc.vhd
+hf-risc/devices/controllers/spi_master/spi_master.vhd
+hf-risc/devices/controllers/spi_master_slave/spi_master_slave.vhd
+hf-risc/devices/controllers/spi_sram_controller/spi_sram_ctrl.vhd
+hf-risc/devices/controllers/uart/uart.vhd
+
+prototyping:
+------------
+hf-risc/riscv/core_rv32i/*
+hf-risc/riscv/platform/rams/*
+hf-risc/riscv/platform/spartan3e_nexys2/spartan3e_nexys2_standard_soc_ext_sram.vhd
+hf-risc/devices/peripherals/standard_soc.vhd
+hf-risc/devices/controllers/spi_master/spi_master.vhd
+hf-risc/devices/controllers/spi_master_slave/spi_master_slave.vhd
+hf-risc/devices/controllers/spi_sram_controller/spi_sram_ctrl.vhd
+hf-risc/devices/controllers/uart/uart.vhd
