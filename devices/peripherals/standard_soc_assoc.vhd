@@ -1,15 +1,10 @@
--- file:          standard_soc.vhd
--- description:   standard SoC with peripherals
--- date:          08/2019
+-- file:          standard_soc_assoc.vhd
+-- description:   standard SoC with peripherals and external blocks
+-- date:          09/2019
 -- author:        Sergio Johann Filho <sergio.filho@pucrs.br>
 --
 -- Standard SoC configuration template for prototyping. Dual GPIO ports,
 -- a counter, a timer, dual UARTs and dual SPIs are included in this version.
-
--- 0xe0ff4000 - 0xe0ff43ff
--- 0xe0ff4400 - 0xe0ff47ff
--- 0xe0ff4800 - 0xe0ff4bff
--- 0xe0ff4c00 - 0xe0ff4fff
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -31,7 +26,25 @@ entity peripherals is
 		gpioa_ddr: out std_logic_vector(15 downto 0);
 		gpiob_in: in std_logic_vector(15 downto 0);
 		gpiob_out: out std_logic_vector(15 downto 0);
-		gpiob_ddr: out std_logic_vector(15 downto 0)
+		gpiob_ddr: out std_logic_vector(15 downto 0);
+
+		-- MAC Sync		I/O space: 0xe0ff4000 - 0xe0ff43ff
+		sync_mac_i: in std_logic_vector(32 downto 0);
+		sync_mac_o: out std_logic_vector(32 downto 0);
+		sync_mac_en_o: out std_logic;
+
+		-- MAC Async		I/O space: 0xe0ff4400 - 0xe0ff47ff
+		async_mac_i: in std_logic_vector(32 downto 0);
+		async_mac_o: out std_logic_vector(32 downto 0);
+		async_mac_en_o: out std_logic;
+		async_mac_rst_o: out std_logic;
+
+		-- Delay line		I/O space: 0xe0ff4800 - 0xe0ff4bff
+		de_pause_o: out std_logic_vector(1 downto 0);
+		de_config_o: out std_logic_vector(4 downto 0);
+		de_cde_sel_o: out std_logic_vector(3 downto 0);
+		de_mde_sel_o: out std_logic_vector(3 downto 0);
+		de_cde_ctrl_o: out std_logic_vector(15 downto 0)
 	);
 end peripherals;
 
@@ -47,7 +60,7 @@ architecture peripherals_arch of peripherals is
 	signal pbddr, pbout, pbin, pbin_inv, pbin_mask: std_logic_vector(15 downto 0);
 
 	signal paaltcfg0: std_logic_vector(31 downto 0);
-	signal paalt: std_logic_vector(15 downto 0);	
+	signal paalt: std_logic_vector(15 downto 0);
 	signal int_gpio, int_timer: std_logic;
 	signal int_gpioa, int_gpiob, int_timer1_ocr, int_timer1_ctc, tmr1_pulse, tmr1_dly, tmr1_dly2: std_logic;
 	signal timer0: std_logic_vector(31 downto 0);
@@ -72,6 +85,15 @@ architecture peripherals_arch of peripherals is
 	signal spi1_data_write, spi1_data_read: std_logic_vector(7 downto 0);
 	signal spi1_clk_div: std_logic_vector(8 downto 0);
 	signal spi1_data_valid, spi1_data_xfer, spi1_ssn, spi1_clk_i, spi1_clk_o, spi1_do, spi1_di: std_logic;
+
+	signal async_mac_en_r, async_mac_rst_r, sync_mac_en_r: std_logic;
+	signal async_mac_r, sync_mac_r: std_logic_vector(31 downto 0);
+	signal de_pause_r: std_logic_vector(1 downto 0);
+	signal de_config_r: std_logic_vector(4 downto 0);
+	signal de_cde_sel_r: std_logic_vector(3 downto 0);
+	signal de_mde_sel_r: std_logic_vector(3 downto 0);
+	signal de_cde_ctrl_r: std_logic_vector(15 downto 0);
+	signal de_cde_ctrl_we_r: std_logic;
 
 begin
 	segment <= addr_i(27 downto 24);
@@ -100,10 +122,10 @@ begin
 
 	int_uart <= '1' when ((uartcause xor uartcause_inv) and uartmask) /= "0000" else '0';
 	uartcause <= uart1_write_busy & uart1_data_avail & uart0_write_busy & uart0_data_avail;
-	
+
 	int_spi <= '1' when ((spicause xor spicause_inv) and spimask) /= "0000" else '0';
 	spicause <= "00" & spi1_data_valid & spi0_data_valid;
-	
+
 	-- PORT A alternate config MUXes for outputs
 	paalt(0) <= int_timer1_ctc when paaltcfg0(1 downto 0) = "01" else int_timer1_ocr when paaltcfg0(1 downto 0) = "10" else paout(0);
 	paalt(1) <= spi1_clk_o when paaltcfg0(3 downto 2) = "11" else paout(1);
@@ -113,7 +135,7 @@ begin
 	paalt(5) <= spi0_clk_o when paaltcfg0(11 downto 10) =  "10" else paout(5);
 	paalt(6) <= spi0_do when paaltcfg0(13 downto 12) = "10" else paout(6);
 	paalt(7) <= spi0_do when paaltcfg0(15 downto 14) = "10" else paout(7);
-	
+
 	paalt(8) <= int_timer1_ctc when paaltcfg0(17 downto 16) = "01" else int_timer1_ocr when paaltcfg0(17 downto 16) = "10" else paout(8);
 	paalt(9) <= spi1_clk_o when paaltcfg0(19 downto 18) = "11" else paout(9);
 	paalt(10) <= uart0_tx when paaltcfg0(21 downto 20) = "01" else spi1_do when paaltcfg0(21 downto 20) = "11" else paout(10);
@@ -122,21 +144,21 @@ begin
 	paalt(13) <= spi0_clk_o when paaltcfg0(27 downto 26) = "10" else paout(13);
 	paalt(14) <= spi0_do when paaltcfg0(29 downto 28) = "10" else paout(14);
 	paalt(15) <= spi0_do when paaltcfg0(31 downto 30) = "10" else paout(15);
-	
+
 	-- PORT A alternate config MUXes for inputs
 	uart0_rx <= pain(3) when paaltcfg0(7 downto 6) = "01" else pain(11) when paaltcfg0(23 downto 22) = "01" else '1';
 	uart1_rx <= pain(5) when paaltcfg0(11 downto 10) = "01" else pain(13) when paaltcfg0(27 downto 26) = "01" else '1';
-	
+
 	spi0_ssn <= pain(4) when paaltcfg0(9 downto 8) = "10" else pain(12) when paaltcfg0(25 downto 24) = "10" else '1';
 	spi0_clk_i <= pain(5) when paaltcfg0(11 downto 10) = "10" else pain(13) when paaltcfg0(27 downto 26) = "10" else '0';
 	spi0_di <= pain(6) when paaltcfg0(13 downto 12) = "10" else pain(14) when paaltcfg0(29 downto 28) = "10" else
 		pain(7) when paaltcfg0(15 downto 14) = "10" else pain(15) when paaltcfg0(31 downto 30) = "10" else '0';
-	
+
 	spi1_ssn <= pain(0) when paaltcfg0(1 downto 0) = "11" else pain(8) when paaltcfg0(17 downto 16) = "11" else '1';
 	spi1_clk_i <= pain(1) when paaltcfg0(3 downto 2) = "11" else pain(9) when paaltcfg0(19 downto 18) = "11" else '0';
 	spi1_di <= pain(2) when paaltcfg0(5 downto 4) = "11" else pain(10) when paaltcfg0(21 downto 20) = "11" else
 		pain(3) when paaltcfg0(7 downto 6) = "11" else pain(11) when paaltcfg0(23 downto 22) = "11" else '0';
-	
+
 	-- address decoder, read from peripheral registers
 	process(clk_i, rst_i, segment, class, device, funct)
 	begin
@@ -147,6 +169,46 @@ begin
 		elsif clk_i'event and clk_i = '1' then
 			if sel_i = '1' then
 				case segment is
+				when "0000" =>								-- Segment Reserved
+					case class is
+					when "1111" =>
+						case device is
+						when "010000" =>					-- MAC Sync		I/O space: 0xe0ff4000 - 0xe0ff43ff
+							case funct is
+							when "0000" =>					-- 0xe0ff4000		(RW)
+								data_o <= sync_mac_r;
+							when "0001" =>					-- 0xe0ff4010		(RO)
+								data_o <= sync_mac_i;
+							when others =>
+							end case;
+						when "010001" =>					-- MAC Async		I/O space: 0xe0ff4400 - 0xe0ff47ff
+							case funct is
+							when "0000" =>					-- 0xe0ff4400		(RW)
+								data_o <= async_mac_r;
+							when "0001" =>					-- 0xe0ff4410		(RO)
+								data_o <= async_mac_i;
+							when "0010" =>					-- 0xe0ff4420		(RW)
+								data_o <= x"0000000" & "000" & async_mac_rst_r;
+							when others =>
+							end case;
+						when "010010" =>					-- Delay line		I/O space: 0xe0ff4800 - 0xe0ff4bff
+							case funct is
+							when "0000" =>					-- 0xe0ff4800		(RW)
+								data_o <= x"000000" & "000" & de_config_r <= data_i(4 downto 0);
+							when "0001" =>					-- 0xe0ff4810		(RW)
+								data_o <= x"0000000" & de_cde_sel_r;
+							when "0010" =>					-- 0xe0ff4820		(RW)
+								data_o <= x"0000000" & de_mde_sel_r;
+							when "0011" =>					-- 0xe0ff4830		(RW)
+								data_o <= x"0000" & de_cde_ctrl_r;
+							when "0100" =>					-- 0xe0ff4840		(RW)
+								data_o <= x"0000000" & "00" & de_pause_r;
+							when others =>
+							end case;
+						when others =>
+						end case;
+					when others =>
+					end case;
 				when "0001" =>
 					case class is
 					when "0000" =>							-- Segment 0
@@ -332,9 +394,68 @@ begin
 			spi1_data_write <= (others => '0');
 			spi1_data_xfer <= '0';
 			spi1_clk_div <= (others => '0');
+
+			sync_mac_en_r <= '0';
+			sync_mac_r <= (others => '0');
+			async_mac_en_r <= '0';
+			async_mac_rst_r <= '0';
+			async_mac_r <= (others => '0');
+			de_pause_r <= (others => '1');
+			de_config_r <= (others => '0');
+			de_cde_sel_r <= (others => '1');
+			de_mde_sel_r <= (others => '0');
+			de_cde_ctrl_r <= x"0001";
 		elsif clk_i'event and clk_i = '1' then
 			if sel_i = '1' and wr_i = '1' then
 				case segment is
+				when "0000" =>								-- Segment Reserved
+					case class is
+					when "1111" =>
+						case device is
+						when "010000" =>					-- MAC Sync		I/O space: 0xe0ff4000 - 0xe0ff43ff
+							case funct is
+							when "0000" =>					-- 0xe0ff4000		(RW)
+								sync_mac_r <= data_i;
+								sync_mac_en_r <= '1';
+--							when "0001" =>					-- 0xe0ff4010		(RO)
+							when others =>
+							end case;
+						when "010001" =>					-- MAC Async		I/O space: 0xe0ff4400 - 0xe0ff47ff
+							case funct is
+							when "0000" =>					-- 0xe0ff4400		(RW)
+								async_mac_r <= data_i;
+								async_mac_en_r <= '1';
+--							when "0001" =>					-- 0xe0ff4410		(RO)
+							when "0010" =>					-- 0xe0ff4420		(RW)
+								async_mac_rst_r <= data_i(0);
+							when others =>
+							end case;
+						when "010010" =>					-- Delay line		I/O space: 0xe0ff4800 - 0xe0ff4bff
+							case funct is
+							when "0000" =>					-- 0xe0ff4800		(RW)
+								if (de_pause_r = "11") then
+									de_config_r <= data_i(4 downto 0);
+								end if;
+							when "0001" =>					-- 0xe0ff4810		(RW)
+								if (de_pause_r(1) = '1') then
+									de_cde_sel_r <= data_i(3 downto 0);
+								end if;
+							when "0010" =>					-- 0xe0ff4820		(RW)
+								if (de_pause_r(0) = '1') then
+									de_mde_sel_r <= data_i(3 downto 0);
+								end if;
+							when "0011" =>					-- 0xe0ff4830		(RW)
+								if (de_pause_r(1) = '1') then
+									de_cde_ctrl_r <= data_i(15 downto 0);
+								end if;
+							when "0100" =>					-- 0xe0ff4840		(RW)
+								de_pause_r <= data_i(1 downto 0);
+							when others =>
+							end case;
+						when others =>
+						end case;
+					when others =>
+					end case;
 				when "0001" =>
 					case class is
 					when "0000" =>							-- Segment 0
@@ -462,6 +583,9 @@ begin
 			else
 				uart0_enable_w <= '0';
 				uart1_enable_w <= '0';
+
+				async_mac_en_r <= '0';
+				sync_mac_en_r <= '0';
 			end if;
 
 			timer0 <= timer0 + 1;
@@ -525,7 +649,7 @@ begin
 		busy_write	=> uart0_write_busy,
 		data_avail	=> uart0_data_avail
 	);
-	
+
 	uart1: entity work.uart
 	port map(
 		clk		=> clk_i,
@@ -576,5 +700,16 @@ begin
 			spi_do_o => spi1_do,
 			spi_di_i => spi1_di
 	);
+
+	sync_mac_en_o <= sync_mac_en_r;
+	sync_mac_o <= sync_mac_r;
+	async_mac_en_o <= async_mac_en_r;
+	async_mac_rst_o <= async_mac_rst_r;
+	async_mac_o <= async_mac_r;
+	de_pause_o <= de_pause_r;
+	de_config_o <= de_config_r;
+	de_cde_sel_o <= de_cde_sel_r;
+	de_mde_sel_o <= de_mde_sel_r;
+	de_cde_ctrl_o <= de_cde_ctrl_r;
 
 end peripherals_arch;
