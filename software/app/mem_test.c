@@ -202,7 +202,7 @@ static int RAMtestMarchC( int* ramStartAddress, int ramSize)
 
 int main(void)
 {
-	unsigned int addr = 0x60000000, addr2;
+	unsigned int addr = 0x30000000, addr2;
 	unsigned int len = 1024 * 128;
 
 	printf("\nmem size: %d Kbytes", len >> 10);
