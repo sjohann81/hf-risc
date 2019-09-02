@@ -1,187 +1,179 @@
 #include <hf-risc.h>
 
-/*
-monitor auxiliry routines
-TODO: use libc routines?
-*/
-
-uint32_t getnum(void){
-	int32_t i;
-	uint32_t ch, ch2, value=0;
-
-	for(i = 0; i < 16; ){
-		ch = ch2 = getchar();
-		if(ch == '\n' || ch == '\r')
-			break;
-		if('0' <= ch && ch <= '9')
-			ch -= '0';
-		else if('A' <= ch && ch <= 'Z')
-			ch = ch - 'A' + 10;
-		else if('a' <= ch && ch <= 'z')
-			ch = ch - 'a' + 10;
-		else if(ch == 8){
-			if(i > 0){
-				--i;
-				putchar(ch);
-				putchar(' ');
-				putchar(ch);
-			}
-			value >>= 4;
-			continue;
-		}
-		putchar(ch2);
-		value = (value << 4) + ch;
-		++i;
-	}
-	return value;
-}
-
-void printnum(uint32_t n){
-	int8_t buf[30];
-	uint16_t i;
-
-	itoa(n, buf, 10);
-	i = 0;
-	while (buf[i]) putchar(buf[i++]);
-}
-
-void printhex(uint32_t n){
-	int8_t buf[30];
-	uint16_t i;
-
-	if (n < 16) putchar('0');
-	itoa(n, buf, 16);
-	i = 0;
-	while (buf[i]) putchar(buf[i++]);
-}
-
-int32_t printstr(const int8_t *str){
-	while(*str)
-		putchar(*str++);
-
-	return 0;
-}
-
-int32_t main(void){
-	int32_t i, j, k, l, ch;
-	uint32_t addr, value;
-	void (*funcPtr)();
-	uint8_t *ptr1;
+void setup_uart(void)
+{
 	uint16_t d;
-
+	
 	d = (uint16_t)(CPU_SPEED / 57600);
 	UART0DIV = d;
 	UART0 = 0;
 
 	PADDR |= MASK_P2;
 	PADDR &= ~MASK_P3;
-	PAALTCFG0 |= MASK_UART0;
+	PAALTCFG0 |= MASK_UART0;	
+}
 
-	printstr("\nHF-RISC bootloader - ");
-	printstr(__DATE__);
-	printstr("\n");
+void boot_eeprom(void)
+{
+	volatile uint32_t *eeprom;
+	void (*fptr)();
+/*	
+ 	eeprom = (uint32_t *)EXT_EEPROM;	
+	fptr = (void (*)(void *))(EXT_EEPROM);
+	if (eeprom[0xe0 >> 2] == ntohl(0xb16b00b5))
+		fptr((void *)0);
+*/
+	volatile uint32_t *sram;
+	sram = (uint32_t *)RAM_BASE;
+	eeprom = (uint32_t *)EXT_EEPROM;	
+	fptr = (void (*)(void *))(RAM_BASE);
+	if (eeprom[0xe0 >> 2] == ntohl(0xb16b00b5)) {
+		memcpy((void *)sram, (void *)eeprom, 7936);
+		fptr((void *)0);
+	}
+}
+
+void boot_loop(void)
+{
+	int32_t i, j, k = 0, ch;
+	uint32_t addr, value;
+	void (*fptr)();
+	int8_t *ptr, *ptr2;
+	volatile uint32_t *eeprom, *ptr3;
+	uint8_t *wren;
+	int8_t buf[80];
+	
+	ptr = (int8_t *)RAM_BASE;
+	fptr = (void (*)(void *))(RAM_BASE);
+
+	printf("HF-RISC SoC bootloader - %s\n", __DATE__);
 
 	for(;;){
-		printstr("\n[u, U] upload binary");
-		printstr("\n[b, B] boot ");
-		printstr("\n[d   ] mem dump");
-		printstr("\n[f   ] mem fill");
-		printstr("\n[w   ] write data");
-		printstr("\n");
+		printf("\n[s, e] select SPM / ext SRAM");
+		printf("\n[u, U] upload binary");
+		printf("\n[b, B] boot");
+		printf("\n[P   ] program ext EEPROM");
+		printf("\n[d   ] hexdump");
+		printf("\n[f   ] fill");
+		printf("\n[r   ] read word");
+		printf("\n[w   ] write word\n");
+
 		ch = getchar();
 		getchar();
 
-		switch(ch){
-// TODO: init cache!
-			case 'u':
-				ptr1 = (uint8_t *)RAM_BASE;
-				goto waiting;
-			case 'U':
-				printstr("\naddress (hex):");
-				addr = getnum();
-				ptr1 = (uint8_t *)addr;
-			waiting:
-				printstr("\nwaiting for binary...");
-				ch = getchar();
-				for(i = 0; ; i++){
-					ptr1[i] = (uint8_t)ch;
-					for(j = 0; j < (CPU_SPEED / 100); j++){
-						if(kbhit()){
-							ch = getchar();
-							break;
-						}
+		switch(ch) {
+		case 's':
+			ptr = (int8_t *)RAM_BASE;
+			fptr = (void (*)(void *))(RAM_BASE);
+			printf("\nSPM selected");
+			break;
+		case 'e':
+			ptr = (int8_t *)EXT_SRAM;
+			fptr = (void (*)(void *))(EXT_SRAM);
+			printf("\nSRAM selected");
+			break;
+		case 'U':
+			printf("\naddress (hex):");
+			getline(buf);
+			addr = strtol(buf, 0, 16);
+			ptr = (int8_t *)addr;
+			fptr = (void (*)(void *))(addr);
+		case 'u':
+			printf("\nwaiting for binary at 0x%08x...\n", (uint32_t)ptr);
+			ch = getchar();
+			for (k = 0; ; k++){
+				ptr[k] = (int8_t)ch;
+				for (j = 0; j < (CPU_SPEED / 100); j++) {
+					if (kbhit()){
+						ch = getchar();
+						break;
 					}
-					if (j >= (CPU_SPEED / 100)) break;
-					if ((i % 1024) == 0) putchar('*');
 				}
-				i++;
-				printstr("--> ");
-				printnum(i);
-				printstr(" bytes");
-
-// TODO: set the stack pointer to the end of the according region (e.g. scratch pad, external RAM ...)
+				if (j >= (CPU_SPEED / 100)) break;
+				if ((k & 0x3ff) == 0) putchar('#');
+			}
+			k++;
+			printf("--> %d bytes", k);
+			break;
+		case 'B':
+			printf("\naddress (hex):");
+			getline(buf);
+			addr = strtol(buf, 0, 16);
+			fptr = (void (*)(void *))addr;
+		case 'b':
+			printf("\nboot\n");
+			fptr((void *)0);
+			break;
+		case 'P':
+			if (!k) {
+				printf("\nno data");
 				break;
-			case 'b':
-				funcPtr = (void (*)(void *))(RAM_BASE);
-				goto booting;
-			case 'B':
-				printstr("\naddress (hex):");
-				addr = getnum();
-				funcPtr = (void (*)(void *))addr;
-			booting:
-				printstr("\nboot\n");
-				funcPtr((void *)0);
-				break;
-			case 'd':
-// TODO: use hexdump()
-				printstr("\naddress (hex):");
-				addr = getnum();
-				ptr1 = (uint8_t *)addr;
-				printstr("\nlength (hex):");
-				i = getnum();
-				for(k = 0; k < i; k += 16){
-					printstr("\n");
-					printhex(addr + k);
-					printstr("  ");
-					for(l = 0; l < 16; l++){
-						printhex(ptr1[k+l]);
-						printstr(" ");
-						if (l == 7) printstr(" ");
-					}
-					printstr(" |");
-					for(l = 0; l < 16; l++){
-						ch = ptr1[k+l];
-						if ((ch >= 32) && (ch <= 126))
-							putchar((uint8_t)ch);
-						else
-							printstr(".");
-					}
-					printstr("|");
+			}
+			printf("\nwrite to EEPROM?\n");
+			ch = getchar();
+			if (ch == 'y' || ch == 'Y') {
+				eeprom = (uint32_t *)EXT_EEPROM_UNCACHED;
+				wren = (uint8_t *)EXT_EEPROM_WREN;
+				ptr3 = (uint32_t *)ptr;
+				for (i = 0; i < (k >> 2) + 1; i++) {
+					*wren = 0x00;
+					eeprom[i] = ptr3[i];
+					delay_ms(5);
+					if ((i & 0xff) == 0) putchar('#');
 				}
-				break;
-			case 'f':
-				printstr("\naddress (hex):");
-				addr = getnum();
-				ptr1 = (uint8_t *)addr;
-				printstr("\nlength (hex):");
-				i = getnum();
-				printstr("\nbyte (hex):");
-				ch = (uint8_t)getnum();
-				for (l = 0; l < i; l++)
-					ptr1[l] = ch;
-				break;
-			case 'w':
-				printstr("\naddress (hex):");
-				addr = getnum();
-				printstr("\ndata (hex):");
-				value = getnum();
-				*(volatile uint32_t *)addr = value;
-				break;
-			default:
-				break;
+				printf("--> %d bytes", k);
+			}
+			break;
+		case 'd':
+			printf("\naddress (hex):");
+			getline(buf);
+			addr = strtol(buf, 0, 16);
+			ptr2 = (int8_t *)addr;
+			printf("\nlength (hex):");
+			getline(buf);
+			i = strtol(buf, 0, 16);
+			hexdump(ptr2, i);
+			break;
+		case 'f':
+			printf("\naddress (hex):");
+			getline(buf);
+			addr = strtol(buf, 0, 16);
+			ptr2 = (int8_t *)addr;
+			printf("\nlength (hex):");
+			getline(buf);
+			i = strtol(buf, 0, 16);
+			printf("\nbyte (hex):");
+			getline(buf);
+			ch = (int8_t)strtol(buf, 0, 16);
+			memset(ptr2, ch, i);
+			break;
+		case 'r':
+			printf("\naddress (hex):");
+			getline(buf);
+			addr = strtol(buf, 0, 16);
+			ptr2 = (int8_t *)addr;
+			printf("%08x\n", *ptr2);
+			break;
+		case 'w':
+			printf("\naddress (hex):");
+			getline(buf);
+			addr = strtol(buf, 0, 16);
+			ptr2 = (int8_t *)addr;
+			printf("\nword (hex):");
+			getline(buf);
+			value = strtol(buf, 0, 16);
+			*ptr2 = value;
+			break;
+		default:
+			break;
 		}
-	}
+	}	
+}
+
+int main(void){
+	setup_uart();
+	boot_eeprom();
+	boot_loop();
 
 	return 0;
 }
-

@@ -20,7 +20,7 @@ READ_mips = mips-elf-readelf
 OBJ_mips = mips-elf-objcopy
 SIZE_mips = mips-elf-size
 
-GCC_riscv = riscv32-unknown-elf-gcc -march=rv32i -mabi=ilp32 -Wall -O2 -c -mstrict-align -ffreestanding -nostdlib -ffixed-s10 -ffixed-s11 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) -DDEBUG_PORT #-ffixed-s10 -ffixed-s11 -mno-div -mrvc -fPIC -DDEBUG_PORT
+GCC_riscv = riscv32-unknown-elf-gcc -march=rv32i -mabi=ilp32 -Wall -Os -c -mstrict-align -ffreestanding -nostdlib -ffixed-s10 -ffixed-s11 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) #-ffixed-s10 -ffixed-s11 -mno-div -mrvc -fPIC -DDEBUG_PORT
 AS_riscv = riscv32-unknown-elf-as -march=rv32i -mabi=ilp32 #-fPIC
 LD_riscv = riscv32-unknown-elf-ld -melf32lriscv $(LDFLAGS_STRIP)
 DUMP_riscv = riscv32-unknown-elf-objdump -Mno-aliases
@@ -65,7 +65,7 @@ monitor:
 	$(AS_$(ARCH)) -o boot_rom.o lib/$(ARCH)/boot_rom.s
 	$(GCC_$(ARCH)) -o libc.o lib/libc.c
 	$(GCC_$(ARCH)) -o math.o lib/math.c
-	$(GCC_$(ARCH)) -o monitor.o boot/monitor.c
+		$(GCC_$(ARCH)) -o monitor.o boot/monitor.c
 	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc_bootloader.ld -Map test.map -N -o test.elf \
 		boot_rom.o libc.o monitor.o
 	$(DUMP_$(ARCH)) --disassemble --reloc test.elf > test.lst

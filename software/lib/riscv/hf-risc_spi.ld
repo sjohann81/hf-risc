@@ -6,12 +6,17 @@ MEMORY
 {
 rom		: ORIGIN = 0x00000000, LENGTH = 256M	/* ROM area*/
 ram		: ORIGIN = 0x40000000, LENGTH = 256M	/* RAM area. */
-ram_top		: ORIGIN = 0x4ffffc00, LENGTH = 0x400	/* RAM area. 1KB reserved for the bootloader .bss + stack */
 }
 
 /* define a global symbol _stack  */
 
-_stack = 0x6001fffc;
+_stack = 0x3001fffc;
+
+/* 0x30000000 - ext SPI cs1, sram 3 byte address
+   0x38000000 - ext SPI cs1, sram 3 byte address (uncached)
+   0x33000000 - ext SPI cs2, eeprom 2 byte address
+   0x3b000000 - ext SPI cs2, eeprom 2 byte address (uncached)
+*/
 
 /* now define the output sections  */
 

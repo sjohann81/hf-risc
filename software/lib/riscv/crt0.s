@@ -29,9 +29,16 @@ BSS_CLEAR:
 
 	li	s10, 0xe0000000		# this will interrupt the simulation (assertion)
 	sw	zero, 0(s10)
-
 L1:
 	beq	zero, zero, L1
+
+	.org 0xe0
+	.global _bootsignature
+_bootsignature:
+	.byte 0xb1
+	.byte 0x6b
+	.byte 0x00
+	.byte 0xb5
 
 # interrupt / exception service routine
 	.org 0x100

@@ -86,9 +86,11 @@ int32_t ftoa(float f, int8_t *outbuf, int32_t precision);
 int8_t *itoa(int32_t i, int8_t *s, int32_t base);
 int32_t puts(const int8_t *str);
 int8_t *gets(int8_t *s);
+int8_t *getline(int8_t *s);
 int32_t abs(int32_t n);
 int32_t random(void);
 void srand(uint32_t seed);
+int32_t hexdump(int8_t *buf, uint32_t size);
 int32_t printf(const int8_t *fmt, ...);
 int32_t sprintf(int8_t *out, const int8_t *fmt, ...);
 

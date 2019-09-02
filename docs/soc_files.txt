@@ -5,7 +5,6 @@ HF-RISCV SoC files for simulation / prototyping
 
 simulation:
 -----------
-
 hf-risc/riscv/core_rv32i/*
 hf-risc/riscv/sim/boot_ram.vhd
 hf-risc/riscv/sim/ram.vhd
@@ -27,7 +26,6 @@ hf-risc/devices/controllers/uart/uart.vhd
 
 simulation:
 -----------
-
 hf-risc/riscv/core_rv32i/*
 hf-risc/riscv/sim/boot_ram.vhd
 hf-risc/riscv/sim/ram.vhd
@@ -37,6 +35,7 @@ hf-risc/devices/peripherals/standard_soc.vhd
 hf-risc/devices/controllers/spi_master/spi_master.vhd
 hf-risc/devices/controllers/spi_master_slave/spi_master_slave.vhd
 hf-risc/devices/controllers/spi_sram_controller/spi_sram_ctrl.vhd
+hf-risc/devices/controllers/spi_sram_controller/23LC1024.v
 hf-risc/devices/controllers/uart/uart.vhd
 
 prototyping:

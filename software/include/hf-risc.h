@@ -31,6 +31,24 @@ typedef unsigned long			size_t;
 #define S3_BASE				0xe8000000
 #define INT_CONTROL_BASE		0xf0000000
 
+#define EXT_SPI_24BA			0x30000000
+#define EXT_SPI_16BA			0x31000000
+#define EXT_SPI_24BA_UNCACHED		0x38000000
+#define EXT_SPI_16BA_UNCACHED		0x39000000
+#define EXT_SPI2_24BA			0x32000000
+#define EXT_SPI2_16BA			0x33000000
+#define EXT_SPI2_24BA_UNCACHED		0x3a000000
+#define EXT_SPI2_16BA_UNCACHED		0x3b000000
+#define EXT_SPI_WREN			0x39800000
+#define EXT_SPI2_WREN			0x3b800000
+
+#define EXT_SRAM			EXT_SPI_24BA
+#define EXT_SRAM_UNCACHED		EXT_SPI_24BA_UNCACHED
+#define EXT_EEPROM			EXT_SPI2_16BA
+#define EXT_EEPROM_UNCACHED		EXT_SPI2_16BA_UNCACHED
+#define EXT_EEPROM_WREN			EXT_SPI2_WREN
+
+
 /* interrupt controller addresses and irq lines */
 #define IRQ_VECTOR			(*(volatile uint32_t *)(INT_CONTROL_BASE + 0x000))
 #define IRQ_CAUSE			(*(volatile uint32_t *)(INT_CONTROL_BASE + 0x010))

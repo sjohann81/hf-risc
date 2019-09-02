@@ -10,8 +10,9 @@ entity hfrisc_soc is
 	port (	clk_i:		in std_logic;
 		rst_i:		in std_logic;
 
-		-- external SRAM SPI interface
+		-- external SRAM / EEPROM SPI interface
 		spi_ssn_o:	out std_logic;
+		spi_ssn2_o:	out std_logic;
 		spi_clk_o:	out std_logic;
 		spi_mosi_o:	out std_logic;
 		spi_miso_i:	in std_logic;
@@ -28,7 +29,7 @@ entity hfrisc_soc is
 end hfrisc_soc;
 
 architecture top_level of hfrisc_soc is
-	signal clock, boot_enable_n, ram_enable_n, stall_sig, ram_dly, rff1, reset: std_logic;
+	signal clock, boot_enable, boot_enable_n, ram_enable_n, stall_sig, ram_dly, rff1, reset: std_logic;
 	signal address, data_read, data_write, data_read_boot, data_read_ram: std_logic_vector(31 downto 0);
 	signal ext_irq: std_logic_vector(7 downto 0);
 	signal data_we, data_w_n_ram: std_logic_vector(3 downto 0);
@@ -36,9 +37,9 @@ architecture top_level of hfrisc_soc is
 	signal periph, periph_dly, periph_wr, periph_irq: std_logic;
 	signal data_read_periph, data_read_periph_s, data_write_periph: std_logic_vector(31 downto 0);
 
-	signal data_read_sram: std_logic_vector(31 downto 0);
+	signal data_read_spi: std_logic_vector(31 downto 0);
 	signal data_mode: std_logic_vector(2 downto 0);
-	signal burst, wr, rd, stall_dly, stall_dly2, stall_sram: std_logic := '0';
+	signal burst, wr, rd, we, stall_dly, stall_dly2, stall_spi, spi_sel, spi_cs_n_s: std_logic := '0';
 begin
 	-- clock divider (25MHz clock from 50MHz main clock for Spartan3 Starter Kit)
 	process (rst_i, clk_i, clock)
@@ -65,7 +66,7 @@ begin
 	end process;
 
 
-	process (clock, reset, stall_sram)
+	process (clock, reset, stall_spi)
 	begin
 		if reset = '1' then
 			ram_dly <= '0';
@@ -75,20 +76,26 @@ begin
 		elsif clock'event and clock = '1' then
 			ram_dly <= not ram_enable_n;
 			periph_dly <= periph;
-			stall_dly <= stall_sram;
+			stall_dly <= stall_spi;
 			stall_dly2 <= stall_dly;
 		end if;
 	end process;
 
 	boot_enable_n <= '0' when (address(31 downto 28) = "0000" and stall_sig = '0') else '1';
 	ram_enable_n <= '0' when (address(31 downto 28) = "0100" and stall_sig = '0') else '1';
-	rd <= '1' when (address(31 downto 28) = "0110" and data_we = "0000" and stall_dly2 = '0') else '0';
-	wr <= '1' when (address(31 downto 28) = "0110" and data_we /= "0000" and stall_dly2 = '0') else '0';
-	data_read <= data_read_periph when periph = '1' or periph_dly = '1' else data_read_boot when address(31 downto 28) = "0000" and ram_dly = '0' else
-			data_read_sram when address(31 downto 28) = "0110" or stall_dly2 = '1' else data_read_ram;
+	spi_sel <= '1' when address(31 downto 28) = "0011" else '0';
+	rd <= '1' when (spi_sel = '1' and data_we = "0000" and stall_dly2 = '0') else '0';
+	wr <= '1' when (spi_sel = '1' and data_we /= "0000" and stall_dly2 = '0') else '0';
+	data_read <= data_read_periph when periph = '1' or periph_dly = '1' else data_read_spi when spi_sel = '1' or stall_dly2 = '1' else
+			data_read_boot when address(31 downto 28) = "0000" and ram_dly = '0' else data_read_ram;
 	data_w_n_ram <= not data_we;
 	burst <= '0';
-	stall_sig <= stall_sram;
+	stall_sig <= stall_spi;
+	-- external SPI SRAM/EEPROM, 0x30000000 (26,25 - spi select, 24 - short address mode, 23 - EEPROM write enable latch)
+	spi_ssn_o <= spi_cs_n_s when spi_sel = '1' and address(25) = '0' else '1';
+	-- external SPI SRAM/EEPROM, 0x32000000
+	spi_ssn2_o <= spi_cs_n_s when spi_sel = '1' and address(25) = '1' else '1';
+	we <= address(24) and address(23);
 
 	ext_irq <= "0000000" & periph_irq;
 
@@ -134,26 +141,30 @@ begin
 			rst_i => reset,
 			addr_i => address(23 downto 0),
 			data_i => data_write,
-			data_o => data_read_sram,
+			data_o => data_read_spi,
 			burst_i => burst,
 			bmode_i => data_mode(2),
 			hmode_i => data_mode(1),
 			wr_i => wr,
 			rd_i => rd,
+			saddr_i => address(24),
+			wren_i => we,
 			data_ack_o => open,
-			cpu_stall_o => stall_sram,
-			spi_cs_n_o => spi_ssn_o,
+			cpu_stall_o => stall_spi,
+			spi_cs_n_o => spi_cs_n_s,
 			spi_clk_o => spi_clk_o,
 			spi_mosi_o => spi_mosi_o,
 			spi_miso_i => spi_miso_i
 	);
 
 	-- instruction and data memory (boot RAM)
+	boot_enable <= not boot_enable_n;
+
 	boot_ram: entity work.ram
 	generic map (memory_type => "DEFAULT")
 	port map (
 		clk			=> clock,
-		enable			=> boot_enable_n,
+		enable			=> boot_enable,
 		write_byte_enable	=> "0000",
 		address			=> address(31 downto 2),
 		data_write		=> (others => '0'),

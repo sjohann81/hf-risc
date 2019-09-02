@@ -28,9 +28,9 @@ architecture tb of tb is
 	signal gpiob_in, gpiob_out, gpiob_ddr: std_logic_vector(15 downto 0);
 	signal gpio_sig, gpio_sig2, gpio_sig3: std_logic := '0';
 
-	signal data_read_sram: std_logic_vector(31 downto 0);
+	signal data_read_spi: std_logic_vector(31 downto 0);
 	signal data_mode: std_logic_vector(2 downto 0);
-	signal burst, wr, rd, stall_dly, stall_dly2, stall_sram, spi_cs, spi_clk, spi_mosi, spi_miso, hold_n: std_logic := '0';
+	signal burst, wr, rd, we, stall_dly, stall_dly2, stall_spi, spi_sel, spi_cs, spi_cs2, spi_clk, spi_mosi, spi_miso, hold_n, spi_cs_n_s: std_logic := '0';
 begin
 
 	process						--25Mhz system clock
@@ -75,16 +75,22 @@ begin
 
 	boot_enable_n <= '0' when (address(31 downto 28) = "0000" and stall_sig = '0') or reset = '1' else '1';
 	ram_enable_n <= '0' when (address(31 downto 28) = "0100" and stall_sig = '0') or reset = '1' else '1';
-	rd <= '1' when (address(31 downto 28) = "0110" and data_we = "0000" and stall_dly2 = '0') else '0';
-	wr <= '1' when (address(31 downto 28) = "0110" and data_we /= "0000" and stall_dly2 = '0') else '0';
-	data_read <= data_read_periph when periph = '1' or periph_dly = '1' else data_read_boot when address(31 downto 28) = "0000" and ram_dly = '0' else
-			data_read_sram when address(31 downto 28) = "0110" or stall_dly2 = '1' else data_read_ram;
+	spi_sel <= '1' when address(31 downto 28) = "0011" else '0';
+	rd <= '1' when (spi_sel = '1' and data_we = "0000" and stall_dly2 = '0') else '0';
+	wr <= '1' when (spi_sel = '1' and data_we /= "0000" and stall_dly2 = '0') else '0';
+	data_read <= data_read_periph when periph = '1' or periph_dly = '1' else data_read_spi when spi_sel = '1' or stall_dly2 = '1' else
+			data_read_boot when address(31 downto 28) = "0000" and ram_dly = '0' else data_read_ram;
 	data_w_n_ram <= not data_we;
 	hold_n <= '1';
 	burst <= '0';
-	stall_sig <= stall_sram;
+	stall_sig <= stall_spi;
+	-- external SPI SRAM/EEPROM, 0x30000000 (26,25 - spi select, 24 - short address mode, 23 - EEPROM write enable latch)
+	spi_cs <= spi_cs_n_s when spi_sel = '1' and address(25) = '0' else '1';
+	-- external SPI SRAM/EEPROM, 0x32000000
+	spi_cs2 <= spi_cs_n_s when spi_sel = '1' and address(25) = '1' else '1';
+	we <= address(24) and address(23);
 
-	process(clock_in, reset, stall_sram)
+	process(clock_in, reset, stall_spi)
 	begin
 		if reset = '1' then
 			ram_dly <= '0';
@@ -94,7 +100,7 @@ begin
 		elsif clock_in'event and clock_in = '1' then
 			ram_dly <= not ram_enable_n;
 			periph_dly <= periph;
-			stall_dly <= stall_sram;
+			stall_dly <= stall_spi;
 			stall_dly2 <= stall_dly;
 		end if;
 	end process;
@@ -141,15 +147,17 @@ begin
 			rst_i => reset,
 			addr_i => address(23 downto 0),
 			data_i => data_write,
-			data_o => data_read_sram,
+			data_o => data_read_spi,
 			burst_i => burst,
 			bmode_i => data_mode(2),
 			hmode_i => data_mode(1),
 			wr_i => wr,
 			rd_i => rd,
+			saddr_i => address(24),
+			wren_i => we,
 			data_ack_o => open,
-			cpu_stall_o => stall_sram,
-			spi_cs_n_o => spi_cs,
+			cpu_stall_o => stall_spi,
+			spi_cs_n_o => spi_cs_n_s,
 			spi_clk_o => spi_clk,
 			spi_mosi_o => spi_mosi,
 			spi_miso_i => spi_miso
@@ -162,6 +170,16 @@ begin
 			CS_N => spi_cs,
 			SIO2 => open,
 			HOLD_N_SIO3 => hold_n,
+			RESET => reset
+	);
+
+	spi_eeprom: entity work.M25LC256
+	port map(	SI => spi_mosi,
+			SO => spi_miso,
+			SCK => spi_clk,
+			CS_N => spi_cs2,
+			WP_N => hold_n,
+			HOLD_N => hold_n,
 			RESET => reset
 	);
 

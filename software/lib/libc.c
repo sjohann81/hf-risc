@@ -479,6 +479,24 @@ int8_t *gets(int8_t *s){
 	return(s);
 }
 
+int8_t *getline(int8_t *s){
+	int32_t c, i = 0;
+	int8_t *cs;
+
+	cs = s;
+	while ((c = getchar()) != '\n' && c >= 0) {
+		if (++i == 80) {
+			*cs = '\0';
+			break;
+		}
+		*cs++ = c;
+	}
+	if (c<0 && cs==s)
+		return(NULL);
+	*cs++ = '\0';
+	return(s);
+}
+
 int32_t abs(int32_t n){
 	return n>=0 ? n:-n;
 }

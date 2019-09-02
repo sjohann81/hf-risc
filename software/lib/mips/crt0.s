@@ -46,6 +46,16 @@ $L1:
 	nop
 .end _entry
 
+	.org 0xe0
+	.global _bootsignature
+	.ent	_bootsignature
+_bootsignature:
+	.byte 0xb1
+	.byte 0x6b
+	.byte 0x00
+	.byte 0xb5
+.end _bootsignature
+
 # the non-vectored interrupt service routine
 	.org 0x100
 	.global _isr
