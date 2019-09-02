@@ -1,15 +1,19 @@
 -- file:          spi_sram_ctrl.vhd
--- description:   Microchip SPI SRAM chip controller
+-- description:   Microchip SPI SRAM and EEPROM chip controller
 -- date:          03/2018
 -- author:        Sergio Johann Filho <sergio.filho@pucrs.br>
 --
--- A memory controller compatible with the 23lc1024 and similar chips.
+-- A memory controller compatible with the 23lc1024 and similar SRAM chips.
 -- For the 23lc512 chip, only two address bytes should be transmitted, and
 -- this controller needs some small changes. The controller assumes that
 -- the chip is configured to burst (sequential) data mode by default (which
 -- is not true for the 23x256 family of chips.
--- Traffic to / from SRAM is performed in 32 bit words (4 SPI 8 bit words) or
--- multiple (burst) of 32 bit words. For single word access, a half word or
+-- In short address mode (sddr_i = '1'), this controller is also compatible with
+-- EEPRROMs, which operate in burst mode by default but use the 16 bit address
+-- format. Warning: this controller doesn't use page writes, so EEPROMs may
+-- wear out faster than normal. To avoid this, hook the write protection pin.
+-- Traffic to / from SRAM / EEPROM is performed in 32 bit words (4 SPI 8 bit words)
+-- or multiple (burst) of 32 bit words. For single word access, a half word or
 -- byte can be individually accessed. In this case burst mode must be deselected.
 
 library ieee;
@@ -32,6 +36,8 @@ entity spi_sram_ctrl is
 		hmode_i: in std_logic;					-- half word access
 		wr_i: in std_logic;
 		rd_i: in std_logic;
+		saddr_i: in std_logic;					-- 16 bit short address select
+		wren_i: in std_logic;					-- EEPROM write enable latch
 		data_ack_o: out std_logic;				-- signals the last byte of a word
 		cpu_stall_o: out std_logic;
 		-- SPI interface
@@ -43,7 +49,7 @@ entity spi_sram_ctrl is
 end spi_sram_ctrl;
 
 architecture spi_sram_ctrl_arch of spi_sram_ctrl is
-	type states is (start, cmd_write, cmd_read, addr_phase, data_phase, ready);
+	type states is (start, cmd_wren, cmd_write, cmd_read, addr_phase, data_phase, ready);
 	signal state: states;
 	signal data_o_reg: std_logic_vector(31 downto 0);
 	signal cmd_counter: std_logic;
@@ -89,7 +95,12 @@ begin
 			case state is
 				when start =>
 					cmd_counter <= '0';
-					addr_counter <= (others => '0');
+					if (saddr_i = '0') then
+						addr_counter <= "00";
+					else
+						addr_counter <= "01";
+					end if;
+
 					data_o_reg <= (others => '0');
 					if (hmode_i = '1' and bmode_i = '0' and burst_i = '0') then
 						data_counter(1 downto 0) <= "10";
@@ -110,6 +121,14 @@ begin
 					spi_cs_n_o <= '0';
 					data_ack_o <= '0';
 					cpu_stall <= '1';
+				when cmd_wren =>
+					if (data_valid = '0') then
+						data_in <= x"06";
+						wren <= '1';
+					else
+						cmd_counter <= '1';
+						wren <= '0';
+					end if;
 				when cmd_write =>
 					if (data_valid = '0') then
 						data_in <= x"02";
@@ -185,11 +204,21 @@ begin
 			case state is
 				when start =>
 					if (wr_i = '1') then
-						state <= cmd_write;
+						if (wren_i = '1') then
+							state <= cmd_wren;
+						else
+							state <= cmd_write;
+						end if;
 					elsif (rd_i = '1') then
 						state <= cmd_read;
 					else
 						state <= start;
+					end if;
+				when cmd_wren =>
+					if (cmd_counter = '1') then
+						state <= ready;
+					else
+						state <= cmd_wren;
 					end if;
 				when cmd_write =>
 					if (cmd_counter = '1') then
@@ -222,7 +251,7 @@ begin
 						else
 							state <= ready;
 						end if;
-					end if;		
+					end if;
 				when ready =>
 					if (wr_i = '1' or rd_i = '1') then
 						state <= start;
