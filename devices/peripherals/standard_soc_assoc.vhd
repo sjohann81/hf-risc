@@ -29,13 +29,13 @@ entity peripherals is
 		gpiob_ddr: out std_logic_vector(15 downto 0);
 
 		-- MAC Sync		I/O space: 0xe0ff4000 - 0xe0ff43ff
-		sync_mac_i: in std_logic_vector(32 downto 0);
-		sync_mac_o: out std_logic_vector(32 downto 0);
+		sync_mac_i: in std_logic_vector(31 downto 0);
+		sync_mac_o: out std_logic_vector(31 downto 0);
 		sync_mac_en_o: out std_logic;
 
 		-- MAC Async		I/O space: 0xe0ff4400 - 0xe0ff47ff
-		async_mac_i: in std_logic_vector(32 downto 0);
-		async_mac_o: out std_logic_vector(32 downto 0);
+		async_mac_i: in std_logic_vector(31 downto 0);
+		async_mac_o: out std_logic_vector(31 downto 0);
 		async_mac_en_o: out std_logic;
 		async_mac_rst_o: out std_logic;
 
@@ -194,7 +194,7 @@ begin
 						when "010010" =>					-- Delay line		I/O space: 0xe0ff4800 - 0xe0ff4bff
 							case funct is
 							when "0000" =>					-- 0xe0ff4800		(RW)
-								data_o <= x"000000" & "000" & de_config_r <= data_i(4 downto 0);
+								data_o <= x"000000" & "000" & de_config_r;
 							when "0001" =>					-- 0xe0ff4810		(RW)
 								data_o <= x"0000000" & de_cde_sel_r;
 							when "0010" =>					-- 0xe0ff4820		(RW)
