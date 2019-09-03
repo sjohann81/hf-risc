@@ -398,7 +398,7 @@ begin
 			sync_mac_en_r <= '0';
 			sync_mac_r <= (others => '0');
 			async_mac_en_r <= '0';
-			async_mac_rst_r <= '0';
+			async_mac_rst_r <= '1';
 			async_mac_r <= (others => '0');
 			de_pause_r <= (others => '1');
 			de_config_r <= (others => '0');
