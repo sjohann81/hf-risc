@@ -11,8 +11,10 @@ int32_t main(void){
 	ptr = (uint32_t *)RAM_BASE;
 	ptr2 = (uint32_t *)EXT_SRAM;
 	memcpy(ptr2, ptr, 4096);
-*/
+
 	funcPtr = (void (*)(void *))(EXT_SRAM);
+*/
+	funcPtr = (void (*)(void *))(RAM_BASE);
 	funcPtr();
 
 	return 0;
