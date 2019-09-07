@@ -5,7 +5,7 @@ ENTRY(_entry)
 MEMORY
 {
 rom		: ORIGIN = 0x00000000, LENGTH = 256M	/* ROM area*/
-ram		: ORIGIN = 0x40000000, LENGTH = 256M	/* RAM area. */
+ram		: ORIGIN = 0x30000000, LENGTH = 256M	/* RAM area. */
 }
 
 /* define a global symbol _stack  */
