@@ -26,7 +26,7 @@ end datapath;
 
 architecture arch_datapath of datapath is
 -- datapath signals
-	signal data_in_s, pc, pc_last, pc_plus4, pc_next, result, branch, jump, ext32, ext32b, ext32h, alu_src: std_logic_vector(31 downto 0);
+	signal inst_in_s, data_in_s, pc, pc_last, pc_plus4, pc_next, result, branch, jump, ext32, ext32b, ext32h, alu_src: std_logic_vector(31 downto 0);
 	signal opcode, funct: std_logic_vector(5 downto 0);
 	signal read_reg1, read_reg2, write_reg, rs, rt, rd, target: std_logic_vector(4 downto 0);
 	signal write_data, read_data1, read_data2: std_logic_vector(31 downto 0);
@@ -120,13 +120,16 @@ begin
 --
 -- 2nd stage, instruction decode, control unit operation, pipeline bubble insertion logic on load/store and 2nd branch delay slot
 
+	-- pipeline bubble insertion on loads/stores, branches and interrupts
+	inst_in_s <= x"00000000" when reg_to_mem_ctl_r = '1' or mem_to_reg_ctl_r = '1' or bds = '1' or irq_ack_s = '1' else data_in;
+
 	-- instruction decode
-	opcode <= data_in(31 downto 26);
-	rs <= data_in(25 downto 21);
-	rt <= data_in(20 downto 16);
-	rd <= "11111" when br_link_ctl = '1' else data_in(15 downto 11);					-- FIXME: this will not work for the 'jalr rd, rs' format
-	funct <= data_in(5 downto 0);
-	imm <= data_in(15 downto 0);
+	opcode <= inst_in_s(31 downto 26);
+	rs <= inst_in_s(25 downto 21);
+	rt <= inst_in_s(20 downto 16);
+	rd <= "11111" when br_link_ctl = '1' else inst_in_s(15 downto 11);					-- FIXME: this will not work for the 'jalr rd, rs' format
+	funct <= inst_in_s(5 downto 0);
+	imm <= inst_in_s(15 downto 0);
 
 	-- control unit
 	control_unit: entity work.control
@@ -172,67 +175,25 @@ begin
 			shift_ctl_r <= '0';
 		elsif clock'event and clock = '1' then
 			if stall = '0' then
-				if irq_ack_s = '1' then
-					rs_r <= (others => '0');
-					rt_r <= (others => '0');
-					rd_r <= (others => '0');
-					imm_r <= (others => '0');
-					reg_dst_ctl_r <= '0';
-					reg_write_ctl_r <= '0';
-					alu_src_ctl_r <= '0';
-					alu_op_ctl_r <= (others => '0');
-					jump_ctl_r <= (others => '0');
-					branch_ctl_r <= (others => '0');
-					br_link_ctl_r <= '0';
-					reg_to_mem_ctl_r <= '0';
-					mem_to_reg_ctl_r <= '0';
-					signed_imm_ctl_r <= '0';
-					mem_write_ctl_r <= "00";
-					mem_read_ctl_r <= "00";
-					signed_rd_ctl_r <= '0';
-					shift_ctl_r <= '0';
-				else
-					if mwait = '0' then
-						if reg_to_mem_ctl_r = '1' or mem_to_reg_ctl_r = '1' or bds = '1' then
-							rs_r <= (others => '0');
-							rt_r <= (others => '0');
-							rd_r <= (others => '0');
-							imm_r <= (others => '0');
-							reg_dst_ctl_r <= '0';
-							reg_write_ctl_r <= '0';
-							alu_src_ctl_r <= '0';
-							alu_op_ctl_r <= (others => '0');
-							jump_ctl_r <= (others => '0');
-							branch_ctl_r <= (others => '0');
-							br_link_ctl_r <= '0';
-							reg_to_mem_ctl_r <= '0';
-							mem_to_reg_ctl_r <= '0';
-							signed_imm_ctl_r <= '0';
-							mem_write_ctl_r <= "00";
-							mem_read_ctl_r <= "00";
-							signed_rd_ctl_r <= '0';
-							shift_ctl_r <= '0';
-						else
-							rs_r <= rs;
-							rt_r <= rt;
-							rd_r <= rd;
-							imm_r <= imm;
-							reg_dst_ctl_r <= reg_dst_ctl;
-							reg_write_ctl_r <= reg_write_ctl;
-							alu_src_ctl_r <= alu_src_ctl;
-							alu_op_ctl_r <= alu_op_ctl;
-							jump_ctl_r <= jump_ctl;
-							branch_ctl_r <= branch_ctl;
-							br_link_ctl_r <= br_link_ctl;
-							reg_to_mem_ctl_r <= reg_to_mem_ctl;
-							mem_to_reg_ctl_r <= mem_to_reg_ctl;
-							signed_imm_ctl_r <= signed_imm_ctl;
-							mem_write_ctl_r <= mem_write_ctl;
-							mem_read_ctl_r <= mem_read_ctl;
-							signed_rd_ctl_r <= signed_rd_ctl;
-							shift_ctl_r <= shift_ctl;
-						end if;
-					end if;
+				if mwait = '0' then
+					rs_r <= rs;
+					rt_r <= rt;
+					rd_r <= rd;
+					imm_r <= imm;
+					reg_dst_ctl_r <= reg_dst_ctl;
+					reg_write_ctl_r <= reg_write_ctl;
+					alu_src_ctl_r <= alu_src_ctl;
+					alu_op_ctl_r <= alu_op_ctl;
+					jump_ctl_r <= jump_ctl;
+					branch_ctl_r <= branch_ctl;
+					br_link_ctl_r <= br_link_ctl;
+					reg_to_mem_ctl_r <= reg_to_mem_ctl;
+					mem_to_reg_ctl_r <= mem_to_reg_ctl;
+					signed_imm_ctl_r <= signed_imm_ctl;
+					mem_write_ctl_r <= mem_write_ctl;
+					mem_read_ctl_r <= mem_read_ctl;
+					signed_rd_ctl_r <= signed_rd_ctl;
+					shift_ctl_r <= shift_ctl;
 				end if;
 			end if;
 		end if;

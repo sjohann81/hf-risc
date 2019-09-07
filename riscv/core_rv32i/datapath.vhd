@@ -124,9 +124,12 @@ begin
 --
 -- 2nd stage, instruction decode, control unit operation, pipeline bubble insertion logic on load/store and branches
 
-	-- instruction decode
-	inst_in_s <= data_in(7 downto 0) & data_in(15 downto 8) & data_in(23 downto 16) & data_in(31 downto 24);
+	-- pipeline bubble insertion on loads/stores, exceptions, branches and interrupts
+	inst_in_s <= x"00000000" when reg_to_mem_r = '1' or mem_to_reg_r = '1' or except = '1' or
+		branch_taken = '1' or jump_taken = '1' or bds = '1' or irq_ack_s = '1' else
+		data_in(7 downto 0) & data_in(15 downto 8) & data_in(23 downto 16) & data_in(31 downto 24);
 
+	-- instruction decode
 	opcode <= inst_in_s(6 downto 0);
 	funct3 <= inst_in_s(14 downto 12);
 	funct7 <= inst_in_s(31 downto 25);
@@ -183,70 +186,26 @@ begin
 			mem_to_reg_r <= '0';
 		elsif clock'event and clock = '1' then
 			if stall = '0' then
-				if irq_ack_s = '1' then
-					rd_r <= (others => '0');
-					rs1_r <= (others => '0');
-					rs2_r <= (others => '0');
-					imm_i_r <= (others => '0');
-					imm_s_r <= (others => '0');
-					imm_sb_r <= (others => '0');
-					imm_u_r <= (others => '0');
-					imm_uj_r <= (others => '0');
-					reg_write_ctl_r <= '0';
-					alu_src1_ctl_r <= '0';
-					alu_src2_ctl_r <= (others => '0');
-					alu_op_ctl_r <= (others => '0');
-					jump_ctl_r <= (others => '0');
-					branch_ctl_r <= (others => '0');
-					mem_write_ctl_r <= (others => '0');
-					mem_read_ctl_r <= (others => '0');
-					sig_read_ctl_r <= '0';
-					reg_to_mem_r <= '0';
-					mem_to_reg_r <= '0';
-				else
-					if mwait = '0' then
-						if (reg_to_mem_r = '1' or mem_to_reg_r = '1' or except = '1' or branch_taken = '1' or jump_taken = '1' or bds = '1') then
-							rd_r <= (others => '0');
-							rs1_r <= (others => '0');
-							rs2_r <= (others => '0');
-							imm_i_r <= (others => '0');
-							imm_s_r <= (others => '0');
-							imm_sb_r <= (others => '0');
-							imm_u_r <= (others => '0');
-							imm_uj_r <= (others => '0');
-							reg_write_ctl_r <= '0';
-							alu_src1_ctl_r <= '0';
-							alu_src2_ctl_r <= (others => '0');
-							alu_op_ctl_r <= (others => '0');
-							jump_ctl_r <= (others => '0');
-							branch_ctl_r <= (others => '0');
-							mem_write_ctl_r <= (others => '0');
-							mem_read_ctl_r <= (others => '0');
-							sig_read_ctl_r <= '0';
-							reg_to_mem_r <= '0';
-							mem_to_reg_r <= '0';
-						else
-							rd_r <= rd;
-							rs1_r <= rs1;
-							rs2_r <= rs2;
-							imm_i_r <= imm_i;
-							imm_s_r <= imm_s;
-							imm_sb_r <= imm_sb;
-							imm_u_r <= imm_u;
-							imm_uj_r <= imm_uj;
-							reg_write_ctl_r <= reg_write_ctl;
-							alu_src1_ctl_r <= alu_src1_ctl;
-							alu_src2_ctl_r <= alu_src2_ctl;
-							alu_op_ctl_r <= alu_op_ctl;
-							jump_ctl_r <= jump_ctl;
-							branch_ctl_r <= branch_ctl;
-							mem_write_ctl_r <= mem_write_ctl;
-							mem_read_ctl_r <= mem_read_ctl;
-							sig_read_ctl_r <= sig_read_ctl;
-							reg_to_mem_r <= reg_to_mem;
-							mem_to_reg_r <= mem_to_reg;
-						end if;
-					end if;
+				if mwait = '0' then
+					rd_r <= rd;
+					rs1_r <= rs1;
+					rs2_r <= rs2;
+					imm_i_r <= imm_i;
+					imm_s_r <= imm_s;
+					imm_sb_r <= imm_sb;
+					imm_u_r <= imm_u;
+					imm_uj_r <= imm_uj;
+					reg_write_ctl_r <= reg_write_ctl;
+					alu_src1_ctl_r <= alu_src1_ctl;
+					alu_src2_ctl_r <= alu_src2_ctl;
+					alu_op_ctl_r <= alu_op_ctl;
+					jump_ctl_r <= jump_ctl;
+					branch_ctl_r <= branch_ctl;
+					mem_write_ctl_r <= mem_write_ctl;
+					mem_read_ctl_r <= mem_read_ctl;
+					sig_read_ctl_r <= sig_read_ctl;
+					reg_to_mem_r <= reg_to_mem;
+					mem_to_reg_r <= mem_to_reg;
 				end if;
 			end if;
 		end if;
