@@ -39,13 +39,15 @@ Patched GNU GCC version 4.9.3. Mandatory compiler options (for bare metal) are: 
 (**) "-mips2 -mno-branch-likely" can be used instead of "-mips1". The result is similar to the code generated with "-mips1", but no useless nops are inserted after loads on data hazards (load delay slots).
 
 *RISC-V version:
-Vanilla GNU GCC version 7.1.0. This is a fairly new compiler that fully supports RISC-V as a target machine. Mandatory compiler options are: -march=rv32i -mabi=ilp32 -Wall -O2 -c -ffreestanding -nostdlib -ffixed-s10 -ffixed-s11.
+Vanilla GNU GCC version 8.3.0. This is a fairly new compiler that fully supports RISC-V as a target machine. Mandatory compiler options are: -march=rv32i -mabi=ilp32 -Wall -O2 -c -ffreestanding -nostdlib -ffixed-s10 -ffixed-s11.
 
 A complete set of flags to be used with the compiler is provided in example applications, along with a small C library and a makefile to build the applications.
 
 ### Instruction set
 
-The following instructions from the MIPS I instruction set were implemented in the MIPS version (subset of 41 opcodes):
+*MIPS
+
+The following instructions from the MIPS I instruction set were implemented (subset of 41 opcodes):
 
 - Arithmetic Instructions: addiu, addu, subu
 - Logic Instructions: and, andi, nor, or, ori, xor, xori
@@ -55,14 +57,17 @@ The following instructions from the MIPS I instruction set were implemented in t
 - Branch Instructions: beq, bne, bgez, bgezal, bgtz, blez, bltzal, bltz
 - Jump Instructions: j, jal, jr, jalr
 
-In the RISC-V version all instructions (minus the FENCE instruction) from the RV32I user level base instruction set are supported.
+*RISC-V
+
+All instructions from the RV32I user level base instruction set are supported. Unsupported instructions trap the processor, including EBREAK and ECALL so system calls are supported.
 
 ### Memory Map
 
 The memory map is separated into regions.
 
 - ROM / Flash: 0x00000000 - 0x1fffffff (512MB)
-- Reserved: 0x20000000 - 0x3fffffff (512MB)
+- Reserved: 0x20000000 - 0x2fffffff (256MB)
+- External SPI SRAM/EEPROM: 0x30000000 - 0x3fffffff (256MB)
 - SRAM: 0x40000000 - 0x5fffffff (512MB)
 - External RAM / device: 0x60000000 - 0x9fffffff (1GB)
 - External RAM / device: 0xa0000000 - 0xdfffffff (1GB)		(uncached)
@@ -74,6 +79,8 @@ The memory map is separated into regions.
 - Peripheral (core): 0xf0000000 - 0xf0ffffff (16MB)		(uncached)
 - Reserved: 0xf1000000 - 0xffffffff (240MB)
 
+*Interrupt controller
+
 The core interrupt controller has some register addresses defined below.
 
 - IRQ_VECTOR: 0xf0000000
@@ -84,6 +91,36 @@ The core interrupt controller has some register addresses defined below.
 - EXTIO_IN: 0xf0000080
 - EXTIO_OUT: 0xf0000090
 - DEBUG: 0xf00000d0
+
+*Peripherals
+
+I/O ports, timers, UART, SPI and I2C interfaces located on segment 0. 1KB of memory space reserved for each peripheral.
+
+Interrupts are non vectored with a fixed priority (in software). Three level of irq handling is performed.
+Interrupts are classified by peripheral subsystem, and each subsystem and peripheral class has its interrupt registers.
+Interrupts are handled this way: irq -> major class -> segment -> class (group) -> peripheral handler
+
+major classes:
+
+0 - core peripherals
+1 - segment 0
+2 - segment 1
+3 - segment 2
+4 - segment 3
+
+For segments, each one has cause and mask registers. The cause register holds interrupts from specific groups. Each group has also cause and mask registers. An interrupt to the core (CAUSE) happens when a segment cause and mask result are not zero. An interrupt appear on the segment cause register when a group cause and mask result are not zero. This way, specific peripherals from a group can be masked (on group cause and mask registers), a whole group can be masked (on segment cause and mask registers) and a whole segment can be masked (on the core CAUSE and MASK registers). Segment interrupt mask is optional. In this case interrupts must be masked directly in the class (group) mask and pass through the segment interrupt requests directly (unmasked).
+
+Peripheral addresses have the following meaning:
+
+0xe1010800
+  |/|/|--/
+  | | |
+  | | |
+  | | |--------device / function
+  | |----------class (group)
+  |------------peripheral (SoC segment)
+
+For a complete description of peripheral registers (Segment 0) please check the docs directory.
 
 ### HF-RISC SoC
 
@@ -99,3 +136,29 @@ Example prototype platforms are available for both HF-RISC and HF-RISCV cores on
 If a multiplier is used (not included in this design) the score is around 2.1 Coremark/MHz.
 
 *HF-RISCV doesn't include the multiply/divide (M) extension (pure RV32I) and doesn't include dalayed branches as found on MIPS. This sacrifices performance a bit, but simplifies the ISA for deeper pipelines and OOO execution. Based on several experiments, the inclusion of the M module will boost the performance of this core beyond the HF-RISC version, even without branch prediction.
+
+### Simulation
+
+To perform a SoC simulation (processor, memories and some peripherals), include the following files in your project:
+
+hf-risc/riscv/core_rv32i/*
+hf-risc/riscv/sim/boot_ram.vhd
+hf-risc/riscv/sim/ram.vhd
+hf-risc/riscv/sim/boot.txt (put this file in the simulator project directory, along with the application code (code.txt))
+hf-risc/riscv/sim/hf-riscv_tb.vhd
+hf-risc/devices/peripherals/minimal_soc.vhd
+
+All files in the _riscv_ directory can be changed to _mips_ if a MIPS variant of the processor is desired. For simulation, the application must be compiled with the correct toolchain (change software/makefile before compiling the application and set the ARCH=riscv or ARCH=mips environment variable). Also, make sure the -DDEBUG_PORT flag is passed to the compiler in the same makefile.
+
+### FPGA Prototyping
+
+The following files can be used to prototype a basic SoC.
+
+hf-risc/riscv/core_rv32i/*
+hf-risc/riscv/platform/rams/*
+hf-risc/riscv/platform/spartan3e_nexys2/spartan3e_nexys2.vhd
+hf-risc/riscv/platform/spartan3e_nexys2/spartan3e_nexys2.ucf
+hf-risc/devices/peripherals/minimal_soc_uart.vhd
+hf-risc/devices/controllers/uart/uart.vhd
+
+If you have a different board, you have to adapt the top file (spartan3e_nexys2_standard_soc.vhd) and the .ucf. Depending on the board configuration, the bootloader (monitor) may have to be recompiled. Again, all files in the _riscv_ directory can be changed to _mips_ if a MIPS processor is needed in the prototype.
