@@ -85,22 +85,22 @@ The memory map is separated into regions.
 
 The core interrupt controller has some register addresses defined below.
 
-- IRQ_VECTOR: 0xf0000000
-- IRQ_CAUSE: 0xf0000010
-- IRQ_MASK: 0xf0000020
-- IRQ_STATUS: 0xf0000030
-- IRQ_EPC: 0xf0000040
-- EXTIO_IN: 0xf0000080
-- EXTIO_OUT: 0xf0000090
-- DEBUG: 0xf00000d0
+| Register name			| Address		|
+| :---------------------------- | :-------------------- |
+| IRQ_VECTOR			| 0xf0000000		|
+| IRQ_CAUSE			| 0xf0000010		|
+| IRQ_MASK			| 0xf0000020		|
+| IRQ_STATUS			| 0xf0000030		|
+| IRQ_EPC			| 0xf0000040		|
+| EXTIO_IN			| 0xf0000080		|
+| EXTIO_OUT			| 0xf0000090		|
+| DEBUG				| 0xf00000d0		|
 
 **Peripherals**
 
-I/O ports, timers, UART, SPI and I2C interfaces located on segment 0. 1KB of memory space reserved for each peripheral.
+Peripheral interrupts are tied to IRQ 0 (EXTIO_IN, pin 0) in the interrupt controller. Other interrupts are unused and reserved for future use. I/O ports, timers, UART, SPI and I2C interfaces located on segment 0. 1KB of memory space reserved for each peripheral.
 
-Interrupts are non vectored with a fixed priority (in software). Three level of irq handling is performed.
-Interrupts are classified by peripheral subsystem, and each subsystem and peripheral class has its interrupt registers.
-Interrupts are handled this way: irq -> major class -> segment -> class (group) -> peripheral handler
+Interrupts are non vectored with a fixed priority (in software) and three levels of irq handling are performed to handle an interrupt. Interrupts are classified by peripheral subsystem, and each subsystem and peripheral class has its own interrupt registers and mask registers. Interrupts are handled this way: irq -> major class -> segment -> class (group) -> peripheral handler.
 
 *major classes:*
 
