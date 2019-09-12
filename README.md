@@ -45,7 +45,7 @@ A complete set of flags to be used with the compiler is provided in example appl
 
 ### Instruction set
 
-*MIPS
+**MIPS**
 
 The following instructions from the MIPS I instruction set were implemented (subset of 41 opcodes):
 
@@ -57,7 +57,7 @@ The following instructions from the MIPS I instruction set were implemented (sub
 - Branch Instructions: beq, bne, bgez, bgezal, bgtz, blez, bltzal, bltz
 - Jump Instructions: j, jal, jr, jalr
 
-*RISC-V
+**RISC-V**
 
 All instructions from the RV32I user level base instruction set are supported. Unsupported instructions trap the processor, including EBREAK and ECALL so system calls are supported.
 
@@ -65,21 +65,23 @@ All instructions from the RV32I user level base instruction set are supported. U
 
 The memory map is separated into regions.
 
-- ROM / Flash: 0x00000000 - 0x1fffffff (512MB)
-- Reserved: 0x20000000 - 0x2fffffff (256MB)
-- External SPI SRAM/EEPROM: 0x30000000 - 0x3fffffff (256MB)
-- SRAM: 0x40000000 - 0x5fffffff (512MB)
-- External RAM / device: 0x60000000 - 0x9fffffff (1GB)
-- External RAM / device: 0xa0000000 - 0xdfffffff (1GB)		(uncached)
-- Reserved: 0xe0000000 - 0xe0ffffff (16MB)
-- Peripheral (SoC segment 0): 0xe1000000 - 0xe1ffffff (16MB)		(uncached)
-- Peripheral (SoC segment 1): 0xe2000000 - 0xe3ffffff (32MB)		(uncached)
-- Peripheral (SoC segment 2): 0xe4000000 - 0xe7ffffff (64MB)		(uncached)
-- Peripheral (SoC segment 3): 0xe8000000 - 0xefffffff (128MB)		(uncached)
-- Peripheral (core): 0xf0000000 - 0xf0ffffff (16MB)		(uncached)
-- Reserved: 0xf1000000 - 0xffffffff (240MB)
+| Memory region			| Address		| End			| Size			|
+| :---------------------------- | :-------------------- | :-------------------- | :-------------------- |
+| ROM / Flash			| 0x00000000 		| 0x1fffffff		| (512MB)		|
+| Reserved			| 0x20000000 		| 0x2fffffff		| (256MB)		|
+| External SPI SRAM/EEPROM	| 0x30000000 		| 0x3fffffff		| (256MB)		|
+| SRAM				| 0x40000000 		| 0x5fffffff		| (512MB)		|
+| External RAM / device		| 0x60000000 		| 0x9fffffff		| (1024MB)		|
+| External RAM / device		| 0xa0000000 		| 0xdfffffff		| (1024MB, Uncached)	|
+| Reserved			| 0xe0000000 		| 0xe0ffffff		| (16MB, Uncached)	|
+| Peripheral (SoC segment 0)	| 0xe1000000 		| 0xe1ffffff		| (16MB, Uncached)	|
+| Peripheral (SoC segment 1)	| 0xe2000000 		| 0xe3ffffff		| (32MB, Uncached)	|
+| Peripheral (SoC segment 2)	| 0xe4000000 		| 0xe7ffffff		| (64MB, Uncached)	|
+| Peripheral (SoC segment 3)	| 0xe8000000 		| 0xefffffff		| (128MB, Uncached)	|
+| Peripheral (core)		| 0xf0000000 		| 0xf0ffffff		| (16MB, Uncached)	|
+| Reserved			| 0xf1000000 		| 0xffffffff		| (240MB)		|
 
-*Interrupt controller
+**Interrupt controller**
 
 The core interrupt controller has some register addresses defined below.
 
@@ -92,7 +94,7 @@ The core interrupt controller has some register addresses defined below.
 - EXTIO_OUT: 0xf0000090
 - DEBUG: 0xf00000d0
 
-*Peripherals
+**Peripherals**
 
 I/O ports, timers, UART, SPI and I2C interfaces located on segment 0. 1KB of memory space reserved for each peripheral.
 
@@ -100,25 +102,25 @@ Interrupts are non vectored with a fixed priority (in software). Three level of 
 Interrupts are classified by peripheral subsystem, and each subsystem and peripheral class has its interrupt registers.
 Interrupts are handled this way: irq -> major class -> segment -> class (group) -> peripheral handler
 
-major classes:
+*major classes:*
 
-0 - core peripherals
-1 - segment 0
-2 - segment 1
-3 - segment 2
-4 - segment 3
+	0 - core peripherals
+	1 - segment 0
+	2 - segment 1
+	3 - segment 2
+	4 - segment 3
 
 For segments, each one has cause and mask registers. The cause register holds interrupts from specific groups. Each group has also cause and mask registers. An interrupt to the core (CAUSE) happens when a segment cause and mask result are not zero. An interrupt appear on the segment cause register when a group cause and mask result are not zero. This way, specific peripherals from a group can be masked (on group cause and mask registers), a whole group can be masked (on segment cause and mask registers) and a whole segment can be masked (on the core CAUSE and MASK registers). Segment interrupt mask is optional. In this case interrupts must be masked directly in the class (group) mask and pass through the segment interrupt requests directly (unmasked).
 
-Peripheral addresses have the following meaning:
+*Peripheral addresses have the following meaning:*
 
-0xe1010800
-  |/|/|--/
-  | | |
-  | | |
-  | | |--------device / function
-  | |----------class (group)
-  |------------peripheral (SoC segment)
+	0xe1010800
+	  |/|/|--/
+	  | | |
+	  | | |
+	  | | |--------device / function
+	  | |----------class (group)
+	  |------------peripheral (SoC segment)
 
 For a complete description of peripheral registers (Segment 0) please check the docs directory.
 
@@ -141,12 +143,12 @@ If a multiplier is used (not included in this design) the score is around 2.1 Co
 
 To perform a SoC simulation (processor, memories and some peripherals), include the following files in your project:
 
-hf-risc/riscv/core_rv32i/*
-hf-risc/riscv/sim/boot_ram.vhd
-hf-risc/riscv/sim/ram.vhd
-hf-risc/riscv/sim/boot.txt (put this file in the simulator project directory, along with the application code (code.txt))
-hf-risc/riscv/sim/hf-riscv_tb.vhd
-hf-risc/devices/peripherals/minimal_soc.vhd
+	hf-risc/riscv/core_rv32i/*
+	hf-risc/riscv/sim/boot_ram.vhd
+	hf-risc/riscv/sim/ram.vhd
+	hf-risc/riscv/sim/boot.txt (put this file in the simulator project directory, along with the application code (code.txt))
+	hf-risc/riscv/sim/hf-riscv_tb.vhd
+	hf-risc/devices/peripherals/minimal_soc.vhd
 
 All files in the _riscv_ directory can be changed to _mips_ if a MIPS variant of the processor is desired. For simulation, the application must be compiled with the correct toolchain (change software/makefile before compiling the application and set the ARCH=riscv or ARCH=mips environment variable). Also, make sure the -DDEBUG_PORT flag is passed to the compiler in the same makefile.
 
@@ -154,11 +156,11 @@ All files in the _riscv_ directory can be changed to _mips_ if a MIPS variant of
 
 The following files can be used to prototype a basic SoC.
 
-hf-risc/riscv/core_rv32i/*
-hf-risc/riscv/platform/rams/*
-hf-risc/riscv/platform/spartan3e_nexys2/spartan3e_nexys2.vhd
-hf-risc/riscv/platform/spartan3e_nexys2/spartan3e_nexys2.ucf
-hf-risc/devices/peripherals/minimal_soc_uart.vhd
-hf-risc/devices/controllers/uart/uart.vhd
+	hf-risc/riscv/core_rv32i/*
+	hf-risc/riscv/platform/rams/*
+	hf-risc/riscv/platform/spartan3e_nexys2/spartan3e_nexys2.vhd
+	hf-risc/riscv/platform/spartan3e_nexys2/spartan3e_nexys2.ucf
+	hf-risc/devices/peripherals/minimal_soc_uart.vhd
+	hf-risc/devices/controllers/uart/uart.vhd
 
 If you have a different board, you have to adapt the top file (spartan3e_nexys2_standard_soc.vhd) and the .ucf. Depending on the board configuration, the bootloader (monitor) may have to be recompiled. Again, all files in the _riscv_ directory can be changed to _mips_ if a MIPS processor is needed in the prototype.
