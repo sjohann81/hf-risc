@@ -3,11 +3,11 @@ F_CLK=25000000
 SERIAL_DEV=/dev/ttyUSB0
 
 #remove unreferenced functions
-CFLAGS_STRIP = -fdata-sections -ffunction-sections
-LDFLAGS_STRIP = --gc-sections
+CFLAGS_STRIP = #-fdata-sections -ffunction-sections
+LDFLAGS_STRIP = #--gc-sections
 
-GCC_riscv = riscv32-unknown-elf-gcc -march=rv32i -mabi=ilp32 -Wall -O2 -c -ffreestanding -nostdlib -ffixed-s10 -ffixed-s11 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN -D__RISCVEL $(CFLAGS_STRIP) #-DDEBUG_PORT #-ffixed-s10 -ffixed-s11 -mrvc -fPIC -DDEBUG_PORT
-AS_riscv = riscv32-unknown-elf-as -march=rv32i -mabi=ilp32 #-fPIC
+GCC_riscv = riscv32-unknown-elf-gcc -march=rv32im -mabi=ilp32 -Wall -O2 -c -ffreestanding -nostdlib -ffixed-s10 -ffixed-s11 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN -D__RISCVEL $(CFLAGS_STRIP) #-DDEBUG_PORT #-ffixed-s10 -ffixed-s11 -mrvc -fPIC -DDEBUG_PORT
+AS_riscv = riscv32-unknown-elf-as -march=rv32im -mabi=ilp32 #-fPIC
 LD_riscv = riscv32-unknown-elf-ld -melf32lriscv $(LDFLAGS_STRIP)
 DUMP_riscv = riscv32-unknown-elf-objdump -Mno-aliases
 READ_riscv = riscv32-unknown-elf-readelf
@@ -18,7 +18,7 @@ TEST_OBJS = $(addsuffix .o,$(basename $(wildcard tests/*.S)))
 
 all:
 
-simple: $(TEST_OBJS)
+test: $(TEST_OBJS)
 	$(GCC_riscv) test.S -o test.o
 	$(LD_riscv) -T../../software/lib/riscv/hf-risc.ld -Map test.map -N -o test.elf \
 		test.o $(TEST_OBJS)

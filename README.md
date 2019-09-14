@@ -69,7 +69,8 @@ The memory map is separated into regions.
 | :---------------------------- | :-------------------- | :-------------------- | :-------------------- |
 | ROM / Flash			| 0x00000000 		| 0x1fffffff		| (512MB)		|
 | Reserved			| 0x20000000 		| 0x2fffffff		| (256MB)		|
-| External SPI SRAM/EEPROM	| 0x30000000 		| 0x3fffffff		| (256MB)		|
+| External SPI SRAM/EEPROM	| 0x30000000 		| 0x37ffffff		| (128MB)		|
+| External SPI SRAM/EEPROM	| 0x38000000 		| 0x3fffffff		| (128MB, Uncached)	|
 | SRAM				| 0x40000000 		| 0x5fffffff		| (512MB)		|
 | External RAM / device		| 0x60000000 		| 0x9fffffff		| (1024MB)		|
 | External RAM / device		| 0xa0000000 		| 0xdfffffff		| (1024MB, Uncached)	|

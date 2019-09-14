@@ -17,7 +17,7 @@
 TEST_FUNC_NAME:				\
 	lui	a0,%hi(.test_name);	\
 	addi	a0,a0,%lo(.test_name);	\
-	li	a2,0xf00000e0;	\
+	li	a2,0xf00000d0;	\
 .prname_next:				\
 	lb	a1,0(a0);		\
 	beq	a1,zero,.prname_done;	\
@@ -27,14 +27,14 @@ TEST_FUNC_NAME:				\
 .test_name:				\
 	.ascii TEST_FUNC_TXT;		\
 	.byte 0x00;			\
-	.balign 4;			\
+	.balign 4, 0;			\
 .prname_done:				\
 	addi	a1,zero,'.';		\
 	sw	a1,0(a2);		\
 	sw	a1,0(a2);
 
 #define RVTEST_PASS			\
-	li	a0,0xf00000e0;	\
+	li	a0,0xf00000d0;	\
 	addi	a1,zero,'O';		\
 	addi	a2,zero,'K';		\
 	addi	a3,zero,'\n';		\
@@ -44,7 +44,7 @@ TEST_FUNC_NAME:				\
 	jal	zero,TEST_FUNC_RET;
 
 #define RVTEST_FAIL			\
-	li	a0,0xf00000e0;	\
+	li	a0,0xf00000d0;	\
 	addi	a1,zero,'E';		\
 	addi	a2,zero,'R';		\
 	addi	a3,zero,'O';		\
@@ -55,7 +55,7 @@ TEST_FUNC_NAME:				\
 	sw	a3,0(a0);		\
 	sw	a2,0(a0);		\
 	sw	a4,0(a0);		\
-	sbreak;
+	ebreak;
 
 #define RVTEST_CODE_END
 #define RVTEST_DATA_BEGIN .balign 4;

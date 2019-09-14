@@ -46,6 +46,8 @@ _entry:
 	.global n ## _ret; \
 	n ## _ret:
 
+	TEST(simple)
+
 	TEST(lui)
 	TEST(auipc)
 	TEST(j)
@@ -90,19 +92,16 @@ _entry:
 	TEST(or)
 	TEST(and)
 
-	TEST(simple)
-
+	TEST(mul)
+	TEST(mulh)
+	TEST(mulhsu)
+	TEST(mulhu)
 #	TEST(div)
 #	TEST(divu)
-#	TEST(mul)
-#	TEST(mulh)
-#	TEST(mulhsu)
-#	TEST(mulhu)
 #	TEST(rem)
 #	TEST(remu)
 
-
-	li a0,0xf00000e0
+	li a0,0xf00000d0
 	addi a1,zero,'D'
 	addi a2,zero,'O'
 	addi a3,zero,'N'

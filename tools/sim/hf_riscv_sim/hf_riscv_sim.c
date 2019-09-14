@@ -335,30 +335,45 @@ void cycle(state *s){
 			}
 			break;
 		case 0x33:
-			switch (funct3){
-				case 0x0:
-					switch (funct7){
-						case 0x0: r[rd] = r[rs1] + r[rs2]; break;					/* ADD */
-						case 0x20: r[rd] = r[rs1] - r[rs2]; break;					/* SUB */
-						default: goto fail;
-					}
-					break;
-				case 0x1: r[rd] = r[rs1] << r[rs2]; break;							/* SLL */
-				case 0x2: r[rd] = r[rs1] < r[rs2]; break;		 					/* SLT */
-				case 0x3: r[rd] = u[rs1] < u[rs2]; break;		 					/* SLTU */
-				case 0x4: r[rd] = r[rs1] ^ r[rs2]; break;							/* XOR */
-				case 0x5:
-					switch (funct7){
-						case 0x0: r[rd] = u[rs1] >> u[rs2]; break;					/* SRL */
-						case 0x20: r[rd] = r[rs1] >> r[rs2]; break;					/* SRA */
-						default: goto fail;
-					}
-					break;
-				case 0x6: r[rd] = r[rs1] | r[rs2]; break;							/* OR */
-				case 0x7: r[rd] = r[rs1] & r[rs2]; break;							/* AND */
-				default: goto fail;
+			if (funct7 == 0x1){											/* RV32M */
+				switch(funct3){
+					case 0:	r[rd] = (((int64_t)r[rs1] * (int64_t)r[rs2]) & 0xffffffff); break;		/* MUL */
+					case 1:	r[rd] = ((((int64_t)r[rs1] * (int64_t)r[rs2]) >> 32) & 0xffffffff); break;	/* MULH */
+					case 2:	r[rd] = ((((int64_t)r[rs1] * (uint64_t)u[rs2]) >> 32) & 0xffffffff); break;	/* MULHSU */
+					case 3:	r[rd] = ((((uint64_t)u[rs1] * (uint64_t)u[rs2]) >> 32) & 0xffffffff); break;	/* MULHU */
+					case 4:	if (r[rs2]) r[rd] = r[rs1] / r[rs2]; else r[rd] = 0; break;			/* DIV */
+					case 5:	if (u[rs2]) r[rd] = u[rs1] / u[rs2]; else r[rd] = 0; break;			/* DIVU */
+					case 6:	if (r[rs2]) r[rd] = r[rs1] % r[rs2]; else r[rd] = 0; break;			/* REM */
+					case 7:	if (u[rs2]) r[rd] = u[rs1] % u[rs2]; else r[rd] = 0; break;			/* REMU */
+					default: goto fail;
+				}
+				break;
+			}else{
+				switch (funct3){
+					case 0x0:
+						switch (funct7){
+							case 0x0: r[rd] = r[rs1] + r[rs2]; break;				/* ADD */
+							case 0x20: r[rd] = r[rs1] - r[rs2]; break;				/* SUB */
+							default: goto fail;
+						}
+						break;
+					case 0x1: r[rd] = r[rs1] << r[rs2]; break;						/* SLL */
+					case 0x2: r[rd] = r[rs1] < r[rs2]; break;		 				/* SLT */
+					case 0x3: r[rd] = u[rs1] < u[rs2]; break;		 				/* SLTU */
+					case 0x4: r[rd] = r[rs1] ^ r[rs2]; break;						/* XOR */
+					case 0x5:
+						switch (funct7){
+							case 0x0: r[rd] = u[rs1] >> u[rs2]; break;				/* SRL */
+							case 0x20: r[rd] = r[rs1] >> r[rs2]; break;				/* SRA */
+							default: goto fail;
+						}
+						break;
+					case 0x6: r[rd] = r[rs1] | r[rs2]; break;						/* OR */
+					case 0x7: r[rd] = r[rs1] & r[rs2]; break;						/* AND */
+					default: goto fail;
+				}
+				break;
 			}
-			break;
 		case 0x73:
 			switch(funct3){
 				case 0:
