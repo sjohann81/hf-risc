@@ -58,7 +58,7 @@ begin
 -- 1st stage, instruction memory access, PC update, interrupt acknowledge logic
 
 	-- program counter logic
-	process(clock, reset, reg_to_mem_r, mem_to_reg_r, mwait, stall)
+	process(clock, reset, reg_to_mem_r, mem_to_reg_r, mwait, stall, stall_reg)
 	begin
 		if reset = '1' then
 			pc <= (others => '0');
@@ -67,7 +67,11 @@ begin
 		elsif clock'event and clock = '1' then
 			if stall = '0' then
 				if mwait = '0' then
-					pc <= pc_next;
+					if stall_reg = '0' then
+						pc <= pc_next;
+					else
+						pc <= pc_last;
+					end if;
 					pc_last <= pc;
 					pc_last2 <= pc_last;
 				else
@@ -100,8 +104,8 @@ begin
 			irq_ack_s_dly <= '0';
 			bds <= '0';
 			mem_to_reg_r_dly <= '0';
-			stall_reg <= '0';
 			data_access_s_dly <= '0';
+			stall_reg <= '0';
 		elsif clock'event and clock = '1' then
 			stall_reg <= stall;
 			if stall = '0' then
@@ -125,7 +129,7 @@ begin
 -- 2nd stage, instruction decode, control unit operation, pipeline bubble insertion logic on load/store and branches
 
 	-- pipeline bubble insertion on loads/stores, exceptions, branches and interrupts
-	inst_in_s <= x"00000000" when reg_to_mem_r = '1' or mem_to_reg_r = '1' or except = '1' or
+	inst_in_s <= x"00000000" when reg_to_mem_r = '1' or mem_to_reg_r = '1' or except = '1' or stall_reg = '1' or
 		branch_taken = '1' or jump_taken = '1' or bds = '1' or irq_ack_s = '1' else
 		data_in(7 downto 0) & data_in(15 downto 8) & data_in(23 downto 16) & data_in(31 downto 24);
 
