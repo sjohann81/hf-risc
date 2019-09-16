@@ -94,8 +94,8 @@ _entry:
 
 	TEST(mul)
 	TEST(mulh)
-	TEST(mulhsu)
 	TEST(mulhu)
+	TEST(mulhsu)
 #	TEST(div)
 #	TEST(divu)
 #	TEST(rem)

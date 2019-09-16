@@ -33,7 +33,7 @@ test: $(TEST_OBJS)
 	mv test.sec code.sec
 	mv test.cnt code.cnt
 	mv test.map code.map
-	hexdump -v -e '4/1 "%02x" "\n"' code.bin > boot.txt
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > code.txt
 	
 
 tests/%.o: tests/%.S tests/riscv_test.h tests/test_macros.h
