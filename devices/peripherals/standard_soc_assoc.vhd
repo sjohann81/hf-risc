@@ -32,6 +32,7 @@ entity peripherals is
 		sync_mac_i: in std_logic_vector(31 downto 0);
 		sync_mac_o: out std_logic_vector(31 downto 0);
 		sync_mac_en_o: out std_logic;
+		sync_mac_rst_o: out std_logic;
 
 		-- MAC Async		I/O space: 0xe0ff4400 - 0xe0ff47ff
 		async_mac_i: in std_logic_vector(31 downto 0);
@@ -43,7 +44,8 @@ entity peripherals is
 		de_pause_o: out std_logic_vector(1 downto 0);
 		de_config_o: out std_logic_vector(4 downto 0);
 		de_cde_sel_o: out std_logic_vector(3 downto 0);
-		de_mde_sel_o: out std_logic_vector(3 downto 0);
+		de_mde_sel_l_o: out std_logic_vector(3 downto 0);
+		de_mde_sel_b_o: out std_logic_vector(3 downto 0);
 		de_cde_ctrl_o: out std_logic_vector(15 downto 0)
 	);
 end peripherals;
@@ -86,12 +88,12 @@ architecture peripherals_arch of peripherals is
 	signal spi1_clk_div: std_logic_vector(8 downto 0);
 	signal spi1_data_valid, spi1_data_xfer, spi1_ssn, spi1_clk_i, spi1_clk_o, spi1_do, spi1_di: std_logic;
 
-	signal async_mac_en_r, async_mac_rst_r, sync_mac_en_r: std_logic;
+	signal async_mac_en_r, async_mac_rst_r, sync_mac_en_r, sync_mac_rst_r: std_logic;
 	signal async_mac_r, sync_mac_r: std_logic_vector(31 downto 0);
 	signal de_pause_r: std_logic_vector(1 downto 0);
 	signal de_config_r: std_logic_vector(4 downto 0);
 	signal de_cde_sel_r: std_logic_vector(3 downto 0);
-	signal de_mde_sel_r: std_logic_vector(3 downto 0);
+	signal de_mde_sel_l_r, de_mde_sel_b_r: std_logic_vector(3 downto 0);
 	signal de_cde_ctrl_r: std_logic_vector(15 downto 0);
 	signal de_cde_ctrl_we_r: std_logic;
 
@@ -179,6 +181,8 @@ begin
 								data_o <= sync_mac_r;
 							when "0001" =>					-- 0xe0ff4010		(RO)
 								data_o <= sync_mac_i;
+							when "0010" =>					-- 0xe0ff4020		(RW)
+								data_o <= x"0000000" & "000" & sync_mac_rst_r;
 							when others =>
 							end case;
 						when "010001" =>					-- MAC Async		I/O space: 0xe0ff4400 - 0xe0ff47ff
@@ -198,10 +202,12 @@ begin
 							when "0001" =>					-- 0xe0ff4810		(RW)
 								data_o <= x"0000000" & de_cde_sel_r;
 							when "0010" =>					-- 0xe0ff4820		(RW)
-								data_o <= x"0000000" & de_mde_sel_r;
+								data_o <= x"0000000" & de_mde_sel_l_r;
 							when "0011" =>					-- 0xe0ff4830		(RW)
-								data_o <= x"0000" & de_cde_ctrl_r;
+								data_o <= x"0000000" & de_mde_sel_b_r;
 							when "0100" =>					-- 0xe0ff4840		(RW)
+								data_o <= x"0000" & de_cde_ctrl_r;
+							when "0101" =>					-- 0xe0ff4850		(RW)
 								data_o <= x"0000000" & "00" & de_pause_r;
 							when others =>
 							end case;
@@ -396,6 +402,7 @@ begin
 			spi1_clk_div <= (others => '0');
 
 			sync_mac_en_r <= '0';
+			sync_mac_rst_r <= '1';
 			sync_mac_r <= (others => '0');
 			async_mac_en_r <= '0';
 			async_mac_rst_r <= '1';
@@ -403,7 +410,8 @@ begin
 			de_pause_r <= (others => '1');
 			de_config_r <= (others => '0');
 			de_cde_sel_r <= (others => '1');
-			de_mde_sel_r <= (others => '0');
+			de_mde_sel_l_r <= (others => '1');
+			de_mde_sel_b_r <= (others => '0');
 			de_cde_ctrl_r <= x"0001";
 		elsif clk_i'event and clk_i = '1' then
 			if sel_i = '1' and wr_i = '1' then
@@ -418,6 +426,8 @@ begin
 								sync_mac_r <= data_i;
 								sync_mac_en_r <= '1';
 --							when "0001" =>					-- 0xe0ff4010		(RO)
+							when "0010" =>					-- 0xe0ff4020		(RW)
+								sync_mac_rst_r <= data_i(0);
 							when others =>
 							end case;
 						when "010001" =>					-- MAC Async		I/O space: 0xe0ff4400 - 0xe0ff47ff
@@ -442,13 +452,17 @@ begin
 								end if;
 							when "0010" =>					-- 0xe0ff4820		(RW)
 								if (de_pause_r(0) = '1') then
-									de_mde_sel_r <= data_i(3 downto 0);
+									de_mde_sel_l_r <= data_i(3 downto 0);
 								end if;
 							when "0011" =>					-- 0xe0ff4830		(RW)
+								if (de_pause_r(0) = '1') then
+									de_mde_sel_b_r <= data_i(3 downto 0);
+								end if;
+							when "0100" =>					-- 0xe0ff4840		(RW)
 								if (de_pause_r(1) = '1') then
 									de_cde_ctrl_r <= data_i(15 downto 0);
 								end if;
-							when "0100" =>					-- 0xe0ff4840		(RW)
+							when "0101" =>					-- 0xe0ff4850		(RW)
 								de_pause_r <= data_i(1 downto 0);
 							when others =>
 							end case;
@@ -702,6 +716,7 @@ begin
 	);
 
 	sync_mac_en_o <= sync_mac_en_r;
+	sync_mac_rst_o <= sync_mac_rst_r;
 	sync_mac_o <= sync_mac_r;
 	async_mac_en_o <= async_mac_en_r;
 	async_mac_rst_o <= async_mac_rst_r;
@@ -709,7 +724,8 @@ begin
 	de_pause_o <= de_pause_r;
 	de_config_o <= de_config_r;
 	de_cde_sel_o <= de_cde_sel_r;
-	de_mde_sel_o <= de_mde_sel_r;
+	de_mde_sel_l_o <= de_mde_sel_l_r;
+	de_mde_sel_b_o <= de_mde_sel_b_r;
 	de_cde_ctrl_o <= de_cde_ctrl_r;
 
 end peripherals_arch;

@@ -33,12 +33,12 @@ architecture tb of tb is
 	signal burst, wr, rd, we, stall_dly, stall_dly2, stall_spi, spi_sel, spi_cs, spi_cs2, spi_clk, spi_mosi, spi_miso, hold_n, spi_cs_n_s: std_logic := '0';
 
 	signal sync_mac_out, sync_mac_in: std_logic_vector(31 downto 0) := x"12345678";
-	signal sync_mac_en: std_logic;
+	signal sync_mac_en, sync_mac_rst: std_logic;
 	signal async_mac_out, async_mac_in: std_logic_vector(31 downto 0) := x"87654321";
 	signal async_mac_en, async_mac_rst: std_logic;
 	signal de_pause: std_logic_vector(1 downto 0);
 	signal de_config: std_logic_vector(4 downto 0);
-	signal de_cde_sel, de_mde_sel: std_logic_vector(3 downto 0);
+	signal de_cde_sel, de_mde_sel_l, de_mde_sel_b: std_logic_vector(3 downto 0);
 	signal de_cde_ctrl: std_logic_vector(15 downto 0);
 
 begin
@@ -153,6 +153,7 @@ begin
 		sync_mac_i => sync_mac_out,
 		sync_mac_o => sync_mac_in,
 		sync_mac_en_o => sync_mac_en,
+		sync_mac_rst_o => sync_mac_rst,
 		async_mac_i => async_mac_out,
 		async_mac_o => async_mac_in,
 		async_mac_en_o => async_mac_en,
@@ -160,7 +161,8 @@ begin
 		de_pause_o => de_pause,
 		de_config_o => de_config,
 		de_cde_sel_o => de_cde_sel,
-		de_mde_sel_o => de_mde_sel,
+		de_mde_sel_l_o => de_mde_sel_l,
+		de_mde_sel_b_o => de_mde_sel_b,
 		de_cde_ctrl_o => de_cde_ctrl
 	);
 

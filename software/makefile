@@ -1,5 +1,5 @@
 # architecture: mips or riscv
-ARCH=mips
+ARCH=riscv
 
 # board specific parameters
 BAUDRATE=57600
