@@ -198,8 +198,8 @@ static void mem_write(state *s, int32_t size, uint32_t address, uint32_t value){
 			fflush(stdout);
 			if (log_enabled)
 				fclose(fptr);
-			printf("\nend of simulation - %ld cycles.\n", s->cycles);
-			exit(0);
+			printf("\nend of simulation - %ld cycles (%d).\n", s->cycles, s->r[10]);
+			exit(s->r[10]);
 		case DEBUG_ADDR:
 			if (log_enabled)
 				fprintf(fptr, "%c", (int8_t)(value & 0xff));

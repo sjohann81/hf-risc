@@ -28,7 +28,7 @@ BSS_CLEAR:
 	jal	ra, main
 
 	li	s10, 0xe0000000		# this will interrupt the simulation (assertion)
-	sw	zero, 0(s10)
+	sw	a0,0(s10)
 L1:
 	beq	zero, zero, L1
 
@@ -154,7 +154,7 @@ longjmp:
 	ret
 
 # system call interface: syscall(service, arg0, arg1, arg2)
-	.global syscall			
+	.global syscall
 syscall:
 	addi	a7, a0, 0
 	ecall
