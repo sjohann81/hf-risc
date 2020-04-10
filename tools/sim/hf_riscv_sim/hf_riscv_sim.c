@@ -385,7 +385,9 @@ void cycle(state *s){
 						default: goto fail;
 					}
 					break;
-				default: goto fail;
+				default:											/* CSRxx instructions */
+					s->exception = 1;
+					break;
 			}
 			break;
 		default: goto fail;
