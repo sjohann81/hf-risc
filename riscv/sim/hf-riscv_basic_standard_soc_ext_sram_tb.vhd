@@ -78,12 +78,14 @@ begin
 	spi_sel <= '1' when address(31 downto 28) = "0011" else '0';
 	rd <= '1' when (spi_sel = '1' and data_we = "0000" and stall_dly2 = '0') else '0';
 	wr <= '1' when (spi_sel = '1' and data_we /= "0000" and stall_dly2 = '0') else '0';
-	data_read <= data_read_periph when periph = '1' or periph_dly = '1' else data_read_spi when spi_sel = '1' or stall_dly2 = '1' else
+--	data_read <= data_read_periph when periph = '1' or periph_dly = '1' else data_read_spi when spi_sel = '1' or stall_dly2 = '1' else
+	data_read <= data_read_periph when periph = '1' or periph_dly = '1' else data_read_spi when spi_sel = '1' else
 			data_read_boot when address(31 downto 28) = "0000" and ram_dly = '0' else data_read_ram;
 	data_w_n_ram <= not data_we;
 	hold_n <= '1';
 	burst <= '0';
 	stall_sig <= stall_spi;
+--	stall_sig <= stall_spi or (not stall_dly and stall_dly2);
 	-- external SPI SRAM/EEPROM, 0x30000000 (26,25 - spi select, 24 - short address mode, 23 - EEPROM write enable latch)
 	spi_cs <= spi_cs_n_s when spi_sel = '1' and address(25) = '0' else '1';
 	-- external SPI SRAM/EEPROM, 0x32000000

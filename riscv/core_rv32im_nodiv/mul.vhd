@@ -10,7 +10,8 @@ entity mul is
 	port (	clock: in std_logic;
 		reset: in std_logic;
 		trg: in std_logic;
-		sig: in std_logic;
+		sig0: in std_logic;
+		sig1: in std_logic;
 		i0: in std_logic_vector(mul_width-1 downto 0);
 		i1: in std_logic_vector(mul_width-1 downto 0);
 		o0: out std_logic_vector(mul_width-1 downto 0);
@@ -37,13 +38,17 @@ begin
 			case current_state is
 				when start =>
 					i0_reg <= i0;
-					reg(mul_width*2 downto mul_width) <= (others => '0');
-					reg(mul_width-1 downto 0) <= i1;
+					reg(mul_width*2 downto mul_width+1) <= (others => '0');
+--					if (sig1 = '1') then
+--						reg(mul_width downto 0) <= i1(mul_width-1) & i1;
+--					else
+						reg(mul_width downto 0) <= '0' & i1;
+--					end if;
 					counter <= (others => '0');
 				when multiply =>
 					rdy_sig <= '0';
 					if (reg(0) = '1') then
-						reg <= (add_sub(mul_width) & add_sub & reg(mul_width-1 downto 1));
+						reg <= ((sig0 and add_sub(mul_width)) & add_sub & reg(mul_width-1 downto 1));
 						counter <= counter + 1;
 					elsif (reg(3 downto 0) = "0000" and counter < mul_width-4) then
 						reg <= (reg(mul_width*2) & reg(mul_width*2) & reg(mul_width*2) & reg(mul_width*2) & reg((mul_width*2) downto 4));
@@ -88,15 +93,16 @@ begin
 		end case;
 	end process;
 
-	sign <= i0_reg(mul_width-1) when sig = '1' else '0';
+	sign <= i0_reg(mul_width-1) when sig0 = '1' else '0';
 	a <= sign & i0_reg;
 
-	add_sub <= reg(mul_width*2 downto mul_width) - a when (counter = mul_width-1) and sig = '1' else
+	add_sub <= reg(mul_width*2 downto mul_width) - a when (counter = mul_width-1) and sig0 = '1' else
 			reg(mul_width*2 downto mul_width) + a;
 
 	o1 <= reg((mul_width*2)-1 downto mul_width);
+--	o1 <= not reg((mul_width*2)-1 downto mul_width) + 1 when sig1 = '1' and i0_reg(mul_width-1) = '1' else reg((mul_width*2)-1 downto mul_width);
 	o0 <= reg(mul_width-1 downto 0);
-	
+
 	rdy <= rdy_sig;
 
 end mul_arch;

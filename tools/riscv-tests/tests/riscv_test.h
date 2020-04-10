@@ -55,7 +55,10 @@ TEST_FUNC_NAME:				\
 	sw	a3,0(a0);		\
 	sw	a2,0(a0);		\
 	sw	a4,0(a0);		\
-	ebreak;
+	li	s10, 0xe0000000;	\
+	sw	zero, 0(s10);		\
+	jal	zero,TEST_FUNC_RET;
+//	ebreak;
 
 #define RVTEST_CODE_END
 #define RVTEST_DATA_BEGIN .balign 4;

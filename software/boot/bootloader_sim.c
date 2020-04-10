@@ -5,7 +5,7 @@ int32_t main(void){
 	void (*funcPtr)();
 
 	printf("boot\n");
-/*
+
 	uint32_t *ptr, *ptr2;
 
 	ptr = (uint32_t *)RAM_BASE;
@@ -13,8 +13,8 @@ int32_t main(void){
 	memcpy(ptr2, ptr, 4096);
 
 	funcPtr = (void (*)(void *))(EXT_SRAM);
-*/
-	funcPtr = (void (*)(void *))(RAM_BASE);
+
+//	funcPtr = (void (*)(void *))(RAM_BASE);
 	funcPtr();
 
 	return 0;
