@@ -171,6 +171,10 @@ hello: crt
 interrupt_test: crt
 	$(GCC_$(ARCH)) -o interrupt_test.o app/interrupt_test.c
 	@$(MAKE) --no-print-directory link
+	
+interrupt_test2: crt	
+	$(GCC_$(ARCH)) -o interrupt_test.o app/interrupt_test2.c
+	@$(MAKE) --no-print-directory link
 
 labyrinth: crt
 	$(GCC_$(ARCH)) -o labyrinth.o app/labyrinth.c
