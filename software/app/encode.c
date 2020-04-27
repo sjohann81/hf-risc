@@ -21,32 +21,21 @@ int main(void)
 	uint8_t message[] = "the quick brown fox jumps over the lazy dog";
 	uint8_t key[] = "attackatdawn";
 	uint8_t key2[] = "attack at dawn";
-	uint8_t *pmessage, *pkey, *pkey2;
-	
-	pmessage = (uint8_t *)0x60000000;
-	pkey = (uint8_t *)0x60000100;
-	pkey2 = (uint8_t *)0x60000200;
-	
-	memset(pmessage, 0x55, 1024);	
-	memcpy(pmessage, message, strlen(message));
-	memcpy(pkey, key, strlen(key));
-	memcpy(pkey2, key2, strlen(key2));
-	
 	
 	printf("\nmessage:");
-	hexdump(pmessage, sizeof(message));
-	encode(pmessage, pmessage, sizeof(message), pkey, sizeof(key));
+	hexdump((int8_t *)message, sizeof(message));
+	encode(message, message, sizeof(message), key, sizeof(key));
 	printf("\nencoded message (first key):");
-	hexdump(pmessage, sizeof(message));
-	decode(pmessage, pmessage, sizeof(message), pkey, sizeof(key));
+	hexdump((int8_t *)message, sizeof(message));
+	decode(message, message, sizeof(message), key, sizeof(key));
 	printf("\ndecoded message (first key):");
-	hexdump(pmessage, sizeof(message));
-	encode(pmessage, pmessage, sizeof(message), pkey2, sizeof(key2));
+	hexdump((int8_t *)message, sizeof(message));
+	encode(message, message, sizeof(message), key2, sizeof(key2));
 	printf("\nencoded message (second key):");
-	hexdump(pmessage, sizeof(message));
-	decode(pmessage, pmessage, sizeof(message), pkey2, sizeof(key2));
+	hexdump((int8_t *)message, sizeof(message));
+	decode(message, message, sizeof(message), key2, sizeof(key2));
 	printf("\ndecoded message (second key):");
-	hexdump(pmessage, sizeof(message));
+	hexdump((int8_t *)message, sizeof(message));
 	
 	return 0;
 }
