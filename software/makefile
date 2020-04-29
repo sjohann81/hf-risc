@@ -173,8 +173,13 @@ interrupt_test: crt
 	@$(MAKE) --no-print-directory link
 	
 interrupt_test2: crt	
-	$(GCC_$(ARCH)) -o interrupt_test.o app/interrupt_test2.c
+	$(GCC_$(ARCH)) -o interrupt_test2.o app/interrupt_test2.c
 	@$(MAKE) --no-print-directory link
+
+interrupt_test3: crt	
+	$(GCC_$(ARCH)) -o interrupt_test3.o app/interrupt_test3.c
+	@$(MAKE) --no-print-directory link
+
 
 labyrinth: crt
 	$(GCC_$(ARCH)) -o labyrinth.o app/labyrinth.c
@@ -207,6 +212,11 @@ sort: crt
 sudoku: crt
 	$(GCC_$(ARCH)) -o sudoku.o app/sudoku.c
 	@$(MAKE) --no-print-directory link
+
+tasker: crt
+	$(GCC_$(ARCH)) -o tasker.o app/tasker.c
+	@$(MAKE) --no-print-directory link
+
 
 test64: crt
 	$(GCC_$(ARCH)) -o test64.o app/test64.c
