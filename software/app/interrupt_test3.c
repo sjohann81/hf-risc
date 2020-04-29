@@ -7,12 +7,15 @@ void timer1ctc_handler(void)
 
 void timer1ocr_handler(void)
 {
-	printf("TIMER1OCR %d\n", TIMER0);
+	static uint32_t tmr1ocr = 0;
+	
+	if (++tmr1ocr & 1) {
+		printf("TIMER1OCR %d\n", TIMER0);
+	}
 	
 	/* schedule next interrupt (half period) */
 	TIMER1OCR = (TIMER1OCR + 196) % 19531;
 }
-
 
 int main(void){
 	TIMER1PRE = TIMERPRE_DIV256;
