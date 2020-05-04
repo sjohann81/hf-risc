@@ -1,3 +1,7 @@
+/*
+ * example of coroutines using setjmp()/longjmp()
+ */
+
 #include <hf-risc.h>
 
 #define N_TASKS		4
