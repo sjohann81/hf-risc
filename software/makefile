@@ -20,7 +20,7 @@ READ_mips = mips-elf-readelf
 OBJ_mips = mips-elf-objcopy
 SIZE_mips = mips-elf-size
 
-GCC_riscv = riscv32-unknown-elf-gcc -march=rv32i -mabi=ilp32 -Wall -O2 -c -mstrict-align -ffreestanding -nostdlib -ffixed-s10 -ffixed-s11 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) -DDEBUG_PORT #-ffixed-s10 -ffixed-s11 -mno-div -mrvc -fPIC -DDEBUG_PORT
+GCC_riscv = riscv32-unknown-elf-gcc -march=rv32i -mabi=ilp32 -Wall -O2 -c -mstrict-align -ffreestanding -nostdlib -ffixed-s10 -ffixed-s11 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) #-DDEBUG_PORT #-ffixed-s10 -ffixed-s11 -mno-div -mrvc -fPIC -DDEBUG_PORT
 AS_riscv = riscv32-unknown-elf-as -march=rv32i -mabi=ilp32 #-fPIC
 LD_riscv = riscv32-unknown-elf-ld -melf32lriscv $(LDFLAGS_STRIP)
 DUMP_riscv = riscv32-unknown-elf-objdump -Mno-aliases
@@ -160,6 +160,14 @@ float_fixed: crt
 	$(GCC_$(ARCH)) -o float_fixed.o app/float_fixed.c
 	@$(MAKE) --no-print-directory link
 
+fsm: crt
+	$(GCC_$(ARCH)) -o fsm.o app/fsm.c
+	@$(MAKE) --no-print-directory link
+
+fsm2: crt
+	$(GCC_$(ARCH)) -o fsm2.o app/fsm2.c
+	@$(MAKE) --no-print-directory link
+
 hanoi: crt
 	$(GCC_$(ARCH)) -o hanoi.o app/hanoi.c
 	@$(MAKE) --no-print-directory link
@@ -215,6 +223,10 @@ sudoku: crt
 
 tasker: crt
 	$(GCC_$(ARCH)) -o tasker.o app/tasker.c
+	@$(MAKE) --no-print-directory link
+
+tasker2: crt
+	$(GCC_$(ARCH)) -o tasker2.o app/tasker2.c
 	@$(MAKE) --no-print-directory link
 
 
