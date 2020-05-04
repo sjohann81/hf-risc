@@ -192,6 +192,11 @@ interrupt_test3: crt
 labyrinth: crt
 	$(GCC_$(ARCH)) -o labyrinth.o app/labyrinth.c
 	@$(MAKE) --no-print-directory link
+	
+list_test: crt
+	$(GCC_$(ARCH)) -o list.o lib/list.c
+	$(GCC_$(ARCH)) -o list_test.o app/list_test.c
+	@$(MAKE) --no-print-directory link
 
 malloc_test: crt
 	$(GCC_$(ARCH)) -o malloc_test.o app/malloc_test.c
