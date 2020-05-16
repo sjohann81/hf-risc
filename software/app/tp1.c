@@ -81,19 +81,22 @@ void updateElement(struct task *newValue){
 // TODO Como inicializar o running
 void scheduler(){
     struct task *runningT = getRunningTask();
-    if(runningT == NULL){ // não é preempção
+    if(runningT == NULL){ // inicaliza a primeira task
         struct task *nextT = getNextTask();
         nextT->status = RUNNING;
         updateElement(nextT);
         context_switch(nextT->id);
     } else {
+        //existe uma task rodando já
         time++;
         runningT->computTimeCount++;
         if(runningT->computTimeCount != runningT->computTime-1){
+            //task não acabou de executar
             if(getNextTask()->id != runningT->id){
                 //go to wait interruption
             }
         } else {
+            //task acabou de executar
             struct task *nextT = getNextTask();
             if(nextT != NULL){
                 nextT->status = RUNNING;
