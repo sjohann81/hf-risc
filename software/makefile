@@ -289,6 +289,11 @@ test: crt
 	$(GCC_$(ARCH)) -o test.o app/test.c
 	@$(MAKE) --no-print-directory link
 
+tp1: crt
+	$(GCC_$(ARCH)) -o list.o lib/list.c
+	$(GCC_$(ARCH)) -o tp1.o app/tp1.c
+	@$(MAKE) --no-print-directory link
+
 include app/malardalen/malardalen.mak
 include app/powerstone/powerstone.mak
 

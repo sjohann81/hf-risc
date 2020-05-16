@@ -28,7 +28,7 @@ Depois de compilar o processador nós podemos utilizar o processador para rodar 
 
 ```
 cd ~/hf-risc/software
-make hello /*hello pode ser substituito por qualquer applicação existente no makefile*/
+make tp1 /*tp1 pode ser substituito por qualquer applicação existente no makefile*/
 
 ```
  O comando **make** vai gerar varios arquivos dentro da pasta, inclusive um **.bin** que será utilizado para executar a aplicação:
