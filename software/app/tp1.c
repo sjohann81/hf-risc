@@ -15,11 +15,13 @@ char mem_pool[8192];
 typedef uint32_t jmp_buf[20];
 int32_t setjmp(jmp_buf env);
 void longjmp(jmp_buf env, int32_t val);
+
 /***** Global Variables *****/
 static jmp_buf jmp[N_TASKS];
 static int cur;
 struct list *queue;
 int interr = 0;
+int time = 0;
 
 /***** Struct definition****/
 struct task {
@@ -65,18 +67,42 @@ struct task *getRunningTask(){
     return NULL;
 }
 
-// Como inicializar o running
+void updateElement(struct task *newValue){
+    int i;
+    struct task *auxT;
+    for(i=0; i< N_TASKS -1; i++){
+        auxT = list_get(queue, i);
+        if(auxT->id == newValue->id){
+            list_set(queue, newValue, i);
+        }
+    }
+}
+
+// TODO Como inicializar o running
 void scheduler(){
     struct task *runningT = getRunningTask();
-    if(runningT == NULL){
-        struct task *curTask = getNextTask();
-        context_switch(curTask->id);
-    } else if(interr == 1){
-        if(runningT->computTimeCount != runningT->computTime){
-            //task não acabou de executar ainda e tem que ser preemptada
-            //status passa pra BLOCKED
+    if(runningT == NULL){ // não é preempção
+        struct task *nextT = getNextTask();
+        nextT->status = RUNNING;
+        updateElement(nextT);
+        context_switch(nextT->id);
+    } else {
+        time++;
+        runningT->computTimeCount++;
+        if(runningT->computTimeCount != runningT->computTime-1){
+            if(getNextTask()->id != runningT->id){
+                //go to wait interruption
+            }
+        } else {
+            struct task *nextT = getNextTask();
+            if(nextT != NULL){
+                nextT->status = RUNNING;
+                updateElement(nextT);
+                context_switch(nextT->id);
+            }
         }
-    } 
+        updateElement(runningT); 
+    }
 }
 
 void idle_task()
