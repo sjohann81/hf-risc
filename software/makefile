@@ -234,6 +234,9 @@ tasker2: crt
 	$(GCC_$(ARCH)) -o tasker2.o app/tasker2.c
 	@$(MAKE) --no-print-directory link
 
+tasker3: crt
+	$(GCC_$(ARCH)) -o tasker.o app/tasker3.c
+	@$(MAKE) --no-print-directory link
 
 test64: crt
 	$(GCC_$(ARCH)) -o test64.o app/test64.c
