@@ -7,6 +7,8 @@
 #define N_TASKS		4
 
 typedef uint32_t jmp_buf[20];
+
+int32_t _interrupt_set(int32_t s);
 int32_t setjmp(jmp_buf env);
 void longjmp(jmp_buf env, int32_t val);
 
@@ -77,7 +79,6 @@ void task0(void)
 	volatile char cushion[1000];	/* reserve some stack space */
 	cushion[0] = '@';		/* don't optimize my cushion away */
 	volatile int cnt = 100000;
-
 
 	if (!setjmp(jmp[0]))
 		task1();
