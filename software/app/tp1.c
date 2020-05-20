@@ -17,18 +17,23 @@ int32_t setjmp(jmp_buf env);
 void longjmp(jmp_buf env, int32_t val);
 
 /***** Global Variables *****/
-static jmp_buf jmp[N_TASKS];
+static jmp_buf jmp[N_TASKS], end;
 static int cur;
 
 struct list *taskList; // List contains all the tasks 
 struct list *readyList; // List contains only available tasks at the current time
 
-int interr = 0;
+int interrupt = 0;
 int time = 0;
 int totalTime;
 
 int lastTaskId = N_TASKS;
 bool lastTaskEnded = true;
+
+//TODO printar a lista bonitinha
+//TODO setar os status das tasks
+//TODO tentar fazer maquina de estado, nao precisa pq ta funcionando, tu que sabe
+// struct list *taskPrintList;
 
 /***** Struct definition****/
 struct task {
@@ -76,11 +81,13 @@ void updateElement(struct task *newValue, struct list *tList){
 }
 
 
-void context_switch(int taskId)
-{
-    //printf("context switch, %d\n", taskId);
+void context_switch(int taskId){
+    while(interrupt == 0){
+        printf(" ");
+    }
 	if (!setjmp(jmp[cur])) {
         cur = taskId;
+        interrupt = 0;
         longjmp(jmp[taskId], 1);
 	}
 }
@@ -104,26 +111,29 @@ void bubble_sort_ready(void)
 			struct task *task2 = list_get(readyList,j+1);
 
 			// Who's deadline is nearest
-            if (task1->deadline - (time - task1->period * task1->runTime)  >  task2->deadline - (time - task2->period * task2->runTime)) 
-            {
-                list_set(readyList,task2,j);
-				list_set(readyList,task1,j+1);
+            if(task1->n_computeCount == 0 && task2->n_computeCount == 0){
+                if (task1->deadline - (time - task1->period * task1->runTime)  >  task2->deadline - (time - task2->period * task2->runTime)) 
+                {
+                    list_set(readyList,task2,j);
+                    list_set(readyList,task1,j+1);
 
-            }
-			// Who's ID's lower
-            if ((task1->deadline - (time - task1->period * task1->runTime)  ==  task2->deadline - (time - task2->period * task2->runTime)) && (task1->id  >  task2->id)) 
-            {
-                list_set(readyList,task2,j);
-				list_set(readyList,task1,j+1);
+                }
+                // Who's ID's lower
+                if ((task1->deadline - (time - task1->period * task1->runTime)  ==  task2->deadline - (time - task2->period * task2->runTime)) && (task1->id  >  task2->id)) 
+                {
+                    list_set(readyList,task2,j);
+                    list_set(readyList,task1,j+1);
+                }
             }
 			// task2 is over deadline?
-            if ((task1->n_computeCount  >  task2->n_computeCount) && task2->n_computeCount < 0) // this condition needs to be reviewed
-            {
+            if (task1->n_computeCount == 0 && task2->n_computeCount < 0) // this condition needs to be reviewed
+            {   
                 list_set(readyList,task2,j);
 				list_set(readyList,task1,j+1);
+                //printList(readyList);
             }
 			// If both tasks are over-deadline, Who has the lower ID?
-            if ((    task1->n_computeCount < 0 && task2->n_computeCount < 0 ) && (task1->id  >  task2->id) ) 
+            if (( task1->n_computeCount < 0 && task2->n_computeCount < 0 ) && (task1->id  >  task2->id) ) 
             {
                 list_set(readyList,task2,j);
 				list_set(readyList,task1,j+1);
@@ -135,9 +145,7 @@ void bubble_sort_ready(void)
 
 void addNewTask(){ // Test if new tasks are ready to be included in readyList
 	bool task_added = false;
-    // printf("*************************");
-    // printList(taskList);
-    // printf("*************************");
+  
 	for (int i = 0 ; i<N_TASKS-1  ; i++ )  
 	{
 		struct task *newTask =  list_get(taskList,i);   
@@ -157,7 +165,7 @@ void addNewTask(){ // Test if new tasks are ready to be included in readyList
 						//if (debugmode == 1)
 						printf("New Task: %d(%d,%d) Already in list \n", newTask->id, newTask->compute, newTask->deadline);
 						
-						auxTask->deadline += time;
+						// auxTask->deadline += time;
 						auxTask->n_computeCount = (auxTask->compute - auxTask->computeCount) * -1; //tratar caso n compute time seja diferente de 0
 						auxTask->computeCount = 0;
 						updateElement(auxTask,readyList);
@@ -178,6 +186,13 @@ void addNewTask(){ // Test if new tasks are ready to be included in readyList
     }
 }
 
+// void printTaskList(){
+//     int i;
+//     for(i=0; i < list_count(taskPrintList)-1;i++){
+//         int *aux = list_get(taskPrintList,i);
+//         printf("%c ", &aux);
+//     }
+// }
 
 void advanceTime() { 
 	bool taskEnded = false;
@@ -190,42 +205,51 @@ void advanceTime() {
 
 	//Sort readyList
 	bubble_sort_ready();
-    // printf("----------------------------------\n");
+    printf("----------------------------------\n");
     // printList(readyList);
     printf("\n%d\n", time);
-	// "run" the task 
 	time++;
-   
+    printList(readyList);
+    
+    if(time == totalTime+1){
+        // printTaskList();
+        longjmp(end,1);
+    }
 	struct task *runningTask = list_get(readyList,0);
-	if (runningTask->n_computeCount != 0 ){
+    if(runningTask != NULL){
+        if (runningTask->n_computeCount != 0){
 		runningTask->n_computeCount++;
 		
 		if(runningTask->n_computeCount == 0){  // this code needs to be revised -> aA is an interruption?
 			taskEnded = true; 
 		}
-		updateElement(runningTask, readyList);
-	} else  {
-		runningTask->computeCount++;
-		if (runningTask->computeCount == runningTask->compute){ // END OF TASK
-			taskEnded = true;
-            struct task * myTask = getTaskById(runningTask->id);
-            myTask->runTime++;
-			list_remove(readyList,0);
-		}
-	}
-    // preempção
-    //printf("CU DO REUSCH lastEnd: %d | taskEnd: %d | lastId: %d\n", lastTaskEnded, taskEnded, lastTaskId);
-    if (runningTask->id != lastTaskId && lastTaskEnded == false) {
-        lastTaskId = runningTask->id;
+		    updateElement(runningTask, readyList);
+        } else {
+            runningTask->computeCount++;
+            if (runningTask->computeCount == runningTask->compute){ // END OF TASK
+                taskEnded = true;
+                struct task * myTask = getTaskById(runningTask->id);
+                myTask->runTime++;
+                list_remove(readyList,0);
+            }
+        }
+        // preempção
+        if (runningTask->id != lastTaskId && lastTaskEnded == false) {
+            lastTaskId = runningTask->id;
+            lastTaskEnded = taskEnded;
+            context_switch(runningTask->id);
+        } else if(runningTask->id != lastTaskId && lastTaskEnded == true){
+            lastTaskId = runningTask->id;
+            lastTaskEnded = taskEnded;  
+            context_switch(runningTask->id);
+        } else{
+            lastTaskEnded = taskEnded;  
+        }
+    } else {
+        lastTaskId = 3;
         lastTaskEnded = taskEnded;
-        context_switch(runningTask->id);
-    } else if(runningTask->id != lastTaskId && lastTaskEnded == true){
-        lastTaskId = runningTask->id;
-        lastTaskEnded = taskEnded;  
-        context_switch(runningTask->id);
-    } else{
-        lastTaskEnded = taskEnded;  
-    }
+        context_switch(3);
+    } 
 	// Actually run the task
 }
 
@@ -303,20 +327,31 @@ int mdc(int a, int b){
     return a;
 }
 
-int mmc(int n, int numberList[]){
-    int mmcResult = numberList[0];
-    int i;
-    for(i = 1; i < n; i++){
-        mmcResult = mmcResult * (numberList[i] / mdc(mmcResult, numberList[i]));
-    }
-    return mmcResult;
+int mmc(int a, int b){
+    return a * (b / mdc(a, b));
+}
+void timer1ctc_handler(void)
+{   
+    interrupt = 1;
 }
 
+void enableTimer(){
+    TIMER1PRE = TIMERPRE_DIV64;
+
+	/* unlock TIMER1 for reset */
+	TIMER1 = TIMERSET;
+	TIMER1 = 0;
+
+	/* TIMER1 frequency: (50000 * 64) = 3200000 cycles */
+	TIMER1CTC = 50000;
+
+	/* enable interrupt mask for TIMER1 CTC events */
+	TIMERMASK |= MASK_TIMER1CTC;
+}
 
 int main(void)
 {   
     int32_t i =0;
-
     /* intialize heap because of list use*/
     heap_init((uint32_t *)&mem_pool, sizeof(mem_pool));
 
@@ -327,22 +362,22 @@ int main(void)
     struct task task0, task1, task2;
     task0.id = 0;
     task0.compute  = 1;
-    task0.period = 5;
-    task0.deadline = 5;
+    task0.period = 4;
+    task0.deadline = 4;
     task0.computeCount = 0;
     task0.status = READY;
 
     task1.id = 1;
-    task1.compute  = 3;
-    task1.period = 15;
-    task1.deadline = 15;
+    task1.compute  = 2;
+    task1.period = 5;
+    task1.deadline = 5;
     task1.computeCount = 0;
     task1.status = READY;
 
     task2.id = 2;
-    task2.compute  = 2;
-    task2.period = 10;
-    task2.deadline = 10;
+    task2.compute  = 6;
+    task2.period = 7;
+    task2.deadline = 7;
     task2.computeCount = 0;
     task2.status = READY;
     
@@ -354,10 +389,11 @@ int main(void)
     printList(taskList);
     
     /*Calculate total execution time*/
-    int vector[N_TASKS-1] = {task0.period, task1.period, task2.period};
-    totalTime = 15;
+    totalTime = mmc(mmc(task0.period, task1.period), task2.period);
     printf("Total time: %d", totalTime);
-    task0_func();
+    enableTimer();
+    if (!setjmp(end))
+        task0_func();
     //TODO add support for idle task
 	return 0;
 }
