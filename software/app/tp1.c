@@ -10,7 +10,7 @@
 #define RUNNING 1
 #define BLOCKED 2
 
-char mem_pool[8192];
+char mem_pool[16384];
 
 typedef uint32_t jmp_buf[20];
 int32_t setjmp(jmp_buf env);
@@ -22,6 +22,7 @@ static int cur;
 
 struct list *taskList; // List contains all the tasks 
 struct list *readyList; // List contains only available tasks at the current time
+struct list *taskPrintList;
 
 int interrupt = 0;
 int time = 0;
@@ -32,8 +33,6 @@ bool lastTaskEnded = true;
 
 //TODO printar a lista bonitinha
 //TODO setar os status das tasks
-//TODO tentar fazer maquina de estado, nao precisa pq ta funcionando, tu que sabe
-// struct list *taskPrintList;
 
 /***** Struct definition****/
 struct task {
@@ -58,17 +57,18 @@ void printList (struct list *list){
     printf("\n");
 }
 
-struct task * getTaskById(int id){
+struct task * getTaskById(int id, struct list *givenList){
     int i;
     struct task * aux;
     for(i=0; i<N_TASKS-1;i++){
-        aux = list_get(taskList,i);
+        aux = list_get(givenList,i);
         if(aux->id == id){
             return aux;
         }
     }
     return NULL;
 }
+
 void updateElement(struct task *newValue, struct list *tList){
     int i;
     struct task *auxT;
@@ -80,10 +80,17 @@ void updateElement(struct task *newValue, struct list *tList){
     }
 }
 
+void printTaskList(){
+    int i;
+    for(i=0; i < list_count(taskPrintList)-1;i++){
+        int *aux = list_get(taskPrintList,i);
+        printf("%c", aux);
+    }
+}
 
 void context_switch(int taskId){
     while(interrupt == 0){
-        printf(" ");
+        printf("");
     }
 	if (!setjmp(jmp[cur])) {
         cur = taskId;
@@ -91,12 +98,6 @@ void context_switch(int taskId){
         longjmp(jmp[taskId], 1);
 	}
 }
-// if (id != lastId and taskEnded = false) 
-// 	if TRUE, the previous cycle task was blocked. wait timer to continue with interruption
-// 	while(!timer_flag)
-// 		do something
-// 	longjmp(jmp[id], 1); 
-// return; // only will reach here when no interruption is needed
 
 
 void bubble_sort_ready(void)
@@ -130,7 +131,6 @@ void bubble_sort_ready(void)
             {   
                 list_set(readyList,task2,j);
 				list_set(readyList,task1,j+1);
-                //printList(readyList);
             }
 			// If both tasks are over-deadline, Who has the lower ID?
             if (( task1->n_computeCount < 0 && task2->n_computeCount < 0 ) && (task1->id  >  task2->id) ) 
@@ -162,22 +162,20 @@ void addNewTask(){ // Test if new tasks are ready to be included in readyList
 					struct task *auxTask = list_get(readyList,j);
 					if (auxTask->id == newTask->id) // Test if newTask is already in readyList, if TRUE, task is over-deadline
 					{
-						//if (debugmode == 1)
-						printf("New Task: %d(%d,%d) Already in list \n", newTask->id, newTask->compute, newTask->deadline);
+						printf("\nNew Task: %c(%d,%d) Already in list \n", (newTask->id+65), newTask->compute, newTask->deadline);
 						
-						// auxTask->deadline += time;
 						auxTask->n_computeCount = (auxTask->compute - auxTask->computeCount) * -1; //tratar caso n compute time seja diferente de 0
 						auxTask->computeCount = 0;
+                        auxTask->status = READY;
 						updateElement(auxTask,readyList);
 						task_added = true;
 					}
 				}
 				if ( task_added == false ) // newTask isn't on readyList, so just add to it.
 				{
-					//if (debugmode == 1)
-					//	printf("New Task: %c(%d,%d,%d)\n",tasks[i]->id+64, tasks[i]->c,tasks[i]->p,tasks[i]->d);
-                    printf("New Task: %d(%d,%d)\n", newTask->id, newTask->compute, newTask->deadline);
+                    printf("\nNew Task: %c(%d,%d)\n", (newTask->id+65), newTask->compute, newTask->deadline);
 					newTask->computeCount = 0;
+                    newTask->status = READY;
 					list_append(readyList,newTask);
 				}
 
@@ -186,55 +184,53 @@ void addNewTask(){ // Test if new tasks are ready to be included in readyList
     }
 }
 
-// void printTaskList(){
-//     int i;
-//     for(i=0; i < list_count(taskPrintList)-1;i++){
-//         int *aux = list_get(taskPrintList,i);
-//         printf("%c ", &aux);
-//     }
-// }
-
 void advanceTime() { 
 	bool taskEnded = false;
-	// Check if new task are ready
+	int i;
+    struct task *taskModel;
+    // Check if new task are ready
 	addNewTask();
-    // printf("+++++++++++++++++++++++++++++++++++++");
-    // printList(taskList);
-    // printf("+++++++++++++++++++++++++++++++++++++");
-    // printList(readyList);
 
 	//Sort readyList
 	bubble_sort_ready();
-    printf("----------------------------------\n");
-    // printList(readyList);
-    printf("\n%d\n", time);
+    for(i=1; i<N_TASKS-1;i++){
+        taskModel = list_get(readyList, i);
+        taskModel->status = READY;
+        list_set(readyList, taskModel, i);
+    }
+
 	time++;
-    printList(readyList);
     
     if(time == totalTime+1){
-        // printTaskList();
+        //printTaskList();
         longjmp(end,1);
     }
 	struct task *runningTask = list_get(readyList,0);
     if(runningTask != NULL){
+        runningTask->status =  RUNNING;
         if (runningTask->n_computeCount != 0){
-		runningTask->n_computeCount++;
-		
-		if(runningTask->n_computeCount == 0){  // this code needs to be revised -> aA is an interruption?
-			taskEnded = true; 
-		}
+		    runningTask->n_computeCount++;
+            list_append(taskPrintList, (int *)(runningTask->id + 97));
+            if(runningTask->n_computeCount == 0){  // this code needs to be revised -> aA is an interruption?
+                taskEnded = true; 
+            }
 		    updateElement(runningTask, readyList);
         } else {
             runningTask->computeCount++;
+            list_append(taskPrintList, (int *)(runningTask->id + 65));
             if (runningTask->computeCount == runningTask->compute){ // END OF TASK
                 taskEnded = true;
-                struct task * myTask = getTaskById(runningTask->id);
+                struct task * myTask = getTaskById(runningTask->id, readyList);
                 myTask->runTime++;
                 list_remove(readyList,0);
             }
         }
         // preempção
         if (runningTask->id != lastTaskId && lastTaskEnded == false) {
+            if(lastTaskId != 3){
+                struct task *auxTask = getTaskById(lastTaskId, readyList);
+                auxTask->status = BLOCKED;
+            }
             lastTaskId = runningTask->id;
             lastTaskEnded = taskEnded;
             context_switch(runningTask->id);
@@ -248,6 +244,7 @@ void advanceTime() {
     } else {
         lastTaskId = 3;
         lastTaskEnded = taskEnded;
+        list_append(taskPrintList, (int *)46);
         context_switch(3);
     } 
 	// Actually run the task
@@ -264,7 +261,7 @@ void idle_task()
 
 	while (1) {			/* thread body */
 		
-		printf("idle task...\n");
+		printf("\nTime: %d --> Idle task\n", time);
 		delay_ms(100);
 		advanceTime();
 	}
@@ -280,7 +277,7 @@ void task2_func()
 
 	while (1) {			/* thread body */
 		
-		printf("task 2...\n");
+		printf("\nTime: %d --> task C\n", time);
 		delay_ms(100);
 		advanceTime();
 	}
@@ -296,7 +293,7 @@ void task1_func()
 
 	while (1) {			/* thread body */
 		
-		printf("task 1...\n");
+		printf("\nTime: %d --> task B\n", time);
 		delay_ms(100);
 		advanceTime();
 	}
@@ -312,7 +309,7 @@ void task0_func()
 
 	while (1) {			/* thread body */
 		
-		printf("task 0...\n");
+		printf("\nTime: %d --> task A\n", time);
 		delay_ms(100);
 		advanceTime();
 	}
@@ -343,7 +340,7 @@ void enableTimer(){
 	TIMER1 = 0;
 
 	/* TIMER1 frequency: (50000 * 64) = 3200000 cycles */
-	TIMER1CTC = 50000;
+	TIMER1CTC = 15625;
 
 	/* enable interrupt mask for TIMER1 CTC events */
 	TIMERMASK |= MASK_TIMER1CTC;
@@ -357,6 +354,7 @@ int main(void)
 
     taskList = list_init();
     readyList = list_init();
+    taskPrintList = list_init();
 
 
     struct task task0, task1, task2;
@@ -394,6 +392,7 @@ int main(void)
     enableTimer();
     if (!setjmp(end))
         task0_func();
-    //TODO add support for idle task
+    printf("Simulation result: ");
+    printTaskList();
 	return 0;
 }
