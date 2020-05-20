@@ -1,5 +1,5 @@
 /*
- * Rate Monotonic Scheduler
+ * Earliest Deadline First
  */
 
 #include <hf-risc.h>
@@ -19,9 +19,10 @@ void longjmp(jmp_buf env, int32_t val);
 /***** Global Variables *****/
 static jmp_buf jmp[N_TASKS];
 static int cur;
-struct list *queue;
+struct list *taskList;
 int interr = 0;
 int time = 0;
+int totalTime;
 
 /***** Struct definition****/
 struct task {
@@ -31,6 +32,7 @@ struct task {
     int deadline;
     int computTimeCount;
     int status;
+    int runTime = 0;
 };
 
 void context_switch(int taskId)
@@ -41,27 +43,45 @@ void context_switch(int taskId)
 	}
 }
 
-struct task *getNextTask(){
-    struct task *cTask = list_get(queue, 0);
-    int i, auxIndex = 0;
-    int menorP = cTask->period;
-
-    for(i=1; i < (N_TASKS-1); i++){
-        cTask = list_get(queue, i);
-        if(cTask->period < menorP){
-            menorP = cTask->period;
-            auxIndex = i;
+struct task *getNearestDeadline(struct task *task){
+    struct task *resultT;
+    int j;
+    for(j=1; j < N_TASKS-1; j++){
+        //rever condição se dsitancia for igual
+        if((cTask->deadline - time) > (list_get(taskList, j+1)->deadline - time)){
+            resultT = cTask;
+            break;
+        } else {
+            resultT = list_get(taskList, j+1);
         }
     }
-    struct task *returnTask = list_get(queue, auxIndex);
-    return returnTask;
+    return resultT;        
+}
+
+struct task *getNextTask(){
+    struct task *cTask, *resultT;
+    int i, auxIndex = 0;
+
+    for(i=0; i < (N_TASKS-1); i++){
+        cTask = list_get(taskList, i);
+        if((cTask->runTime > 0)){
+            if((cTask->deadline - (time - cTask->period * cTask->runTime))  < ((time - cTask->period * cTask->runTime))){
+                return cTask;
+            } else {
+                resultT = getNearestDeadline(cTask);
+            }
+        } else {
+            if((cTask->deadline - time) < time) return cTask;
+        }
+        resultT = getNearestDeadline(cTask);
+    }
 }
 
 struct task *getRunningTask(){
     struct task *rTask;
     int i;
     for(i=0; i< (N_TASKS-1); i++){
-        rTask = list_get(queue, i);
+        rTask = list_get(taskList, i);
         if(rTask->status == RUNNING) return rTask;
     }
     return NULL;
@@ -71,14 +91,13 @@ void updateElement(struct task *newValue){
     int i;
     struct task *auxT;
     for(i=0; i< N_TASKS -1; i++){
-        auxT = list_get(queue, i);
+        auxT = list_get(taskList, i);
         if(auxT->id == newValue->id){
-            list_set(queue, newValue, i);
+            list_set(taskList, newValue, i);
         }
     }
 }
 
-// TODO Como inicializar o running
 void scheduler(){
     struct task *runningT = getRunningTask();
     if(runningT == NULL){ // inicaliza a primeira task
@@ -97,6 +116,8 @@ void scheduler(){
             }
         } else {
             //task acabou de executar
+            runningT->runTime++;
+            updateElement(runningT);
             struct task *nextT = getNextTask();
             if(nextT != NULL){
                 nextT->status = RUNNING;
@@ -168,6 +189,15 @@ void task0_func()
 	}
 }
 
+int mmc(int n, int numberList[]){
+    int mmcResul = numberList[0];
+    int i;
+    for(i = 1; i < n; i++){
+        mmcResult = mmcResult * (numberList[i] / mdc(mmcResult, numberList[i]));
+    }
+    return mmcResult;
+}
+
 int main(void)
 {   
     int32_t i =0;
@@ -175,13 +205,13 @@ int main(void)
     /* intialize heap because of list use*/
     heap_init((uint32_t *)&mem_pool, sizeof(mem_pool));
 
-    queue = list_init();
+    taskList = list_init();
     /* reserve space for the incoming tasks */
     while(i < N_TASKS){
-        list_append(queue, NULL);
+        list_append(taskList, NULL);
         i++;
     }
-    printf("Number of nodes %d\n", list_count(queue));
+    printf("Number of nodes %d\n", list_count(taskList));
 	
     struct task task0, task1, task2;
     task0.id = 0;
@@ -205,10 +235,12 @@ int main(void)
     task2.computTimeCount = 0;
     task2.status = READY;
 
-    list_append(queue, &task0);
-    list_append(queue, &task1);
-    list_append(queue, &task2);
+    list_append(taskList, &task0);
+    list_append(taskList, &task1);
+    list_append(taskList, &task2);
 
+    /*Calculate total execution time*/
+    totalTime = mmc(3, {task0.period, task1.period, task2.period});
     task0_func();
 
 	return 0;
