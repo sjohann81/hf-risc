@@ -39,6 +39,16 @@ struct task {
 
 };
 
+void printList (struct list *list){
+	int i;
+	struct task *printTask;
+    printf("id |  c  |  p  |  d  | count | nCount | status\n");
+	for (i = 0 ; i< list_count(list) ; i++){
+		printTask = list_get(list,i);
+		printf(" %d |  %d  |  %d  |  %d  | %d | %d | %d\n",printTask->id, printTask->compute,printTask->period,printTask->deadline,printTask->computeCount,printTask->n_computeCount,printTask->status);
+	}
+    printf("\n");
+}
 
 void updateElement(struct task *newValue, struct list *taskList){
     int i;
@@ -52,15 +62,21 @@ void updateElement(struct task *newValue, struct list *taskList){
 }
 
 
-void context_switch(int id,int lastId, bool taskEnded)
+void context_switch(int taskId)
 {
-	//if (id != lastId and taskEnded = false) 
-		//if TRUE, the previous cycle task was blocked. wait timer to continue with interruption
-		// while(!timer_flag)
-			//do something
-		//longjmp(jmp[id], 1); 
-	return; // only will reach here when no interruption is needed
+    printf("context switch, %d\n", taskId);
+	if (!setjmp(jmp[cur])) {
+        cur = taskId;
+        longjmp(jmp[taskId], 1);
+	}
 }
+// if (id != lastId and taskEnded = false) 
+// 	if TRUE, the previous cycle task was blocked. wait timer to continue with interruption
+// 	while(!timer_flag)
+// 		do something
+// 	longjmp(jmp[id], 1); 
+// return; // only will reach here when no interruption is needed
+
 
 void bubble_sort_ready(void)
 {
@@ -105,12 +121,15 @@ void bubble_sort_ready(void)
 
 void addNewTask(){ // Test if new tasks are ready to be included in readyList
 	bool task_added = false;
-	for (int i = 0 ; i<N_TASKS  ; i++ )  
+	for (int i = 0 ; i<N_TASKS-1  ; i++ )  
 	{
 		struct task *newTask =  list_get(taskList,i);
 
+        if(time == 0){
+            list_append(readyList, newTask);
+        }
 		if (time >= newTask->period) // Test to protect system from value/0
-		{
+		{   
 			if ((time % newTask->period) == 0) // if TRUE, newTask needs to be added to readyList
 			{
 				for(int j=0; j<list_count(taskList); j++) 
@@ -122,7 +141,7 @@ void addNewTask(){ // Test if new tasks are ready to be included in readyList
 						//	printf("New Task: %c(%d,%d,%d) Already in list \n",tasks[i]->id+64, tasks[i]->c,tasks[i]->p,tasks[i]->d);
 						
 						auxTask->deadline += time;
-						auxTask->n_computeCount = (auxTask->compute - auxTask->computeCount) * -1; 
+						auxTask->n_computeCount = (auxTask->compute - auxTask->computeCount) * -1; //tratar caso n compute time seja diferente de 0
 						auxTask->computeCount = 0;
 						updateElement(auxTask,readyList);
 						task_added = true;
@@ -146,9 +165,14 @@ void addNewTask(){ // Test if new tasks are ready to be included in readyList
 
 void advanceTime() {
 	volatile int lastTaskId;
+    volatile bool lastTaskEnded = false; 
 	bool taskEnded = false;
 	// Check if new task are ready
 	addNewTask();
+    // printf("+++++++++++++++++++++++++++++++++++++");
+    // printList(taskList);
+    // printf("+++++++++++++++++++++++++++++++++++++");
+    // printList(readyList);
 
 	//Sort readyList
 	bubble_sort_ready();
@@ -156,6 +180,7 @@ void advanceTime() {
 	// "run" the task 
 	time++;
 	struct task *runningTask = list_get(readyList,0);
+    printf("%d\n", runningTask->id);
 	if (runningTask->n_computeCount != 0 ){
 		runningTask->n_computeCount++;
 		
@@ -170,12 +195,17 @@ void advanceTime() {
 			list_remove(readyList,0);
 		}
 	}
-	lastTaskId = runningTask->id;
-
+    // preempção
+    if (runningTask->id != lastTaskId && lastTaskEnded == false) {
+        lastTaskId = runningTask->id;
+        lastTaskEnded = taskEnded;
+        context_switch(runningTask->id);
+    } else if(runningTask->id != lastTaskId && lastTaskEnded == true){
+        lastTaskId = runningTask->id;
+        lastTaskEnded = taskEnded;  
+        context_switch(runningTask->id);
+    }
 	// Actually run the task
-	context_switch(runningTask->id,lastTaskId,taskEnded);
-	return;
-
 }
 
 void idle_task()
@@ -184,8 +214,8 @@ void idle_task()
 	cushion[0] = '@';		/* don't optimize my cushion away */
         cur = N_TASKS - 1;		/* the first thread to context switch is this one */
 		
-	advanceTime(); //  This is needed to decide who will be the first ever task to run. this line should be only run once
 	setjmp(jmp[N_TASKS - 1]);
+    advanceTime(); //  This is needed to decide who will be the first ever task to run. this line should be only run once
 
 	while (1) {			/* thread body */
 		
@@ -272,13 +302,7 @@ int main(void)
     taskList = list_init();
     readyList = list_init();
 
-    /* reserve space for the incoming tasks */
-    while(i < N_TASKS){
-        list_append(taskList, NULL);
-        i++;
-    }
-    printf("Number of nodes %d\n", list_count(taskList));
-	
+
     struct task task0, task1, task2;
     task0.id = 0;
     task0.compute  = 1;
@@ -300,11 +324,14 @@ int main(void)
     task2.deadline = 10;
     task2.computeCount = 0;
     task2.status = READY;
-
+    
+    
     list_append(taskList, &task0);
     list_append(taskList, &task1);
     list_append(taskList, &task2);
 
+    printList(taskList);
+    
     /*Calculate total execution time*/
     int vector[N_TASKS-1] = {task0.period, task1.period, task2.period};
     totalTime = mmc(3,vector);
