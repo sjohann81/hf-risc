@@ -16,8 +16,8 @@ typedef long long			int64_t;
 typedef unsigned long			size_t;
 
 /* disable interrupts, return previous int status / enable interrupts */
-#define _di				interrupt_set(0)
-#define _ei(S)				interrupt_set(S)
+#define _di()				_interrupt_set(0)
+#define _ei(S)				_interrupt_set(S)
 
 /* memory address map */
 #define ROM_BASE			0x00000000
