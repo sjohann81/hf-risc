@@ -7,7 +7,7 @@
 #define OUTPUT_NEURONS		4
 #define ETA			0.30
 #define ALPHA			0.90
-#define EPSILON			0.005
+#define EPSILON			0.05
 #define INITIAL_WEIGHT_MAX	0.50
 #define EPOCHS_MAX		100000
 #define STATUS_CYCLES		1000
