@@ -12,7 +12,7 @@ LDFLAGS_STRIP = --gc-sections
 LD_SCRIPT = hf-risc.ld
 
 CFLAGS_NO_HW_MULDIV = -mnohwmult -mnohwdiv -ffixed-lo -ffixed-hi
-GCC_mips = mips-elf-gcc -Wall -Os -c -mips2 -mno-branch-likely -mpatfree -mfix-r4000 -mno-check-zero-division -msoft-float -ffreestanding -nostdlib -fomit-frame-pointer -G 0 -I ./include -DCPU_SPEED=${F_CLK} -DBIG_ENDIAN $(CFLAGS_NO_HW_MULDIV) $(CFLAGS_STRIP) -DDEBUG_PORT
+GCC_mips = mips-elf-gcc -Wall -Os -c -mips2 -mno-branch-likely -mpatfree -mfix-r4000 -mno-check-zero-division -msoft-float -ffreestanding -nostdlib -fomit-frame-pointer -G 0 -I ./include -DCPU_SPEED=${F_CLK} -DBIG_ENDIAN $(CFLAGS_NO_HW_MULDIV) $(CFLAGS_STRIP) #-DDEBUG_PORT
 AS_mips = mips-elf-as -mips1 -msoft-float
 LD_mips = mips-elf-ld -mips1 $(LDFLAGS_STRIP)
 DUMP_mips = mips-elf-objdump
@@ -107,6 +107,10 @@ eeprom_sim:
 	echo "b16b00b5" > eeprom.txt
 	printf "%08x\n" `stat -L -c %s code.txt` >> eeprom.txt
 	cat code.txt >> eeprom.txt
+
+animal: crt
+	$(GCC_$(ARCH)) -o animal.o app/animal.c
+	@$(MAKE) --no-print-directory link
 
 ann: crt
 	$(GCC_$(ARCH)) -o ann.o app/ann.c
@@ -236,6 +240,10 @@ tasker2: crt
 
 tasker3: crt
 	$(GCC_$(ARCH)) -o tasker.o app/tasker3.c
+	@$(MAKE) --no-print-directory link
+	
+tasker4: crt
+	$(GCC_$(ARCH)) -o tasker.o app/tasker4.c
 	@$(MAKE) --no-print-directory link
 
 test64: crt
