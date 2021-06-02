@@ -120,6 +120,10 @@ ann2: crt
 	$(GCC_$(ARCH)) -o ann2.o app/ann2.c
 	@$(MAKE) --no-print-directory link
 
+ann3: crt
+	$(GCC_$(ARCH)) -o ann3.o app/ann3.c
+	@$(MAKE) --no-print-directory link
+
 base64: crt
 	$(GCC_$(ARCH)) -o base64.o app/base64.c
 	@$(MAKE) --no-print-directory link
