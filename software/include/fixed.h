@@ -26,7 +26,8 @@ typedef int32_t fixed_t;
 #define FIX_FMASK		(((fixed_t)1 << FIX_FBITS) - 1)
 #define FIX_ONE			((fixed_t)((fixed_t)1 << FIX_FBITS))
 
-#define fix_val(V)		((fixed_t)((V) * FIX_ONE + ((V) >= 0 ? 0.5 : -0.5)))
+//#define fix_val(V)		((fixed_t)((V) * FIX_ONE + ((V) >= 0 ? 0.5f : -0.5f)))
+#define fix_val(V)		((fixed_t)((V) * FIX_ONE))
 #define fix_int(F)		((F) >> FIX_FBITS)
 #define fix_frac(A)		((fixed_t)(A) & FIX_FMASK)
 #define fix_abs(A)		((A) < 0 ? -(A) : (A))
