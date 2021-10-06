@@ -17,10 +17,12 @@
 
 /* SPI interface - PORTA pin 7 (master input) */
 #define OUT		PAOUT
+#define DDR		PADDR
 #define SPI_MISO	MASK_P7
 
 void spi_setup(void){
 // setup IO pins ...
+	DDR |= SPI_CS | SPI_SCK | SPI_MOSI;
 	OUT |= SPI_CS;
 
 #if SPI_MODE == 0 || SPI_MODE == 1
