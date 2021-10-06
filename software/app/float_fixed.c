@@ -88,9 +88,9 @@ int main()
 	volatile float maxfl = 1000.0;
 	volatile float stepfl = 0.1;
 	float vfl;
-	fixed_t minfx = fix_val(minfl);
-	fixed_t maxfx = fix_val(maxfl);
-	fixed_t stepfx = fix_val(stepfl);
+	volatile fixed_t minfx = fix_val(minfl);
+	volatile fixed_t maxfx = fix_val(maxfl);
+	volatile fixed_t stepfx = fix_val(stepfl);
 	fixed_t vfx;
 	uint32_t cycles;
 	int8_t buf[20];
