@@ -101,19 +101,65 @@ void xtea_cbc_decrypt(uint8_t *out, uint8_t *in, uint32_t len, const uint32_t ke
 	}
 }
 
+/* XTEA stream cipher, CTR mode
+ * CTR mode based on https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
+ */
+#define BLOCKLEN	8		// in bytes
+
+void xtea_ctr_crypt(uint8_t *out, uint8_t *in, uint32_t len, const uint32_t key[4], const uint32_t nonce[2])
+{
+	uint32_t i, k, rem;
+	uint32_t data[2];
+	uint8_t *data2 = (uint8_t *)&data;
+	uint64_t counter = 0;
+	uint32_t *in_p = (uint32_t *)in;
+	uint32_t *out_p = (uint32_t *)out;
+	
+	rem = len % BLOCKLEN;
+	for (i = 0; i < len; i += BLOCKLEN) {
+		data[0] = nonce[0] ^ (counter & 0xffffffff);
+		data[1] = nonce[1] ^ (counter >> 32);
+		xtea_encrypt(data, key, 32);
+		out_p[0] = in_p[0] ^ data[0];
+		out_p[1] = in_p[1] ^ data[1];
+		in_p += 2;
+		out_p += 2;
+		counter++;
+	}
+	
+	in = (uint8_t *)in_p;
+	out = (uint8_t *)out_p;
+	
+	if (rem) {
+		data[0] = nonce[0] ^ (counter & 0xffffffff);
+		data[1] = nonce[1] ^ (counter >> 32);		
+		xtea_encrypt(data, key, 32);
+		for (k = 0; k < rem; k++)
+			out[k] = in[k] ^ data2[k];
+	}
+}
+
 int main(void){
 	uint8_t message[] = "the quick brown fox jumps over the lazy dog";
 	uint32_t xtea_key[4] = {0xf0e1d2c3, 0xb4a59687, 0x78695a4b, 0x3c2d1e0f};
 	uint32_t iv[2] = {0x11223344, 0x55667788};
 	
 	printf("\nmessage:");
-	hexdump(message, sizeof(message));
+	hexdump((char *)message, sizeof(message));
+	
 	xtea_cbc_encrypt(message, message, sizeof(message), xtea_key, iv);
-	printf("\nencoded message:");
-	hexdump(message, sizeof(message));
+	printf("\nencoded message (CBC mode):");
+	hexdump((char *)message, sizeof(message));
 	xtea_cbc_decrypt(message, message, sizeof(message), xtea_key, iv);
-	printf("\ndecoded message:");
-	hexdump(message, sizeof(message));
+	printf("\ndecoded message (CBC mode):");
+	hexdump((char *)message, sizeof(message));
+
+	xtea_ctr_crypt(message, message, sizeof(message), xtea_key, iv);
+	printf("\nencoded message (CTR mode):");
+	hexdump((char *)message, sizeof(message));
+	xtea_ctr_crypt(message, message, sizeof(message), xtea_key, iv);
+	printf("\ndecoded message (CTR mode):");
+	hexdump((char *)message, sizeof(message));
 	
 	return 0;
 }
