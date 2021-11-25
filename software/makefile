@@ -283,6 +283,10 @@ xtea2: crt
 	$(GCC_$(ARCH)) -o xtea2.o app/xtea2.c
 	@$(MAKE) --no-print-directory link
 
+xtea3: crt
+	$(GCC_$(ARCH)) -o xtea3.o app/xtea3.c
+	@$(MAKE) --no-print-directory link
+
 xtea_hw: crt
 	$(GCC_$(ARCH)) -o xtea_hw.o app/xtea_hw.c
 	@$(MAKE) --no-print-directory link
