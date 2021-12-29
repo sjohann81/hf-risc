@@ -252,7 +252,7 @@ float ceil(float d){
 // square root (newton's method of sucessive aproximations)
 float sqrt(float arg){
 	float x, temp;
-	int32_t exp;
+	int32_t exp = 0;
 	int32_t i;
 
 	if(arg <= 0.0f){
@@ -326,7 +326,7 @@ float log(float arg){
 	static float q2	= -0.891110902798312337e1f;
 
 	float x,z, zsq, temp;
-	int32_t exp;
+	int32_t exp = 0;
 
 	if(arg <= 0.0f){
 		return(-HUGE);
