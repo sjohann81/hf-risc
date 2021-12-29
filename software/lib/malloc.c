@@ -1,5 +1,8 @@
 #include <hf-risc.h>
 
+static struct mem_block_s *first_free;
+static struct mem_block_s *last_free;
+
 void free(void *ptr)
 {
 	struct mem_block_s *p;
