@@ -323,11 +323,11 @@ void cycle(state *s){
 				case 0x4: r[rd] = r[rs1] ^ (int32_t)imm_i; break;						/* XORI */
 				case 0x6: r[rd] = r[rs1] | (int32_t)imm_i; break;						/* ORI */
 				case 0x7: r[rd] = r[rs1] & (int32_t)imm_i; break;						/* ANDI */
-				case 0x1: r[rd] = u[rs1] << (rs2 & 0x3f); break;						/* SLLI */
+				case 0x1: r[rd] = u[rs1] << (imm_i & 0x3f); break;						/* SLLI */
 				case 0x5:
 					switch (funct7){
-						case 0x0: r[rd] = u[rs1] >> (rs2 & 0x3f); break;				/* SRLI */
-						case 0x20: r[rd] = r[rs1] >> (rs2 & 0x3f); break;				/* SRAI */
+						case 0x0: r[rd] = u[rs1] >> (imm_i & 0x3f); break;				/* SRLI */
+						case 0x20: r[rd] = r[rs1] >> (imm_i & 0x3f); break;				/* SRAI */
 						default: goto fail;
 					}
 					break;
