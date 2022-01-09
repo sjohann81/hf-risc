@@ -46,17 +46,15 @@ void boot_loop(void)
 	ptr = (int8_t *)RAM_BASE;
 	fptr = (void (*)(void *))(RAM_BASE);
 
-	printf("HF-RISC SoC bootloader - %s\n", __DATE__);
+	printf("\nHF-RISC SoC bootloader - %s\n", __DATE__);
 
-	for(;;){
+	for (;;) {
 		printf("\n[s, e] select SPM / ext SRAM");
 		printf("\n[u, U] upload binary");
 		printf("\n[b, B] boot");
 		printf("\n[P   ] program ext EEPROM");
-		printf("\n[d   ] hexdump");
-		printf("\n[f   ] fill");
-		printf("\n[r   ] read word");
-		printf("\n[w   ] write word\n");
+		printf("\n[d, f] hexdump / fill");
+		printf("\n[r, w] read word / write word\n");
 
 		ch = getchar();
 		getchar();
@@ -90,7 +88,7 @@ void boot_loop(void)
 					}
 				}
 				if (j >= (CPU_SPEED / 100)) break;
-				if ((k & 0x3ff) == 0) putchar('#');
+				if ((k & 0x3ff) == 0) putchar(':');
 			}
 			k++;
 			printf("--> %d bytes", k);
