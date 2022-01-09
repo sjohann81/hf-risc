@@ -70,6 +70,7 @@ _isr:
 	jal	ra, irq_handler		# jump to C handler
 
 	lw	ra, 0(sp)
+	lw	t0, 4(sp)
 	lw	t1, 8(sp)
 	lw	t2, 12(sp)
 	lw	a0, 16(sp)
@@ -78,12 +79,10 @@ _isr:
 	lw	a3, 28(sp)
 	lw	a4, 32(sp)
 
-	ori	t0, zero, 0x1
 	li	a5, 0xf0000030
+	ori	a5, a5, 0x1
 	addi	sp, sp, 40
-	sw	t0, 0(a5)
-
-	lw	t0, -36(sp)		# 4(sp)
+	sb	a5, 0(a5)
 	lw	a5, -4(sp)		# 36(sp)
 
 	jalr	zero, a5		# context restored, continue
