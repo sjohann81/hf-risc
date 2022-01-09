@@ -4,7 +4,7 @@ use ieee.std_logic_unsigned.all;
 
 entity hfrisc_soc is
 	generic(
-		address_width: integer := 14;
+		address_width: integer := 15;
 		memory_file : string := "code.txt"
 	);
 	port (	clk_in:		in std_logic;
