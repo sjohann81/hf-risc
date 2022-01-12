@@ -434,6 +434,7 @@ int32_t ftoa(float f, int8_t *outbuf, int32_t precision){
 	return 0;
 }
 
+/*
 int8_t *itoa(int32_t i, int8_t *s, int32_t base){
 	int8_t *ptr = s, *ptr1 = s, tmp_char;
 	int32_t tmp_value;
@@ -454,6 +455,45 @@ int8_t *itoa(int32_t i, int8_t *s, int32_t base){
 		tmp_char = *ptr;
 		*ptr--= *ptr1;
 		*ptr1++ = tmp_char;
+	}
+	return s;
+}
+*/
+int8_t *itoa(int32_t i, int8_t *s, int32_t base)
+{
+	int8_t c;
+	int8_t *p = s;
+	int8_t *q = s;
+	uint32_t h;
+
+	if (base == 16) {
+		h = (uint32_t)i;
+		do {
+			*q++ = '0' + (h % base);
+		} while (h /= base);
+		if ((i >= 0) && (i < 16)) *q++ = '0';
+		for (*q = 0; p <= --q; p++){
+			(*p > '9') ? (c = *p + 39) : (c = *p);
+			(*q > '9') ? (*p = *q + 39) : (*p = *q);
+			*q = c;
+		}
+	} else {
+		if (i >= 0) {
+			do {
+				*q++ = '0' + (i % base);
+			} while (i /= base);
+		} else {
+			*q++ = '-';
+			p++;
+			do {
+				*q++ = '0' - (i % base);
+			} while (i /= base);
+		}
+		for (*q = 0; p <= --q; p++) {
+			c = *p;
+			*p = *q;
+			*q = c;
+		}
 	}
 	return s;
 }
