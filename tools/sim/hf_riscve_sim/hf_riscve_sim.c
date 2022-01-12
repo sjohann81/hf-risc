@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <SDL2/SDL.h>
 
 #define MEM_SIZE			0x00100000
 #define SRAM_BASE			0x40000000
@@ -51,6 +52,20 @@
 #define UART0				0xe1034000
 #define UART0_DIV			0xe1034010
 
+// display: RGB565 (16-bit per pixel)
+#define DISPLAY_RAM			0xe0400000	// 0xe0400000 - 0xe07fffff (4MB)
+#define DISPLAY_RAM_TOP			0xe0800000	// 0xe0400000 - 0xe07fffff (4MB)
+#define DISPLAY_STATUS			0xe0e00010	// bit: 31 - 4 (reserved), 3 - update (blit), 2 - deinitialize, 1 - initialize, 0 - configured
+#define DISPLAY_WIDTH			0xe0e00020
+#define DISPLAY_HEIGHT			0xe0e00030
+#define DISPLAY_SCALE			0xe0e00040
+
+#define DISPLAY_CONFIGURED		(1 << 0)
+#define DISPLAY_INITIALIZE		(1 << 1)
+#define DISPLAY_DEINITIALIZE		(1 << 2)
+#define DISPLAY_UPDATE			(1 << 3)
+
+
 #define ntohs(A) ( ((A)>>8) | (((A)&0xff)<<8) )
 #define htons(A) ntohs(A)
 #define ntohl(A) ( ((A)>>24) | (((A)&0xff0000)>>8) | (((A)&0xff00)<<8) | ((A)<<24) )
@@ -74,12 +89,82 @@ struct periph_s {
 	uint32_t timercause, timercause_inv, timermask;
 	uint32_t timer0, timer1, timer1_pre, timer1_ctc, timer1_ocr;
 	uint32_t uartcause, uartcause_inv, uartmask;
+	int8_t *display_mem;
+	uint32_t display_status;
+	uint16_t display_width, display_height, display_scale;
 };
 
 FILE *fptr;
 int32_t log_enabled = 0;
 
-void dumpregs(struct state_s *s){
+SDL_Window *screen;
+SDL_Event event;
+const uint8_t *inkeys;
+SDL_Renderer *renderer;
+SDL_Texture *texture;
+
+void display_status(struct periph_s *per)
+{
+	if (per->display_status & DISPLAY_CONFIGURED) {
+		if (per->display_status & DISPLAY_UPDATE) {
+			per->display_status &= ~DISPLAY_UPDATE;
+			
+			SDL_UpdateTexture(texture, NULL, per->display_mem, per->display_width * sizeof(uint16_t));
+			SDL_RenderCopy(renderer, texture, NULL, NULL);
+			SDL_RenderPresent(renderer);
+			
+			return;
+		}
+		
+		if (per->display_status & DISPLAY_DEINITIALIZE) {
+			if (per->display_mem)
+				free(per->display_mem);
+			per->display_status &= ~DISPLAY_DEINITIALIZE;
+			per->display_status &= ~DISPLAY_CONFIGURED;
+			
+			SDL_DestroyTexture(texture);
+			SDL_DestroyRenderer(renderer);
+			SDL_DestroyWindow(screen);
+		}
+	} else {
+		if (per->display_status & DISPLAY_INITIALIZE) {
+			if (per->display_width < 128 || per->display_height < 128)
+				return;
+			
+			SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengles");
+
+			if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
+				fprintf(stderr, "Unable to init SDL: %s\n", SDL_GetError());
+				exit(1);
+			}
+			
+			screen = SDL_CreateWindow("RGB565 display", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+				(int)((float)per->display_width * ((float)per->display_scale / 100.0)), (int)((float)per->display_height * ((float)per->display_scale / 100.0)), 0);
+
+			if (screen == NULL) {
+				fprintf(stderr, "Unable to set video: %s\n", SDL_GetError());
+				exit(1);
+			}
+
+			renderer = SDL_CreateRenderer(screen, -1, SDL_RENDERER_ACCELERATED);
+			texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING,
+				per->display_width, per->display_height);
+
+			SDL_SetRelativeMouseMode(SDL_TRUE);
+			
+			per->display_mem = (int8_t *)malloc(8 * 1024 * 1024);
+			if (!per->display_mem)
+				return;			
+
+			per->display_status &= ~DISPLAY_INITIALIZE;
+			per->display_status |= DISPLAY_CONFIGURED;
+		}
+	}
+}
+
+
+void dumpregs(struct state_s *s)
+{
 	int32_t i;
 
 	for (i = 0; i < 16; i+=4){
@@ -89,13 +174,15 @@ void dumpregs(struct state_s *s){
 	printf("\n");
 }
 
-void bp(struct state_s *s, uint32_t ir){
+void bp(struct state_s *s, uint32_t ir)
+{
 	printf("\npc: %08x, ir: %08x", s->pc, ir);
 	dumpregs(s);
 	getchar();
 }
 
-static int32_t mem_fetch(struct state_s *s, uint32_t address){
+static int32_t mem_fetch(struct state_s *s, uint32_t address)
+{
 	uint32_t value=0;
 	uint32_t *ptr;
 
@@ -105,7 +192,8 @@ static int32_t mem_fetch(struct state_s *s, uint32_t address){
 	return(value);
 }
 
-static int32_t mem_read(struct state_s *s, struct intctrl_s *ic, struct periph_s *per, int32_t size, uint32_t address){
+static int32_t mem_read(struct state_s *s, struct intctrl_s *ic, struct periph_s *per, int32_t size, uint32_t address)
+{
 	uint32_t value = 0;
 	uint32_t *ptr;
 
@@ -137,10 +225,17 @@ static int32_t mem_read(struct state_s *s, struct intctrl_s *ic, struct periph_s
 		case UARTMASK:		return per->uartmask;
 		case UART0:		return getchar();
 		case UART0_DIV:		return 0;
+		case DISPLAY_STATUS:	return per->display_status;
+		case DISPLAY_WIDTH:	return per->display_width;
+		case DISPLAY_HEIGHT:	return per->display_height;
+		case DISPLAY_SCALE:	return per->display_scale;
 	}
-	if (address >= EXIT_TRAP) return 0;
+	if (address == EXIT_TRAP) return 0;
 
-	ptr = (uint32_t *)(s->mem + (address % MEM_SIZE));
+	if (address >= DISPLAY_RAM && address < DISPLAY_RAM_TOP)
+		ptr = (uint32_t *)(per->display_mem + (address % (DISPLAY_RAM_TOP - DISPLAY_RAM)));
+	else
+		ptr = (uint32_t *)(s->mem + (address % MEM_SIZE));
 
 	switch (size){
 		case 4:
@@ -171,7 +266,8 @@ static int32_t mem_read(struct state_s *s, struct intctrl_s *ic, struct periph_s
 	return(value);
 }
 
-static void mem_write(struct state_s *s, struct intctrl_s *ic, struct periph_s *per, int32_t size, uint32_t address, uint32_t value){
+static void mem_write(struct state_s *s, struct intctrl_s *ic, struct periph_s *per, int32_t size, uint32_t address, uint32_t value)
+{
 	uint32_t i;
 	uint32_t *ptr;
 
@@ -196,6 +292,10 @@ static void mem_write(struct state_s *s, struct intctrl_s *ic, struct periph_s *
 		case TIMER1_OCR:	per->timer1_ocr = value & 0xffff; return;
 		case UARTCAUSE_INV:	per->uartcause_inv = value & 0xff; return;
 		case UARTMASK:		per->uartmask = value & 0xff; return;
+		case DISPLAY_STATUS:	per->display_status = value; display_status(per); return;
+		case DISPLAY_WIDTH:	per->display_width = value & 0xffff; return;
+		case DISPLAY_HEIGHT:	per->display_height = value & 0xffff; return;
+		case DISPLAY_SCALE:	per->display_scale = value & 0xffff; return;
 
 		case EXIT_TRAP:
 			fflush(stdout);
@@ -213,9 +313,12 @@ static void mem_write(struct state_s *s, struct intctrl_s *ic, struct periph_s *
 		case UART0_DIV:
 			return;
 	}
-	if (address >= EXIT_TRAP) return;
+	if (address == EXIT_TRAP) return;
 
-	ptr = (uint32_t *)(s->mem + (address % MEM_SIZE));
+	if (address >= DISPLAY_RAM && address < DISPLAY_RAM_TOP)
+		ptr = (uint32_t *)(per->display_mem + (address % (DISPLAY_RAM_TOP - DISPLAY_RAM)));
+	else
+		ptr = (uint32_t *)(s->mem + (address % MEM_SIZE));
 
 	switch (size){
 		case 4:
@@ -245,7 +348,8 @@ static void mem_write(struct state_s *s, struct intctrl_s *ic, struct periph_s *
 }
 
 
-void intctrl_cycle(struct state_s *s, struct intctrl_s *ic, struct periph_s *per){
+void intctrl_cycle(struct state_s *s, struct intctrl_s *ic, struct periph_s *per)
+{
 	uint32_t i;
 	
 	if ((ic->status && (ic->cause & ic->mask)) || ic->exception) {
@@ -264,7 +368,8 @@ void intctrl_cycle(struct state_s *s, struct intctrl_s *ic, struct periph_s *per
 	ic->cause = per->s0cause ? 0x01 : 0x00;
 }
 
-void periph_cycle(struct periph_s *per){
+void periph_cycle(struct periph_s *per)
+{
 	per->gpiocause = (per->pain ^ per->pain_inv) & per->pain_mask ? 0x01 : 0x00;
 	if (per->timer0 & 0x10000) {
 		per->timercause |= 0x01;
@@ -317,7 +422,8 @@ void periph_cycle(struct periph_s *per){
 	per->timer1 &= 0xffff;
 }
 
-void cpu_cycle(struct state_s *s, struct intctrl_s *ic, struct periph_s *per){
+void cpu_cycle(struct state_s *s, struct intctrl_s *ic, struct periph_s *per)
+{
 	uint32_t inst;
 	uint32_t opcode, rd, rs1, rs2, funct3, funct7, imm_i, imm_s, imm_sb, imm_u, imm_uj;
 	int32_t *r = s->r;
@@ -458,7 +564,8 @@ fail:
 	exit(0);
 }
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[])
+{
 	struct state_s context;
 	struct intctrl_s interrupt;
 	struct periph_s peripheral;
@@ -494,7 +601,7 @@ int main(int argc, char *argv[]){
 			log_enabled = 1;
 		}
 	}else{
-		printf("\nsyntax: hf_risc_sim [file.bin] [logfile.txt]\n");
+		printf("\nsyntax: hf_riscve_sim [file.bin] [logfile.txt]\n");
 		return 1;
 	}
 
@@ -504,6 +611,11 @@ int main(int argc, char *argv[]){
 	s->mem = &sram[0];
 	s->r[2] = MEM_SIZE - 4;
 	ic->exception = 0;
+	per->display_mem = 0;
+	per->display_status = 0;
+	per->display_width = 0;
+	per->display_height = 0;
+	per->display_scale = 1;
 
 	for(;;){
 		intctrl_cycle(s, ic, per);
