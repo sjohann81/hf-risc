@@ -197,7 +197,7 @@ static int32_t mem_read(struct state_s *s, struct intctrl_s *ic, struct periph_s
 	uint32_t value = 0;
 	uint32_t *ptr;
 
-	switch (address){
+	switch (address & ~0xf){
 		case IRQ_VECTOR:	return ic->vector;
 		case IRQ_CAUSE:		return ic->cause;
 		case IRQ_MASK:		return ic->mask;
@@ -271,7 +271,7 @@ static void mem_write(struct state_s *s, struct intctrl_s *ic, struct periph_s *
 	uint32_t i;
 	uint32_t *ptr;
 
-	switch (address){
+	switch (address & ~0xf){
 		case IRQ_VECTOR:	ic->vector = value; return;
 		case IRQ_MASK:		ic->mask = value; return;
 		case IRQ_STATUS:	if (value == 0){ ic->status = 0; for (i = 0; i < 4; i++) ic->status_dly[i] = 0; } else { ic->status_dly[3] = value; } return;
