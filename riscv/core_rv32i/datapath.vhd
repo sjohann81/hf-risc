@@ -8,13 +8,17 @@ entity datapath is
 		reset:		in std_logic;
 
 		stall:		in std_logic;
+		mwait:		in std_logic;
 
 		irq_vector:	in std_logic_vector(31 downto 0);
 		irq:		in std_logic;
 		irq_ack:	out std_logic;
 		exception:	out std_logic;
 
-		address:	out std_logic_vector(31 downto 0);
+		inst_addr:	out std_logic_vector(31 downto 0);
+		inst_in:	in std_logic_vector(31 downto 0);
+
+		data_addr:	out std_logic_vector(31 downto 0);
 		data_in:	in std_logic_vector(31 downto 0);
 		data_out:	out std_logic_vector(31 downto 0);
 		data_w:		out std_logic_vector(3 downto 0);
@@ -30,11 +34,12 @@ architecture arch_datapath of datapath is
 	signal ext32: std_logic_vector(31 downto 12);
 	signal opcode, funct7: std_logic_vector(6 downto 0);
 	signal funct3: std_logic_vector(2 downto 0);
-	signal read_reg1, read_reg2, write_reg, rs1, rs2, rd: std_logic_vector(4 downto 0);
+	signal read_reg1, read_reg2, write_reg: std_logic_vector(4 downto 0);
+	signal rs1, rs2, rd: std_logic_vector(4 downto 0);
 	signal write_data, read_data1, read_data2: std_logic_vector(31 downto 0);
 	signal imm_i, imm_s, imm_sb, imm_uj, branch_src1, branch_src2: std_logic_vector(31 downto 0);
 	signal imm_u: std_logic_vector(31 downto 12);
-	signal wreg, zero, less_than, branch_taken, jump_taken, mwait, stall_reg: std_logic;
+	signal wreg, zero, less_than, branch_taken, jump_taken, stall_reg: std_logic;
 	signal irq_ack_s, irq_ack_s_dly, bds, data_access_s, data_access_s_dly: std_logic;
 
 -- control signals
@@ -46,7 +51,7 @@ architecture arch_datapath of datapath is
 	signal rs1_r, rs2_r, rd_r: std_logic_vector(4 downto 0);
 	signal imm_i_r, imm_s_r, imm_sb_r, imm_uj_r: std_logic_vector(31 downto 0);
 	signal imm_u_r: std_logic_vector(31 downto 12);
-	signal reg_write_ctl_r, alu_src1_ctl_r, sig_read_ctl_r, reg_to_mem_r, mem_to_reg_r, mem_to_reg_r_dly: std_logic;
+	signal reg_write_ctl_r, alu_src1_ctl_r, sig_read_ctl_r, reg_to_mem_r, mem_to_reg_r: std_logic;
 	signal jump_ctl_r, mem_write_ctl_r, mem_read_ctl_r: std_logic_vector(1 downto 0);
 	signal alu_src2_ctl_r, branch_ctl_r: std_logic_vector(2 downto 0);
 	signal alu_op_ctl_r: std_logic_vector(3 downto 0);
@@ -58,7 +63,7 @@ begin
 -- 1st stage, instruction memory access, PC update, interrupt acknowledge logic
 
 	-- program counter logic
-	process(clock, reset, reg_to_mem_r, mem_to_reg_r, mwait, stall, stall_reg)
+	process(clock, reset, reg_to_mem_r, mem_to_reg_r, stall, stall_reg)
 	begin
 		if reset = '1' then
 			pc <= (others => '0');
@@ -66,19 +71,9 @@ begin
 			pc_last2 <= (others => '0');
 		elsif clock'event and clock = '1' then
 			if stall = '0' then
-				if mwait = '0' then
-					if stall_reg = '0' then
-						pc <= pc_next;
-					else
-						pc <= pc_last;
-					end if;
-					pc_last <= pc;
-					pc_last2 <= pc_last;
-				else
-					if (reg_to_mem_r = '1' or mem_to_reg_r = '1' or except = '1') and bds = '0' then
-						pc <= pc_last;
-					end if;
-				end if;
+				pc <= pc_next;
+				pc_last <= pc;
+				pc_last2 <= pc_last;
 			end if;
 		end if;
 	end process;
@@ -87,6 +82,7 @@ begin
 
 	pc_next <=	irq_vector when (irq = '1' and irq_ack_s = '1') or except = '1' else
 			branch when branch_taken = '1' or jump_taken = '1' else
+			pc_last when data_access_s = '1' else
 			pc_plus4;
 
 	-- interrupt acknowledge logic
@@ -98,18 +94,16 @@ begin
 
 	exception <= '1' when except = '1' else '0';
 
-	process(clock, reset, irq, irq_ack_s, mem_to_reg_r, mwait, stall)
+	process(clock, reset, irq, irq_ack_s, mem_to_reg_r, stall, mwait)
 	begin
 		if reset = '1' then
 			irq_ack_s_dly <= '0';
 			bds <= '0';
-			mem_to_reg_r_dly <= '0';
 			data_access_s_dly <= '0';
 			stall_reg <= '0';
 		elsif clock'event and clock = '1' then
 			stall_reg <= stall;
 			if stall = '0' then
-				mem_to_reg_r_dly <= mem_to_reg_r;
 				data_access_s_dly <= data_access_s;
 				if mwait = '0' then
 					irq_ack_s_dly <= irq_ack_s;
@@ -129,9 +123,9 @@ begin
 -- 2nd stage, instruction decode, control unit operation, pipeline bubble insertion logic on load/store and branches
 
 	-- pipeline bubble insertion on loads/stores, exceptions, branches and interrupts
-	inst_in_s <= x"00000000" when reg_to_mem_r = '1' or mem_to_reg_r = '1' or except = '1' or stall_reg = '1' or
+	inst_in_s <= x"00000000" when data_access_s = '1' or except = '1' or
 		branch_taken = '1' or jump_taken = '1' or bds = '1' or irq_ack_s = '1' else
-		data_in(7 downto 0) & data_in(15 downto 8) & data_in(23 downto 16) & data_in(31 downto 24);
+		inst_in(7 downto 0) & inst_in(15 downto 8) & inst_in(23 downto 16) & inst_in(31 downto 24);
 
 	-- instruction decode
 	opcode <= inst_in_s(6 downto 0);
@@ -166,7 +160,7 @@ begin
 	reg_to_mem <= '1' when mem_write_ctl /= "00" else '0';
 	mem_to_reg <= '1' when mem_read_ctl /= "00" else '0';
 
-	process(clock, reset, irq_ack_s, bds, mwait, stall)
+	process(clock, reset, irq_ack_s, bds, stall, mwait)
 	begin
 		if reset = '1' then
 			rd_r <= (others => '0');
@@ -189,28 +183,26 @@ begin
 			reg_to_mem_r <= '0';
 			mem_to_reg_r <= '0';
 		elsif clock'event and clock = '1' then
-			if stall = '0' then
-				if mwait = '0' then
-					rd_r <= rd;
-					rs1_r <= rs1;
-					rs2_r <= rs2;
-					imm_i_r <= imm_i;
-					imm_s_r <= imm_s;
-					imm_sb_r <= imm_sb;
-					imm_u_r <= imm_u;
-					imm_uj_r <= imm_uj;
-					reg_write_ctl_r <= reg_write_ctl;
-					alu_src1_ctl_r <= alu_src1_ctl;
-					alu_src2_ctl_r <= alu_src2_ctl;
-					alu_op_ctl_r <= alu_op_ctl;
-					jump_ctl_r <= jump_ctl;
-					branch_ctl_r <= branch_ctl;
-					mem_write_ctl_r <= mem_write_ctl;
-					mem_read_ctl_r <= mem_read_ctl;
-					sig_read_ctl_r <= sig_read_ctl;
-					reg_to_mem_r <= reg_to_mem;
-					mem_to_reg_r <= mem_to_reg;
-				end if;
+			if stall = '0' and mwait = '0' then
+				rd_r <= rd;
+				rs1_r <= rs1;
+				rs2_r <= rs2;
+				imm_i_r <= imm_i;
+				imm_s_r <= imm_s;
+				imm_sb_r <= imm_sb;
+				imm_u_r <= imm_u;
+				imm_uj_r <= imm_uj;
+				reg_write_ctl_r <= reg_write_ctl;
+				alu_src1_ctl_r <= alu_src1_ctl;
+				alu_src2_ctl_r <= alu_src2_ctl;
+				alu_op_ctl_r <= alu_op_ctl;
+				jump_ctl_r <= jump_ctl;
+				branch_ctl_r <= branch_ctl;
+				mem_write_ctl_r <= mem_write_ctl;
+				mem_read_ctl_r <= mem_read_ctl;
+				sig_read_ctl_r <= sig_read_ctl;
+				reg_to_mem_r <= reg_to_mem;
+				mem_to_reg_r <= mem_to_reg;
 			end if;
 		end if;
 	end process;
@@ -236,7 +228,7 @@ begin
 	read_reg1 <= rs1_r;
 	read_reg2 <= rs2_r;
 	write_reg <= rd_r;
-	wreg <= (reg_write_ctl_r or mem_to_reg_r_dly) and not mwait and not stall_reg;
+	wreg <= (reg_write_ctl_r or mem_to_reg_r) and not mwait and not stall_reg;
 
 -- 3rd stage (b) ALU operation
 	alu: entity work.alu
@@ -272,12 +264,12 @@ begin
 	except <= '1' when branch_ctl_r = "111" else '0';
 	jump_taken <= '1' when jump_ctl_r /= "00" else '0';
 
-	address <= result when data_access_s = '1' and mwait = '1' else pc;
+	inst_addr <= pc;
+	data_addr <= result;
 	data_b <= '1' when mem_read_ctl_r = "01" or mem_write_ctl_r = "01" else '0';
 	data_h <= '1' when mem_read_ctl_r = "10" or mem_write_ctl_r = "10" else '0';
 	data_access_s <= '1' when reg_to_mem_r = '1' or mem_to_reg_r = '1' else '0';
-	mwait <= '1' when data_access_s = '1' and data_access_s_dly = '0' else '0';
-	data_access <= mwait;
+	data_access <= '1' when data_access_s = '1' and data_access_s_dly = '0' else '0';
 
 
 -- 3rd stage (c) data memory / write back operation, register file access (write)

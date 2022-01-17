@@ -22,8 +22,8 @@ entity processor is
 end processor;
 
 architecture arch_processor of processor is
-	signal irq_cpu, irq_ack_cpu, exception_cpu, data_b_cpu, data_h_cpu, data_access_cpu: std_logic;
-	signal irq_vector_cpu, address_cpu, data_in_cpu, data_out_cpu: std_logic_vector(31 downto 0);
+	signal stall_cpu, mwait_cpu, irq_cpu, irq_ack_cpu, exception_cpu, data_b_cpu, data_h_cpu, data_access_cpu: std_logic;
+	signal irq_vector_cpu, inst_addr_cpu, inst_in_cpu, data_addr_cpu, data_in_cpu, data_out_cpu: std_logic_vector(31 downto 0);
 	signal data_w_cpu: std_logic_vector(3 downto 0);
 begin
 	data_mode_o <= data_b_cpu & data_h_cpu & data_access_cpu;
@@ -32,12 +32,15 @@ begin
 	core: entity work.datapath
 	port map(	clock => clk_i,
 			reset => rst_i,
-			stall => stall_i,
+			stall => stall_cpu,
+			mwait => mwait_cpu,
 			irq_vector => irq_vector_cpu,
 			irq => irq_cpu,
 			irq_ack => irq_ack_cpu,
 			exception => exception_cpu,
-			address => address_cpu,
+			inst_addr => inst_addr_cpu,
+			inst_in => inst_in_cpu,
+			data_addr => data_addr_cpu,
 			data_in => data_in_cpu,
 			data_out => data_out_cpu,
 			data_w => data_w_cpu,
@@ -53,12 +56,16 @@ begin
 		reset => rst_i,
 
 		stall => stall_i,
+		stall_cpu => stall_cpu,
+		mwait_cpu => mwait_cpu,
 
 		irq_vector_cpu => irq_vector_cpu,
 		irq_cpu => irq_cpu,
 		irq_ack_cpu => irq_ack_cpu,
 		exception_cpu => exception_cpu,
-		address_cpu => address_cpu,
+		inst_addr_cpu => inst_addr_cpu,
+		inst_in_cpu => inst_in_cpu,
+		data_addr_cpu => data_addr_cpu,
 		data_in_cpu => data_in_cpu,
 		data_out_cpu => data_out_cpu,
 		data_w_cpu => data_w_cpu,
