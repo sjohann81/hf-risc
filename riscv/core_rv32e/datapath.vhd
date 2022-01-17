@@ -123,7 +123,6 @@ begin
 -- 2nd stage, instruction decode, control unit operation, pipeline bubble insertion logic on load/store and branches
 
 	-- pipeline bubble insertion on loads/stores, exceptions, branches and interrupts
---	inst_in_s <= x"00000000" when reg_to_mem_r = '1' or mem_to_reg_r = '1' or except = '1' or
 	inst_in_s <= x"00000000" when data_access_s = '1' or except = '1' or
 		branch_taken = '1' or jump_taken = '1' or bds = '1' or irq_ack_s = '1' else
 		inst_in(7 downto 0) & inst_in(15 downto 8) & inst_in(23 downto 16) & inst_in(31 downto 24);
