@@ -1,5 +1,16 @@
 #include <hf-risc.h>
 
+#define XTEA_BASE			0xe7000000
+#define XTEA_CONTROL			(*(volatile uint32_t *)(XTEA_BASE + 0x000))
+#define XTEA_KEY0			(*(volatile uint32_t *)(XTEA_BASE + 0x010))
+#define XTEA_KEY1			(*(volatile uint32_t *)(XTEA_BASE + 0x020))
+#define XTEA_KEY2			(*(volatile uint32_t *)(XTEA_BASE + 0x030))
+#define XTEA_KEY3			(*(volatile uint32_t *)(XTEA_BASE + 0x040))
+#define XTEA_IN0			(*(volatile uint32_t *)(XTEA_BASE + 0x050))
+#define XTEA_IN1			(*(volatile uint32_t *)(XTEA_BASE + 0x060))
+#define XTEA_OUT0			(*(volatile uint32_t *)(XTEA_BASE + 0x070))
+#define XTEA_OUT1			(*(volatile uint32_t *)(XTEA_BASE + 0x080))
+
 /*
 XTEA encryption algorithm
 
