@@ -10,24 +10,27 @@
 
 TOP = tb
 
+VHDL_BASE = ../..
+SRC_BASE = ../..
+
 VHD_SRC = \
-	../riscv/core_rv32i/bshifter.vhd \
-	../riscv/core_rv32i/alu.vhd \
-	../riscv/core_rv32i/reg_bank.vhd \
-	../riscv/core_rv32i/control.vhd \
-	../riscv/core_rv32i/datapath.vhd \
-	../riscv/core_rv32i/int_control.vhd \
-	../riscv/core_rv32i/cpu.vhd \
-	../devices/controllers/spi_master_slave/spi_master_slave.vhd \
-	../devices/controllers/uart/uart.vhd \
-	../devices/peripherals/standard_soc.vhd \
-	../riscv/sim/boot_ram.vhd \
-	../riscv/sim/ram.vhd \
-	../riscv/sim/hf-riscv_basic_standard_soc_tb.vhd
+	$(VHDL_BASE)/riscv/core_rv32i/bshifter.vhd \
+	$(VHDL_BASE)/riscv/core_rv32i/alu.vhd \
+	$(VHDL_BASE)/riscv/core_rv32i/reg_bank.vhd \
+	$(VHDL_BASE)/riscv/core_rv32i/control.vhd \
+	$(VHDL_BASE)/riscv/core_rv32i/datapath.vhd \
+	$(VHDL_BASE)/riscv/core_rv32i/int_control.vhd \
+	$(VHDL_BASE)/riscv/core_rv32i/cpu.vhd \
+	$(VHDL_BASE)/devices/controllers/spi_master_slave/spi_master_slave.vhd \
+	$(VHDL_BASE)/devices/controllers/uart/uart.vhd \
+	$(VHDL_BASE)/devices/peripherals/standard_soc.vhd \
+	$(VHDL_BASE)/riscv/sim/boot_ram.vhd \
+	$(VHDL_BASE)/riscv/sim/ram.vhd \
+	$(VHDL_BASE)/riscv/sim/hf-riscv_basic_standard_soc_tb.vhd
 
 PROG_SRC = \
-	../riscv/sim/boot.txt \
-	../software/code.txt
+	$(SRC_BASE)/riscv/sim/boot.txt \
+	$(SRC_BASE)/software/code.txt
 
 all:
 
