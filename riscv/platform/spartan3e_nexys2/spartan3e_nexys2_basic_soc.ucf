@@ -1,0 +1,8 @@
+NET "clk_i" LOC = "B8";
+NET "clk_i" TNM_NET = "clk_in";
+TIMESPEC TS_clk_in = PERIOD "clk_in" 20 ns;
+NET "rst_i" LOC = "H13";
+
+NET "gpioa_out<2>" LOC = "P9";				# uart_write (UART0_TX)
+NET "gpioa_in<3>"  LOC = "U6";				# uart_read  (UART0_RX)
+
