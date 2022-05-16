@@ -1,5 +1,5 @@
 # architecture: mips, riscv or riscve
-ARCH=riscv
+ARCH=riscve
 
 # board specific parameters
 BAUDRATE=57600
@@ -43,7 +43,11 @@ serial:
 	stty ${BAUDRATE} raw cs8 -parenb -crtscts clocal cread ignpar ignbrk -ixon -ixoff -ixany -brkint -icrnl -imaxbel -opost -onlcr -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke -F ${SERIAL_DEV}
 
 load: serial
+	echo "u" > ${SERIAL_DEV}
+	sleep 1
 	cp code.bin ${SERIAL_DEV}
+	sleep 5
+	echo "b" > ${SERIAL_DEV}
 
 debug: serial
 	cat ${SERIAL_DEV}
