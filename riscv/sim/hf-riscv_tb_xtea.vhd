@@ -7,7 +7,7 @@ use ieee.numeric_std.all;
 
 entity tb is
 	generic(
-		address_width: integer := 14;
+		address_width: integer := 15;
 		memory_file : string := "code.txt";
 		log_file: string := "out.txt";
 		uart_support : string := "no"
@@ -105,7 +105,7 @@ begin
 
 
 	data_read_xtea <= data_read_xtea_s(7 downto 0) & data_read_xtea_s(15 downto 8) & data_read_xtea_s(23 downto 16) & data_read_xtea_s(31 downto 24);
-	ext_periph <= '1' when address(31 downto 24) = x"fa" else '0';
+	ext_periph <= '1' when address(31 downto 24) = x"e7" else '0';
 
 	process(clock_in, reset)
 	begin
@@ -125,25 +125,25 @@ begin
 		if reset = '1' then
 			data_read_xtea_s <= (others => '0');
 		elsif clock_in'event and clock_in = '1' then
-			if (ext_periph = '1') then	-- XTEA is at 0xfa000000
+			if (ext_periph = '1') then	-- XTEA is at 0xe7000000
 				case address(7 downto 4) is
-					when "0000" =>		-- control	0xfa000000	(bit2 - ready (R), bit1 - encrypt (RW), bit0 - start (RW)
+					when "0000" =>		-- control	0xe7000000	(bit2 - ready (R), bit1 - encrypt (RW), bit0 - start (RW)
 						data_read_xtea_s <= x"000000" & "00000" & ready & control;
-					when "0001" =>		-- key[0]	0xfa000010
+					when "0001" =>		-- key[0]	0xe7000010
 						data_read_xtea_s <= key(127 downto 96);
-					when "0010" =>		-- key[1]	0xfa000020
+					when "0010" =>		-- key[1]	0xe7000020
 						data_read_xtea_s <= key(95 downto 64);
-					when "0011" =>		-- key[2]	0xfa000030
+					when "0011" =>		-- key[2]	0xe7000030
 						data_read_xtea_s <= key(63 downto 32);
 					when "0100" =>		-- key[3]	0xfa000040
 						data_read_xtea_s <= key(31 downto 0);
-					when "0101" =>		-- input[0]	0xfa000050
+					when "0101" =>		-- input[0]	0xe7000050
 						data_read_xtea_s <= input(63 downto 32);
-					when "0110" =>		-- input[1]	0xfa000060
+					when "0110" =>		-- input[1]	0xe7000060
 						data_read_xtea_s <= input(31 downto 0);
-					when "0111" =>		-- output[0]	0xfa000070
+					when "0111" =>		-- output[0]	0xe7000070
 						data_read_xtea_s <= output(63 downto 32);
-					when "1000" =>		-- output[1]	0xfa000080
+					when "1000" =>		-- output[1]	0xe7000080
 						data_read_xtea_s <= output(31 downto 0);
 					when others =>
 						data_read_xtea_s <= (others => '0');
@@ -159,21 +159,21 @@ begin
 			input <= (others => '0');
 			control <= "00";
 		elsif clock_in'event and clock_in = '1' then
-			if (ext_periph = '1' and data_we /= "0000") then	-- XTEA is at 0xfa000000
+			if (ext_periph = '1' and data_we /= "0000") then	-- XTEA is at 0xe7000000
 				case address(7 downto 4) is
-					when "0000" =>		-- control	0xfa000000	(bit2 - ready (R), bit1 - encrypt (RW), bit0 - start (RW)
+					when "0000" =>		-- control	0xe7000000	(bit2 - ready (R), bit1 - encrypt (RW), bit0 - start (RW)
 						control <= data_write_periph(1 downto 0);
-					when "0001" =>		-- key[0]	0xfa000010
+					when "0001" =>		-- key[0]	0xe7000010
 						key(127 downto 96) <= data_write_periph;
-					when "0010" =>		-- key[1]	0xfa000020
+					when "0010" =>		-- key[1]	0xe7000020
 						key(95 downto 64) <= data_write_periph;
-					when "0011" =>		-- key[2]	0xfa000030
+					when "0011" =>		-- key[2]	0xe7000030
 						key(63 downto 32) <= data_write_periph;
-					when "0100" =>		-- key[3]	0xfa000040
+					when "0100" =>		-- key[3]	0xe7000040
 						key(31 downto 0) <= data_write_periph;
-					when "0101" =>		-- input[0]	0xfa000050
+					when "0101" =>		-- input[0]	0xe7000050
 						input(63 downto 32) <= data_write_periph;
-					when "0110" =>		-- input[1]	0xfa000060
+					when "0110" =>		-- input[1]	0xe7000060
 						input(31 downto 0) <= data_write_periph;
 					when others =>
 				end case;
