@@ -336,17 +336,6 @@ typedef unsigned long			size_t;
 #define ADC2				(*(volatile uint32_t *)(ADC_BASE + 0x4800))
 #define ADC3				(*(volatile uint32_t *)(ADC_BASE + 0x4c00))
 
-#define XTEA_BASE			0xfa000000
-#define XTEA_CONTROL			(*(volatile uint32_t *)(XTEA_BASE + 0x000))
-#define XTEA_KEY0			(*(volatile uint32_t *)(XTEA_BASE + 0x010))
-#define XTEA_KEY1			(*(volatile uint32_t *)(XTEA_BASE + 0x020))
-#define XTEA_KEY2			(*(volatile uint32_t *)(XTEA_BASE + 0x030))
-#define XTEA_KEY3			(*(volatile uint32_t *)(XTEA_BASE + 0x040))
-#define XTEA_IN0			(*(volatile uint32_t *)(XTEA_BASE + 0x050))
-#define XTEA_IN1			(*(volatile uint32_t *)(XTEA_BASE + 0x060))
-#define XTEA_OUT0			(*(volatile uint32_t *)(XTEA_BASE + 0x070))
-#define XTEA_OUT1			(*(volatile uint32_t *)(XTEA_BASE + 0x080))
-
 extern int32_t syscall(int32_t service, int32_t arg0, int32_t arg1, int32_t arg2);
 
 #include <libc.h>
