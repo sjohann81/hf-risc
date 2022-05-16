@@ -7,7 +7,7 @@ use ieee.numeric_std.all;
 
 entity tb is
 	generic(
-		address_width: integer := 14;
+		address_width: integer := 15;
 		memory_file : string := "code.txt";
 		log_file: string := "out.txt";
 		uart_support : string := "no"
