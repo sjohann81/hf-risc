@@ -11,6 +11,11 @@
 #define XTEA_OUT0			(*(volatile uint32_t *)(XTEA_BASE + 0x070))
 #define XTEA_OUT1			(*(volatile uint32_t *)(XTEA_BASE + 0x080))
 
+#define XTEA_START			(1 << 0)
+#define XTEA_ENCRYPT			(1 << 1)
+#define XTEA_DECRYPT			(0 << 1)
+#define XTEA_READY			(1 << 2)
+
 /*
 XTEA encryption algorithm
 
@@ -62,18 +67,19 @@ int main(void){
 
 	printf("message: %8x%8x\n", msg[0], msg[1]);
 
-	XTEA_CONTROL = 0x2;
 	XTEA_KEY0 = xtea_key[0];
 	XTEA_KEY1 = xtea_key[1];
 	XTEA_KEY2 = xtea_key[2];
 	XTEA_KEY3 = xtea_key[3];
 
+	XTEA_CONTROL = XTEA_ENCRYPT;
+
 	cycles = TIMER0;
 	XTEA_IN0 = msg[0];
 	XTEA_IN1 = msg[1];
-	XTEA_CONTROL = 0x3;
-	while (!(XTEA_CONTROL & 0x4));
-	XTEA_CONTROL = 0x0;
+	XTEA_CONTROL |= XTEA_START;
+	while (!(XTEA_CONTROL & XTEA_READY));
+	XTEA_CONTROL &= ~XTEA_START;
 	cycles = TIMER0 - cycles;
 
 	msg[0] = XTEA_OUT0;
@@ -81,14 +87,14 @@ int main(void){
 
 	printf("encipher: %8x%8x, %d cycles\n", msg[0], msg[1], cycles);
 
-	cycles = TIMER0;
+	XTEA_CONTROL = XTEA_DECRYPT;
 
+	cycles = TIMER0;
 	XTEA_IN0 = msg[0];
 	XTEA_IN1 = msg[1];
-	XTEA_CONTROL = 0x1;
+	XTEA_CONTROL = XTEA_START;
 	while (!(XTEA_CONTROL & 0x4));
-	XTEA_CONTROL = 0x0;
-
+	XTEA_CONTROL &= ~XTEA_START;
 	cycles = TIMER0 - cycles;
 
 	msg[0] = XTEA_OUT0;
