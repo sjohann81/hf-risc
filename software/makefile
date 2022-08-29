@@ -121,6 +121,15 @@ eeprom_sim:
 	printf "%08x\n" `stat -L -c %s code.txt` >> eeprom.txt
 	cat code.txt >> eeprom.txt
 
+
+asm_test:
+	$(AS_$(ARCH)) -o riscv.o app/asm/riscv.s
+	@$(MAKE) --no-print-directory link
+		
+asm_crt_test: crt
+	$(AS_$(ARCH)) -o riscv.o app/asm/riscv_crt.s
+	@$(MAKE) --no-print-directory link
+
 animal: crt
 	$(GCC_$(ARCH)) -o animal.o app/animal.c
 	@$(MAKE) --no-print-directory link
