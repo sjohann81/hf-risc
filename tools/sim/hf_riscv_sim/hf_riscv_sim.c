@@ -105,7 +105,7 @@ static int32_t mem_read(state *s, int32_t size, uint32_t address){
 	uint32_t value=0;
 	uint32_t *ptr;
 
-	switch (address){
+	switch (address & ~0xf){
 		case IRQ_VECTOR:	return s->vector;
 		case IRQ_CAUSE:		return s->cause;
 		case IRQ_MASK:		return s->mask;
@@ -171,7 +171,7 @@ static void mem_write(state *s, int32_t size, uint32_t address, uint32_t value){
 	uint32_t i;
 	uint32_t *ptr;
 
-	switch (address){
+	switch (address & ~0xf){
 		case IRQ_VECTOR:	s->vector = value; return;
 		case IRQ_MASK:		s->mask = value; return;
 		case IRQ_STATUS:	if (value == 0){ s->status = 0; for (i = 0; i < 4; i++) s->status_dly[i] = 0; }else{ s->status_dly[3] = value; } return;
@@ -257,6 +257,10 @@ void cycle(state *s){
 		for (i = 0; i < 4; i++)
 			s->status_dly[i] = 0;
 	}
+	s->status = s->status_dly[0];
+	for (i = 0; i < 3; i++)
+		s->status_dly[i] = s->status_dly[i+1];
+	s->cause = s->s0cause ? 0x01 : 0x00;
 
 	inst = mem_fetch(s, s->pc);
 
@@ -395,9 +399,6 @@ void cycle(state *s){
 
 	s->pc = s->pc_next;
 	s->pc_next = s->pc_next + 4;
-	s->status = s->status_dly[0];
-	for (i = 0; i < 3; i++)
-		s->status_dly[i] = s->status_dly[i+1];
 
 	s->gpiocause = (s->pain ^ s->pain_inv) & s->pain_mask ? 0x01 : 0x00;
 	if (s->timer0 & 0x10000) {
@@ -421,7 +422,6 @@ void cycle(state *s){
 	}
 	s->s0cause = (s->gpiocause ^ s->gpiocause_inv) & s->gpiomask ? 0x02 : 0x00;
 	s->s0cause |= (s->timercause ^ s->timercause_inv) & s->timermask ? 0x04 : 0x00;
-	s->cause = s->s0cause ? 0x01 : 0x00;
 
 	s->cycles++;
 	s->timer0++;
