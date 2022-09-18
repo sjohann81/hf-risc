@@ -8,12 +8,18 @@ entity interrupt_controller is
 		reset:		in std_logic;
 
 		stall:		in std_logic;
+		stall_cpu:	out std_logic;
+		mwait_cpu:	out std_logic;
 
 		irq_vector_cpu:	out std_logic_vector(31 downto 0);
 		irq_cpu:	out std_logic;
 		irq_ack_cpu:	in std_logic;
 		exception_cpu:	in std_logic;
-		address_cpu: 	in std_logic_vector(31 downto 0);
+		
+		inst_addr_cpu: 	in std_logic_vector(31 downto 0);
+		inst_in_cpu:	out std_logic_vector(31 downto 0);
+		
+		data_addr_cpu: 	in std_logic_vector(31 downto 0);
 		data_in_cpu:	out std_logic_vector(31 downto 0);
 		data_out_cpu:	in std_logic_vector(31 downto 0);
 		data_w_cpu:	in std_logic_vector(3 downto 0);
@@ -31,8 +37,8 @@ end interrupt_controller;
 
 architecture arch_interrupt_controller of interrupt_controller is
 	signal irq_cause, irq_mask_reg, irq_status_reg, extio_out_reg: std_logic_vector(7 downto 0);
-	signal periph_data, irq_vector_reg, irq_epc_reg: std_logic_vector(31 downto 0);
-	signal interrupt, irq: std_logic;
+	signal periph_data, irq_vector_reg, irq_epc_reg, inst_reg: std_logic_vector(31 downto 0);
+	signal interrupt, irq, data_access_cpu_dly: std_logic;
 
 	type pulse_state_type is (irq_idle, irq_int, irq_req, irq_ackn, irq_done);
 	signal pulse_state: pulse_state_type;
@@ -43,13 +49,13 @@ architecture arch_interrupt_controller of interrupt_controller is
 
 begin
 	-- address decoder, read from peripheral registers
-	process(clock, reset, periph_access, address_cpu, irq_vector_reg, irq_cause, irq_mask_reg, irq_status_reg, irq_epc_reg, data_read_mem, extio_in, extio_out_reg)
+	process(clock, reset, periph_access, data_addr_cpu, irq_vector_reg, irq_cause, irq_mask_reg, irq_status_reg, irq_epc_reg, data_read_mem, extio_in, extio_out_reg)
 	begin
 		if reset = '1' then
 			periph_data <= (others => '0');
 		elsif clock'event and clock = '1' then
 			if periph_access = '1' then
-				case address_cpu(7 downto 4) is
+				case data_addr_cpu(7 downto 4) is
 					when "0000" =>		-- IRQ_VECTOR		(RW)
 						periph_data <= irq_vector_reg;
 					when "0001" =>		-- IRQ_CAUSE		(RO)
@@ -71,10 +77,11 @@ begin
 		end if;
 	end process;
 
+	inst_in_cpu <= data_read_mem when data_access_cpu = '0' else inst_reg;
 	data_in_cpu <= data_read_mem when periph_access_dly = '0' else periph_data;
 
 	-- peripheral register logic, write to peripheral registers
-	process(clock, reset, address_cpu, data_out_cpu, periph_access, periph_access_we, irq_ack_cpu)
+	process(clock, reset, data_addr_cpu, data_out_cpu, periph_access, periph_access_we, irq_ack_cpu)
 	begin
 		if reset = '1' then
 			irq_vector_reg <= (others => '0');
@@ -83,7 +90,7 @@ begin
 			extio_out_reg <= (others => '0');
 		elsif clock'event and clock = '1' then
 			if periph_access = '1' and periph_access_we = '1' then
-				case address_cpu(7 downto 4) is
+				case data_addr_cpu(7 downto 4) is
 					when "0000" =>	-- IRQ_VECTOR
 						irq_vector_reg <= data_out_cpu(31 downto 0);
 					when "0010" =>	-- IRQ_MASK
@@ -102,13 +109,13 @@ begin
 	end process;
 
 	-- EPC register register load on interrupts
-	process(clock, reset, address_cpu, irq, irq_ack_cpu)
+	process(clock, reset, inst_addr_cpu, irq, irq_ack_cpu)
 	begin
 		if reset = '1' then
 			irq_epc_reg <= x"00000000";
 		elsif clock'event and clock = '1' then
 			if ((irq = '1' and irq_ack_cpu = '0') or exception_cpu = '1') then
-				irq_epc_reg <= address_cpu;
+				irq_epc_reg <= inst_addr_cpu;
 			end if;
 		end if;
 	end process;
@@ -150,25 +157,33 @@ begin
 	end process;
 
 	-- data / peripheral access delay
-	process(clock, reset, irq_ack_cpu, periph_access, stall)
+	process(clock, reset, irq_ack_cpu, periph_access, stall, data_read_mem)
 	begin
 		if reset = '1' then
 			periph_access_dly <= '0';
+			data_access_cpu_dly <= '0';
+			inst_reg <= (others => '0');
 		elsif clock'event and clock = '1' then
 			if stall = '0' then
 				periph_access_dly <= periph_access;
+				data_access_cpu_dly <= data_access_cpu;
+				if (data_access_cpu = '0') then
+					inst_reg <= data_read_mem;
+				end if;
 			end if;
 		end if;
 	end process;
 
-	periph_access <= '1' when address_cpu(31 downto 27) = "11110" and data_access_cpu = '1' else '0';
+	periph_access <= '1' when data_addr_cpu(31 downto 27) = "11110" and data_access_cpu = '1' else '0';
 	periph_access_we <= '1' when periph_access <= '1' and data_w_cpu /= "0000" else '0';
 
 	-- memory address / write enable muxes
-	addr_mem <= address_cpu;
+	addr_mem <= data_addr_cpu when data_access_cpu = '1' else inst_addr_cpu;
 	data_write_mem <= data_out_cpu;
 	data_we_mem_s <= data_w_cpu when data_access_cpu = '1' and periph_access = '0' else "0000";
 	data_we_mem <= data_we_mem_s;
+	mwait_cpu <= '1' when data_access_cpu = '1' and data_access_cpu_dly = '0' else '0';
+	stall_cpu <= stall;
 
 	-- interrupts masking
 	interrupt <= '0' when (irq_cause and irq_mask_reg) = x"0000" else '1';
