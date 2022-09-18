@@ -42,7 +42,7 @@ begin
 		wait for 4 ms;
 		gpio_sig <= not gpio_sig;
 		gpio_sig2 <= not gpio_sig2;
-		wait for 100 us;
+		wait for 3 ms;
 		gpio_sig <= not gpio_sig;
 		gpio_sig2 <= not gpio_sig2;
 	end process;
