@@ -17,9 +17,9 @@ BSS_CLEAR:
 	blt	a3, a2, BSS_CLEAR
 
 	# configure IRQ_VECTOR
-	la	s11, _isr
-	li	s10, 0xf0000000
-	sw	s11, 0(s10)
+	la	t0, _isr
+	li	t1, 0xf0000000
+	sw	t0, 0(t1)
 
 	# enable global interrupts
 	jal	ra, irq_enable
@@ -62,17 +62,21 @@ _isr:
 	sw	t4, 52(sp)
 	sw	t5, 56(sp)
 	sw	t6, 60(sp)
-	li	s10, 0xf0000040		# read IRQ_EPC
-	lw	s10, 0(s10)
-	addi	s10, s10, -4		# rollback, last opcode (at EPC) was not commited
-	sw	s10, 64(sp)
+	
+	li	s11, 0xf0000040		# read IRQ_EPC
+	lw	s11, 0(s11)
+	addi	s11, s11, -4		# rollback, last opcode (at EPC) was not commited
+	sw	s11, 64(sp)
+
 	lui	a1, 0xf0000
 	lw	a0, 0x10(a1)		# read IRQ_CAUSE
 	lw	a2, 0x20(a1)		# read IRQ_MASK
 	and	a0, a0, a2		# pass CAUSE and MASK and the stack pointer to the C handler
 	addi	a1, sp, 0
+
 	beq	a0, zero, _exception	# it's an exception, not an interrupt
 	jal	ra, irq_handler		# jump to C handler
+
 _restore:
 	lw	a0, 16(sp)
 	lw	a1, 20(sp)
@@ -91,12 +95,15 @@ _restore_exception:
 	lw	t4, 52(sp)
 	lw	t5, 56(sp)
 	lw	t6, 60(sp)
+	
+	li	s11, 0xf0000030
+	ori	s11, s11, 0x1
 	addi	sp, sp, 68
-	ori	s11, zero, 0x1
-	li	s10, 0xf0000030
-	sw	s11, 0(s10)		# enable interrupts after a few cycles
-	lw	s10, -4(sp)
-	jalr	zero, s10		# context restored, continue
+	sb	s11, 0(s11)		# enable interrupts after a few cycles
+	lw	s11, -4(sp)
+	
+	jalr	zero, s11		# context restored, continue
+
 _exception:
 	# pass syscall code and parameters to the exception handler
 	addi	a0, a7, 0
