@@ -33,7 +33,7 @@ void timer1ocr_handler(void)
 int main(void){
 	int32_t val;
 	
-	TIMER1PRE = TIMERPRE_DIV4;
+	TIMER1PRE = TIMERPRE_DIV64;
 
 	/* unlock TIMER1 for reset */
 	TIMER1 = TIMERSET;
