@@ -92,8 +92,8 @@ int main(void){
 	cycles = TIMER0;
 	XTEA_IN0 = msg[0];
 	XTEA_IN1 = msg[1];
-	XTEA_CONTROL = XTEA_START;
-	while (!(XTEA_CONTROL & 0x4));
+	XTEA_CONTROL |= XTEA_START;
+	while (!(XTEA_CONTROL & XTEA_READY));
 	XTEA_CONTROL &= ~XTEA_START;
 	cycles = TIMER0 - cycles;
 
