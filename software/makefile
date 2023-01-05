@@ -164,11 +164,15 @@ core_test: crt
 	$(GCC_$(ARCH)) -o core_test.o app/core_test.c
 	@$(MAKE) --no-print-directory link
 	
+cube: crt
+	$(GCC_$(ARCH)) -o display_drv.o app/display/display_drv.c
+	$(GCC_$(ARCH)) -o cube.o app/cube.c
+	@$(MAKE) --no-print-directory link
+
 display_test: crt
 	$(GCC_$(ARCH)) -o display_drv.o app/display/display_drv.c
 	$(GCC_$(ARCH)) -o display_test.o app/display/display_test.c
 	@$(MAKE) --no-print-directory link
-
 
 encode: crt
 	$(GCC_$(ARCH)) -o encode.o app/encode.c
@@ -236,6 +240,11 @@ list_test: crt
 
 malloc_test: crt
 	$(GCC_$(ARCH)) -o malloc_test.o app/malloc_test.c
+	@$(MAKE) --no-print-directory link
+	
+mandelbrot: crt
+	$(GCC_$(ARCH)) -o display_drv.o app/display/display_drv.c
+	$(GCC_$(ARCH)) -o mandelbrot.o app/mandelbrot.c
 	@$(MAKE) --no-print-directory link
 
 mem_test: crt
