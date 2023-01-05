@@ -41,9 +41,8 @@ extern struct display_s *display_p;
 #define TEAL		RGB(0x00, 0x80, 0x80)
 #define NAVY		RGB(0x00, 0x00, 0x80)
 
-#define FONT_SPACE	6
-#define FONT_X		5
-#define FONT_Y		7
+#define FONT_X		8
+#define FONT_Y		8
 
 void display_init(uint16_t width, uint16_t height, uint16_t scale);
 void display_blit(void);
@@ -56,6 +55,16 @@ void display_frectangle(uint16_t x0, uint16_t y0, uint16_t length, uint16_t widt
 void display_background(uint16_t color);
 void display_circle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color);
 void display_fcircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color);
-void display_char(uint8_t ascii, uint16_t x0, uint16_t y0,uint16_t size, uint16_t fgcolor);
+void display_triangle(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color);
+void display_ftriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
+void display_char(uint8_t ascii, uint16_t x0, uint16_t y0, uint16_t size, uint16_t fgcolor);
 void display_print(char *string, uint16_t x0, uint16_t y0, uint16_t size, uint16_t fgcolor);
+
+#define _swap_int16_t(a, b)	\
+{				\
+	int16_t t = a;		\
+	a = b;			\
+	b = t;			\
+}
+
 
