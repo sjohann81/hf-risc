@@ -538,7 +538,7 @@ int8_t *getline(int8_t *s){
 }
 
 int32_t abs(int32_t n){
-	return n>=0 ? n:-n;
+	return n >= 0 ? n : -n;
 }
 
 static uint32_t rand1=0xbaadf00d;
