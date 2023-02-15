@@ -21,7 +21,7 @@ READ_mips = mips-elf-readelf
 OBJ_mips = mips-elf-objcopy
 SIZE_mips = mips-elf-size
 
-GCC_riscv = riscv32-unknown-elf-gcc -march=rv32i -mabi=ilp32 -Wall -Os -c -mstrict-align -ffreestanding -nostdlib -ffixed-s11 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) -DDEBUG_PORT #-ffixed-s10 -ffixed-s11 -mno-div -mrvc -fPIC #-DDEBUG_PORT
+GCC_riscv = riscv32-unknown-elf-gcc -march=rv32i -mabi=ilp32 -Wall -Os -c -mstrict-align -ffreestanding -nostdlib -ffixed-s11 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) #-DDEBUG_PORT #-ffixed-s10 -ffixed-s11 -mno-div -mrvc -fPIC #-DDEBUG_PORT
 AS_riscv = riscv32-unknown-elf-as -march=rv32i -mabi=ilp32 #-fPIC
 LD_riscv = riscv32-unknown-elf-ld -melf32lriscv $(LDFLAGS_STRIP)
 DUMP_riscv = riscv32-unknown-elf-objdump -Mno-aliases
@@ -207,6 +207,10 @@ fsm: crt
 fsm2: crt
 	$(GCC_$(ARCH)) -o fsm2.o app/fsm2.c
 	@$(MAKE) --no-print-directory link
+	
+gpio: crt
+	$(GCC_$(ARCH)) -o gpio.o app/gpio.c
+	@$(MAKE) --no-print-directory link
 
 hanoi: crt
 	$(GCC_$(ARCH)) -o hanoi.o app/hanoi.c
@@ -330,6 +334,10 @@ xtea_hw: crt
 
 xtea_hw_vec: crt
 	$(GCC_$(ARCH)) -o xtea_hw_vec.o app/xtea_hw_vec.c
+	@$(MAKE) --no-print-directory link
+
+uart_axi: crt
+	$(GCC_$(ARCH)) -o uart_axi.o app/uart_axi.c
 	@$(MAKE) --no-print-directory link
 
 aes_tiny: crt
