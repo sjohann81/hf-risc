@@ -33,11 +33,11 @@ begin
 
 	tx_process: process(axis_aclk_i) is
 	begin
-	if axis_aresetn_i = '0' then
-		tready <= '0';
-		txbuf <= (others => '0');
-		bitcount <= (others => '0');
-		clkcount <= (others => '0');
+		if axis_aresetn_i = '0' then
+			tready <= '0';
+			txbuf <= (others => '0');
+			bitcount <= (others => '0');
+			clkcount <= (others => '0');
 		elsif axis_aclk_i'event and axis_aclk_i = '1' then
 			txd_o <= '1';
 			tready <= '0';
@@ -85,7 +85,7 @@ begin
 						clkcount <= clkcount + 1;
 					end if;
 			end case;
-		 end if;
+		end if;
 	end process;
 
 end uart_tx_arch;

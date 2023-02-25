@@ -36,12 +36,12 @@ begin
 
 	rx_process: process(axis_aclk_i) is
 	begin
-	if axis_aresetn_i = '0' then
-		tvalid <= '0';
-		tdata <= (others => '0');
-		rxbuf <= (others => '0');
-		bitcount <= (others => '0');
-		clkcount <= (others => '0');
+		if axis_aresetn_i = '0' then
+			tvalid <= '0';
+			tdata <= (others => '0');
+			rxbuf <= (others => '0');
+			bitcount <= (others => '0');
+			clkcount <= (others => '0');
 		elsif axis_aclk_i'event and axis_aclk_i = '1' then
 			if m_axis_tready_i = '1' then
 				tvalid <= '0';
@@ -81,9 +81,8 @@ begin
 					else
 						clkcount <= clkcount + 1;
 					end if;
-
 			end case;
-		 end if;
+		end if;
 	end process;
 
 end uart_rx_arch;
