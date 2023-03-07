@@ -39,11 +39,11 @@ all:
 ghdl:
 	@ cp $(PROG_SRC) .
 	@ mkdir -p simu
-	@ ghdl -i --ieee=synopsys --warn-no-vital-generic --workdir=simu --work=work -fexplicit $(VHD_SRC)
-	@ ghdl -r --ieee=synopsys --warn-no-vital-generic --workdir=simu --work=work -fexplicit $(TOP) --assert-level=failure --stop-time=$(time) --vcdgz=$(TOP).vcdgz
+	ghdl -a --ieee=synopsys --warn-no-vital-generic --workdir=simu --work=work -fexplicit $(VHD_SRC)
+	ghdl -r --ieee=synopsys --warn-no-vital-generic --workdir=simu --work=work -fexplicit $(TOP) --assert-level=failure --stop-time=$(time) --vcdgz=$(TOP).vcdgz
 
 ghdl-gui:
-	@ gunzip --stdout $(TOP).vcdgz | gtkwave --vcd
+	gunzip --stdout $(TOP).vcdgz | gtkwave --vcd
 
 clean-ghdl:
 	@ rm -rf simu
