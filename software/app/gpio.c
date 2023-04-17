@@ -11,21 +11,26 @@ void portb_handler(void)
 }
 
 int main(void){
-	/* enable interrupt mask for PORTA and PORTB inputs */
-	GPIOMASK |= MASK_PAIN | MASK_PBIN;
+	/* enable interrupt mask for GPIOA and GPIOB inputs */
+//	GPIOMASK |= MASK_PAIN | MASK_PBIN;
+	GPIO->MASK |= MASK_PAIN | MASK_PBIN;
 
-	/* enable PORTA input change mask for pins 5 and 4 */
-	PAINMASK |= MASK_P5 | MASK_P4;
+	/* enable GPIOA input change mask for pins 5 and 4 */
+//	PAINMASK |= MASK_P5 | MASK_P4;
+	GPIOA->INMASK |= MASK_P5 | MASK_P4;
 
 	/* enable PORTB input change mask for pins 11, 10 and 1 */
-	PBINMASK |= MASK_P11 | MASK_P10 | MASK_P1;
+//	PBINMASK |= MASK_P11 | MASK_P10 | MASK_P1;
+	GPIOB->INMASK |= MASK_P11 | MASK_P10 | MASK_P1;
 	
 	/* set PORTA pin 0 as an output */
-	PADDR |= MASK_P0;
+//	PADDR |= MASK_P0;
+	GPIOA->DDR |= MASK_P0;
 
 	for(;;){
 		/* toggle pin 0 */
-		PAOUT ^= MASK_P0;
+//		PAOUT ^= MASK_P0;
+		GPIOA->OUT ^= MASK_P0;
 		
 		printf(".");
 		delay_ms(1000);
