@@ -1,6 +1,6 @@
 /* file:          hf-risc.h
  * description:   hardware abstraction layer (HAL) definitions for HF-RISC
- * date:          01/2019
+ * date:          01/2019 (last updated: 03/2023)
  * author:        Sergio Johann Filho <sergio.filho@pucrs.br>
  */
 
@@ -55,6 +55,31 @@ typedef unsigned long			size_t;
 #define IRQ_MASK			(*(volatile uint32_t *)(INT_CONTROL_BASE + 0x020))
 #define IRQ_STATUS			(*(volatile uint32_t *)(INT_CONTROL_BASE + 0x030))
 #define IRQ_EPC				(*(volatile uint32_t *)(INT_CONTROL_BASE + 0x040))
+
+typedef volatile struct __attribute__((packed, aligned(4))) {
+  	uint32_t VECTOR;
+  	uint32_t RESERVED0[3];
+  	uint32_t CAUSE;
+  	uint32_t RESERVED1[3];
+  	uint32_t MASK;
+  	uint32_t RESERVED2[3];
+  	uint32_t STATUS;
+  	uint32_t RESERVED3[3];
+  	uint32_t EPC;
+  	uint32_t RESERVED4[3];
+} intcontrol_t;
+
+typedef volatile struct __attribute__((packed, aligned(4))) {
+	uint32_t CAUSE;
+	uint32_t RESERVED0[255];
+	uint32_t CAUSEINV;
+	uint32_t RESERVED1[255];
+	uint32_t MASK;
+	uint32_t RESERVED2[255];
+} pint_t;
+
+#define INTCTRL				((intcontrol_t *)(INT_CONTROL_BASE))
+
 #define EXTIO_IN			(*(volatile uint32_t *)(INT_CONTROL_BASE + 0x080))
 #define EXTIO_OUT			(*(volatile uint32_t *)(INT_CONTROL_BASE + 0x090))
 #define DEBUG_ADDR			(*(volatile uint32_t *)(INT_CONTROL_BASE + 0x0d0))
@@ -74,10 +99,27 @@ typedef unsigned long			size_t;
 #define S0CAUSE				(*(volatile uint32_t *)(S0_BASE + 0x0400))
 #define S0CAUSEINV			(*(volatile uint32_t *)(S0_BASE + 0x0800))
 #define S0MASK				(*(volatile uint32_t *)(S0_BASE + 0x0c00))
+
+#define SEG0				((pint_t *)(S0_BASE + 0x0400))
+
 #define PAALTCFG0			(*(volatile uint32_t *)(S0_BASE + 0x4000))
 #define PBALTCFG0			(*(volatile uint32_t *)(S0_BASE + 0x4400))
 #define PCALTCFG0			(*(volatile uint32_t *)(S0_BASE + 0x4800))
 #define PDALTCFG0			(*(volatile uint32_t *)(S0_BASE + 0x4c00))
+
+typedef volatile struct __attribute__((packed, aligned(4))) {
+	uint32_t ALTA;
+	uint32_t RESERVED0[255];
+	uint32_t ALTB;
+	uint32_t RESERVED1[255];
+	uint32_t ALTC;
+	uint32_t RESERVED2[255];
+	uint32_t ALTD;
+	uint32_t RESERVED3[255];
+} gpioalt_t;
+
+#define GPIOALT				((gpioalt_t *)(S0_BASE + 0x4000))
+
 #define DEBUG0				(*(volatile uint32_t *)(S0_BASE + 0xd000))
 #define DEBUG1				(*(volatile uint32_t *)(S0_BASE + 0xd400))
 #define DEBUG2				(*(volatile uint32_t *)(S0_BASE + 0xd800))
@@ -113,6 +155,7 @@ typedef unsigned long			size_t;
 #define GPIOCAUSE			(*(volatile uint32_t *)(GPIO_BASE + 0x0400))
 #define GPIOCAUSEINV			(*(volatile uint32_t *)(GPIO_BASE + 0x0800))
 #define GPIOMASK			(*(volatile uint32_t *)(GPIO_BASE + 0x0c00))
+
 #define PADDR				(*(volatile uint32_t *)(GPIO_BASE + 0x4000))
 #define PAOUT				(*(volatile uint32_t *)(GPIO_BASE + 0x4010))
 #define PAIN				(*(volatile uint32_t *)(GPIO_BASE + 0x4020))
@@ -133,6 +176,25 @@ typedef unsigned long			size_t;
 #define PDIN				(*(volatile uint32_t *)(GPIO_BASE + 0x4c20))
 #define PDININV				(*(volatile uint32_t *)(GPIO_BASE + 0x4c30))
 #define PDINMASK			(*(volatile uint32_t *)(GPIO_BASE + 0x4c40))
+
+typedef volatile struct __attribute__((packed, aligned(4))) {
+  	uint32_t DDR;
+  	uint32_t RESERVED0[3];
+  	uint32_t OUT;
+  	uint32_t RESERVED1[3];
+  	uint32_t IN;
+  	uint32_t RESERVED2[3];
+  	uint32_t ININV;
+  	uint32_t RESERVED3[3];
+  	uint32_t INMASK;
+  	uint32_t RESERVED4[3];
+} ioport_t;
+
+#define GPIO				((pint_t *)(GPIO_BASE + 0x0400))
+#define GPIOA				((ioport_t *)(GPIO_BASE + 0x4000))
+#define GPIOB				((ioport_t *)(GPIO_BASE + 0x4400))
+#define GPIOC				((ioport_t *)(GPIO_BASE + 0x4800))
+#define GPIOD				((ioport_t *)(GPIO_BASE + 0x4c00))
 
 #define MASK_PAIN			(1 << 0)
 #define MASK_PBIN			(1 << 1)
@@ -161,6 +223,7 @@ typedef unsigned long			size_t;
 #define TIMERCAUSE			(*(volatile uint32_t *)(TIMER_BASE + 0x0400))
 #define TIMERCAUSEINV			(*(volatile uint32_t *)(TIMER_BASE + 0x0800))
 #define TIMERMASK			(*(volatile uint32_t *)(TIMER_BASE + 0x0c00))
+
 #define TIMER0				(*(volatile uint32_t *)(TIMER_BASE + 0x4000))
 #define TIMER1				(*(volatile uint32_t *)(TIMER_BASE + 0x4400))
 #define TIMER1PRE			(*(volatile uint32_t *)(TIMER_BASE + 0x4410))
@@ -190,6 +253,27 @@ typedef unsigned long			size_t;
 #define TIMER7PRE			(*(volatile uint32_t *)(TIMER_BASE + 0x5c10))
 #define TIMER7CTC			(*(volatile uint32_t *)(TIMER_BASE + 0x5c20))
 #define TIMER7OCR			(*(volatile uint32_t *)(TIMER_BASE + 0x5c30))
+
+typedef volatile struct __attribute__((packed, aligned(4))) {
+	uint32_t COUNT;			/* timer current count */
+	uint32_t RESERVED0[3];
+	uint32_t PRE;			/* clock prescaler */
+	uint32_t RESERVED1[3];
+	uint32_t CTC;			/* clear timer on compare */
+	uint32_t RESERVED2[3];
+	uint32_t OCR;			/* output compare register */
+	uint32_t RESERVED3[3];
+} timer_t;
+
+#define TIMER				((pint_t *)(TIMER_BASE + 0x0400))
+#define TIM0				((timer_t *)(TIMER_BASE + 0x4000))
+#define TIM1				((timer_t *)(TIMER_BASE + 0x4400))
+#define TIM2				((timer_t *)(TIMER_BASE + 0x4800))
+#define TIM3				((timer_t *)(TIMER_BASE + 0x4c00))
+#define TIM4				((timer_t *)(TIMER_BASE + 0x5000))
+#define TIM5				((timer_t *)(TIMER_BASE + 0x5400))
+#define TIM6				((timer_t *)(TIMER_BASE + 0x5800))
+#define TIM7				((timer_t *)(TIMER_BASE + 0x5c00))
 
 #define MASK_TIMER0A			(1 << 0)
 #define MASK_TIMER0B			(1 << 1)
