@@ -434,31 +434,6 @@ int32_t ftoa(float f, int8_t *outbuf, int32_t precision){
 	return 0;
 }
 
-/*
-int8_t *itoa(int32_t i, int8_t *s, int32_t base){
-	int8_t *ptr = s, *ptr1 = s, tmp_char;
-	int32_t tmp_value;
-
-	if (base < 2 || base > 36) {
-		*s = '\0';
-		return s;
-	}
-	do {
-		tmp_value = i;
-		i /= base;
-		*ptr++ = "zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz" [35 + (tmp_value - i * base)];
-	} while (i);
-	if (tmp_value < 0)
-		*ptr++ = '-';
-	*ptr-- = '\0';
-	while(ptr1 < ptr) {
-		tmp_char = *ptr;
-		*ptr--= *ptr1;
-		*ptr1++ = tmp_char;
-	}
-	return s;
-}
-*/
 int8_t *itoa(int32_t i, int8_t *s, int32_t base)
 {
 	int8_t c;
