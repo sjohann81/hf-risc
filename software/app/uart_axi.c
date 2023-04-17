@@ -12,24 +12,38 @@
 #define UART_AXI_STVALID		(1 << 3)
 
 
+void uart_axi_init(uint32_t baud)
+{
+	UART_AXI_DIVISOR = CPU_SPEED / baud;
+}
+
+void uart_axi_tx(uint8_t byte)
+{
+	UART_AXI_SDATA = byte;
+	while (!(UART_AXI_STATUS & UART_AXI_STREADY));
+}
+
+uint8_t uart_axi_rx(void)
+{
+	while (!(UART_AXI_STATUS & UART_AXI_MTVALID));
+	return UART_AXI_MDATA;
+}
+
+
 int main(void){
-	char data;
+	uint8_t data;
 	
-	UART_AXI_DIVISOR = CPU_SPEED / 115200;
+	uart_axi_init(115200);
 	
 	/* read a byte (AXI uart rx) */
-	while (!(UART_AXI_STATUS & UART_AXI_MTVALID));
-	data = UART_AXI_MDATA;
+	data = uart_axi_rx();
 	
 	/* write two bytes (AXI uart tx) */
-	UART_AXI_SDATA = 0x61;
-	while (!(UART_AXI_STATUS & UART_AXI_STREADY));
-	UART_AXI_SDATA = 0x62;
-	while (!(UART_AXI_STATUS & UART_AXI_STREADY));
+	uart_axi_tx(0x61);
+	uart_axi_tx(0x62);
 	
 	/* write received data (AXI uart tx) */
-	UART_AXI_SDATA = data;
-	while (!(UART_AXI_STATUS & UART_AXI_STREADY));
+	uart_axi_tx(data);
 
 	return 0;
 }
