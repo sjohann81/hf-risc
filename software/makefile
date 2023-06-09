@@ -211,6 +211,10 @@ fsm2: crt
 gpio: crt
 	$(GCC_$(ARCH)) -o gpio.o app/gpio.c
 	@$(MAKE) --no-print-directory link
+	
+gpio2: crt
+	$(GCC_$(ARCH)) -o gpio.o app/gpio2.c
+	@$(MAKE) --no-print-directory link
 
 hanoi: crt
 	$(GCC_$(ARCH)) -o hanoi.o app/hanoi.c
