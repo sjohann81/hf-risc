@@ -37,7 +37,8 @@ architecture peripherals_arch of peripherals is
 	signal funct: std_logic_vector(3 downto 0);
 
 	signal s0cause: std_logic_vector(4 downto 0);
-	signal gpiocause, gpiocause_inv, gpiomask, timercause, timercause_inv, timermask: std_logic_vector(3 downto 0);
+	signal gpiocause, gpiocause_inv, gpiomask: std_logic_vector(3 downto 0);
+	signal timercause, timercause_inv, timermask: std_logic_vector(4 downto 0);
 	signal paddr, paout, pain, pain_inv, pain_mask: std_logic_vector(15 downto 0);
 	signal pbddr, pbout, pbin, pbin_inv, pbin_mask: std_logic_vector(15 downto 0);
 
@@ -91,7 +92,7 @@ begin
 	gpiob_ddr <= pbddr;
 
 	int_timer <= '1' when ((timercause xor timercause_inv) and timermask) /= "0000" else '0';
-	timercause <= int_timer1_ocr & int_timer1_ctc & timer0(18) & timer0(16);
+	timercause <= timer1(15) & int_timer1_ocr & int_timer1_ctc & timer0(18) & timer0(16);
 
 	int_uart <= '1' when ((uartcause xor uartcause_inv) and uartmask) /= "0000" else '0';
 	uartcause <= uart1_write_busy & uart1_data_avail & uart0_write_busy & uart0_data_avail;
@@ -197,11 +198,11 @@ begin
 					when "0010" =>							-- timers
 						case device is
 						when "000001" =>					-- TIMERCAUSE		(RO)
-							data_o <= x"0000000" & timercause;
+							data_o <= x"000000" & "000" & timercause;
 						when "000010" =>					-- TIMERCAUSE_INV	(RW)
-							data_o <= x"0000000" & timercause_inv;
+							data_o <= x"000000" & "000" & timercause_inv;
 						when "000011" =>					-- TIMERMASK		(RW)
-							data_o <= x"0000000" & timermask;
+							data_o <= x"000000" & "000" & timermask;
 						when "010000" =>					-- TIMER0		(RO)
 							data_o <= timer0;
 						when "010001" =>					-- TIMER1
@@ -373,9 +374,9 @@ begin
 					when "0010" =>							-- timers
 						case device is
 						when "000010" =>					-- TIMERCAUSE_INV	(RW)
-							timercause_inv <= data_i(3 downto 0);
+							timercause_inv <= data_i(4 downto 0);
 						when "000011" =>					-- TIMERMASK		(RW)
-							timermask <= data_i(3 downto 0);
+							timermask <= data_i(4 downto 0);
 						when "010001" =>					-- TIMER1
 							case funct is
 							when "0000" =>					-- TIMER1		(RW)
