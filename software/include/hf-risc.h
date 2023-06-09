@@ -133,18 +133,18 @@ typedef volatile struct __attribute__((packed, aligned(4))) {
 #define MASK_S0CAUSE_I2C		(1 << 5)
 
 /* alternate pin configuration masks for PAALTCFG0 */
-#define MASK_OSC0			0x00000001
-#define MASK_PWM0			0x00000002
-#define MASK_OSC1			0x00000004
-#define MASK_PWM1			0x00000008
+#define MASK_OSC1			0x00000001
+#define MASK_PWM1			0x00000002
+#define MASK_OSC2			0x00000004
+#define MASK_PWM2			0x00000008
 #define MASK_UART0			0x00000150
 #define MASK_UART1			0x000002a0
 #define MASK_SPI0			0x00001540
 #define MASK_SPI1			0x0000003f
-#define MASK_OSC0H			0x00010000
-#define MASK_PWM0H			0x00020000
-#define MASK_OSC1H			0x00040000
-#define MASK_PWM1H			0x00080000
+#define MASK_OSC1H			0x00010000
+#define MASK_PWM1H			0x00020000
+#define MASK_OSC2H			0x00040000
+#define MASK_PWM2H			0x00080000
 #define MASK_UART0H			0x01500000
 #define MASK_UART1H			0x02a00000
 #define MASK_SPI0H			0x15400000
@@ -261,7 +261,7 @@ typedef volatile struct __attribute__((packed, aligned(4))) {
 	uint32_t RESERVED1[3];
 	uint32_t CTC;			/* clear timer on compare */
 	uint32_t RESERVED2[3];
-	uint32_t OCR;			/* output compare register */
+	uint32_t OCR;			/* output compare */
 	uint32_t RESERVED3[3];
 } timer_t;
 
@@ -279,19 +279,25 @@ typedef volatile struct __attribute__((packed, aligned(4))) {
 #define MASK_TIMER0B			(1 << 1)
 #define MASK_TIMER1CTC			(1 << 2)
 #define MASK_TIMER1OCR			(1 << 3)
-#define MASK_TIMER2CTC			(1 << 4)
-#define MASK_TIMER2OCR			(1 << 5)
-#define MASK_TIMER3CTC			(1 << 6)
-#define MASK_TIMER3OCR			(1 << 7)
-#define MASK_TIMER4CTC			(1 << 8)
-#define MASK_TIMER4OCR			(1 << 9)
-#define MASK_TIMER5CTC			(1 << 10)
-#define MASK_TIMER5OCR			(1 << 11)
-#define MASK_TIMER6CTC			(1 << 12)
-#define MASK_TIMER6OCR			(1 << 13)
-#define MASK_TIMER7CTC			(1 << 14)
-#define MASK_TIMER7OCR			(1 << 15)
-
+#define MASK_TIMER1OVF			(1 << 4)
+#define MASK_TIMER2CTC			(1 << 5)
+#define MASK_TIMER2OCR			(1 << 6)
+#define MASK_TIMER2OVF			(1 << 7)
+#define MASK_TIMER3CTC			(1 << 8)
+#define MASK_TIMER3OCR			(1 << 9)
+#define MASK_TIMER3OVF			(1 << 10)
+#define MASK_TIMER4CTC			(1 << 11)
+#define MASK_TIMER4OCR			(1 << 12)
+#define MASK_TIMER4OVF			(1 << 13)
+#define MASK_TIMER5CTC			(1 << 14)
+#define MASK_TIMER5OCR			(1 << 15)
+#define MASK_TIMER5OVF			(1 << 16)
+#define MASK_TIMER6CTC			(1 << 17)
+#define MASK_TIMER6OCR			(1 << 18)
+#define MASK_TIMER6OVF			(1 << 19)
+#define MASK_TIMER7CTC			(1 << 20)
+#define MASK_TIMER7OCR			(1 << 21)
+#define MASK_TIMER7OVF			(1 << 22)
 #define TIMERSET			(1 << 31)
 
 #define TIMERPRE_DIV1			0x00
