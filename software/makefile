@@ -266,6 +266,26 @@ peripherals_test: crt
 pi: crt
 	$(GCC_$(ARCH)) -o pi.o app/pi.c
 	@$(MAKE) --no-print-directory link
+	
+pwm0: crt
+	$(GCC_$(ARCH)) -o pwm0.o app/pwm0.c
+	@$(MAKE) --no-print-directory link
+	
+pwm1: crt
+	$(GCC_$(ARCH)) -o pwm1.o app/pwm1.c
+	@$(MAKE) --no-print-directory link
+	
+pwm2: crt
+	$(GCC_$(ARCH)) -o pwm2.o app/pwm2.c
+	@$(MAKE) --no-print-directory link
+	
+pwm3: crt
+	$(GCC_$(ARCH)) -o pwm3.o app/pwm3.c
+	@$(MAKE) --no-print-directory link
+	
+pwm4: crt
+	$(GCC_$(ARCH)) -o pwm4.o app/pwm4.c
+	@$(MAKE) --no-print-directory link
 
 sort: crt
 	$(GCC_$(ARCH)) -o sort.o app/sort.c
