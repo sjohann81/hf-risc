@@ -390,6 +390,11 @@ void periph_cycle(struct periph_s *per)
 	} else {
 		per->timercause &= 0xf7;
 	}
+	if (per->timer1 & 0x8000) {
+		per->timercause |= 0x10;
+	} else {
+		per->timercause &= 0xef;
+	}
 	per->s0cause = (per->gpiocause ^ per->gpiocause_inv) & per->gpiomask ? 0x02 : 0x00;
 	per->s0cause |= (per->timercause ^ per->timercause_inv) & per->timermask ? 0x04 : 0x00;
 	per->timer0++;
