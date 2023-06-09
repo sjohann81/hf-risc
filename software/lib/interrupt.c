@@ -22,18 +22,25 @@ void timer0a_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
 void timer0b_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
 void timer1ctc_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
 void timer1ocr_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
+void timer1ovf_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
 void timer2ctc_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
 void timer2ocr_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
+void timer2ovf_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
 void timer3ctc_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
 void timer3ocr_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
+void timer3ovf_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
 void timer4ctc_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
 void timer4ocr_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
+void timer4ovf_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
 void timer5ctc_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
 void timer5ocr_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
+void timer5ovf_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
 void timer6ctc_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
 void timer6ocr_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
+void timer6ovf_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
 void timer7ctc_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
 void timer7ocr_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
+void timer7ovf_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
 
 void uart0rx_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
 void uart0tx_handler(void) __attribute__ ((weak, alias ("dummy_handler")));
@@ -81,7 +88,7 @@ void (*irq_vector[])(void) = {
 	irq4_handler,
 	irq5_handler,
 	irq6_handler,
-	irq7_handler,
+	irq7_handler
 };
 
 void (*gpio_vector[])(void) = {
@@ -96,18 +103,25 @@ void (*timer_vector[])(void) = {
 	timer0b_handler,
 	timer1ctc_handler,
 	timer1ocr_handler,
+	timer1ovf_handler,
 	timer2ctc_handler,
 	timer2ocr_handler,
+	timer2ovf_handler,
 	timer3ctc_handler,
 	timer3ocr_handler,
+	timer3ovf_handler,
 	timer4ctc_handler,
 	timer4ocr_handler,
+	timer4ovf_handler,
 	timer5ctc_handler,
 	timer5ocr_handler,
+	timer5ovf_handler,
 	timer6ctc_handler,
 	timer6ocr_handler,
+	timer6ovf_handler,
 	timer7ctc_handler,
 	timer7ocr_handler,
+	timer7ovf_handler
 };
 
 void (*uart_vector[])(void) = {
