@@ -21,7 +21,7 @@ READ_mips = mips-elf-readelf
 OBJ_mips = mips-elf-objcopy
 SIZE_mips = mips-elf-size
 
-GCC_riscv = riscv32-unknown-elf-gcc -march=rv32i -mabi=ilp32 -Wall -Os -c -mstrict-align -ffreestanding -nostdlib -ffixed-s11 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) #-DDEBUG_PORT #-ffixed-s10 -ffixed-s11 -mno-div -mrvc -fPIC #-DDEBUG_PORT
+GCC_riscv = riscv32-unknown-elf-gcc -march=rv32i -mabi=ilp32 -Wall -Os -c -mstrict-align -ffreestanding -nostdlib -ffixed-s11 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) -DDEBUG_PORT #-ffixed-s10 -ffixed-s11 -mno-div -mrvc -fPIC #-DDEBUG_PORT
 AS_riscv = riscv32-unknown-elf-as -march=rv32i -mabi=ilp32 #-fPIC
 LD_riscv = riscv32-unknown-elf-ld -melf32lriscv $(LDFLAGS_STRIP)
 DUMP_riscv = riscv32-unknown-elf-objdump -Mno-aliases
@@ -29,13 +29,13 @@ READ_riscv = riscv32-unknown-elf-readelf
 OBJ_riscv = riscv32-unknown-elf-objcopy
 SIZE_riscv = riscv32-unknown-elf-size
 
-GCC_riscve = riscv32-unknown-elf-gcc -march=rv32e -mabi=ilp32e -Wall -Os -c -mstrict-align -ffreestanding -nostdlib -ffixed-a5 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) #-DDEBUG_PORT 
-AS_riscve = riscv32-unknown-elf-as -march=rv32e -mabi=ilp32e #-fPIC
-LD_riscve = riscv32-unknown-elf-ld -melf32lriscv $(LDFLAGS_STRIP)
-DUMP_riscve = riscv32-unknown-elf-objdump -Mno-aliases
-READ_riscve = riscv32-unknown-elf-readelf
-OBJ_riscve = riscv32-unknown-elf-objcopy
-SIZE_riscve = riscv32-unknown-elf-size
+GCC_riscve = riscv64-unknown-elf-gcc -march=rv32e -mabi=ilp32e -Wall -Os -c -mstrict-align -ffreestanding -nostdlib -ffixed-a5 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) #-DDEBUG_PORT 
+AS_riscve = riscv64-unknown-elf-as -march=rv32e -mabi=ilp32e #-fPIC
+LD_riscve = riscv64-unknown-elf-ld -melf32lriscv $(LDFLAGS_STRIP)
+DUMP_riscve = riscv64-unknown-elf-objdump -Mno-aliases
+READ_riscve = riscv64-unknown-elf-readelf
+OBJ_riscve = riscv64-unknown-elf-objcopy
+SIZE_riscve = riscv64-unknown-elf-size
 
 all:
 
@@ -81,6 +81,28 @@ monitor:
 		$(GCC_$(ARCH)) -o monitor.o boot/monitor.c
 	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc_bootloader.ld -Map test.map -N -o test.elf \
 		boot_rom.o libc.o monitor.o
+	$(DUMP_$(ARCH)) --disassemble --reloc test.elf > test.lst
+	$(DUMP_$(ARCH)) -h test.elf > test.sec
+	$(DUMP_$(ARCH)) -s test.elf > test.cnt
+	$(OBJ_$(ARCH)) -O binary test.elf test.bin --pad-to 4096
+	$(SIZE_$(ARCH)) test.elf
+	mv test.elf code.elf
+	mv test.bin code.bin
+	mv test.lst code.lst
+	mv test.sec code.sec
+	mv test.cnt code.cnt
+	mv test.map code.map
+	hexdump -v -e '4/1 "%02x" "\n"' code.bin > boot.txt
+	xxd -b -c 4 code.bin | awk '{print $$2 $$3 $$4 $$5}' > boot_bin.txt
+	./../tools/xilinx/ram_image ./../tools/xilinx/ram_xilinx.vhd boot.txt boot_ram.vhd
+	
+monitor_uart_axi:
+	$(AS_$(ARCH)) -o boot_rom.o lib/$(ARCH)/boot_rom.s
+	$(GCC_$(ARCH)) -o libc.o lib/libc.c
+	$(GCC_$(ARCH)) -o math.o lib/math.c
+		$(GCC_$(ARCH)) -o monitor_uart_axi.o boot/monitor_uart_axi.c
+	$(LD_$(ARCH)) -Tlib/$(ARCH)/hf-risc_bootloader.ld -Map test.map -N -o test.elf \
+		boot_rom.o libc.o monitor_uart_axi.o
 	$(DUMP_$(ARCH)) --disassemble --reloc test.elf > test.lst
 	$(DUMP_$(ARCH)) -h test.elf > test.sec
 	$(DUMP_$(ARCH)) -s test.elf > test.cnt
@@ -236,7 +258,6 @@ interrupt_test3: crt
 	$(GCC_$(ARCH)) -o interrupt_test3.o app/interrupt_test3.c
 	@$(MAKE) --no-print-directory link
 
-
 labyrinth: crt
 	$(GCC_$(ARCH)) -o labyrinth.o app/labyrinth.c
 	@$(MAKE) --no-print-directory link
@@ -362,6 +383,10 @@ xtea_hw_vec: crt
 
 uart_axi: crt
 	$(GCC_$(ARCH)) -o uart_axi.o app/uart_axi.c
+	@$(MAKE) --no-print-directory link
+
+uart_axi2: crt
+	$(GCC_$(ARCH)) -o uart_axi2.o app/uart_axi2.c
 	@$(MAKE) --no-print-directory link
 
 aes_tiny: crt
