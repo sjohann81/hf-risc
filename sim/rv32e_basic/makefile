@@ -30,28 +30,55 @@ VHD_SRC = \
 PROG_SRC = \
 	$(SRC_BASE)/riscv/sim/boot.txt \
 	$(SRC_BASE)/software/code.txt
+	
+TIME = 1ms
 
 all:
 
+# Command line simulation using ModelSim
+# run simulation with 'make modelsim-top TIME=10ms' to run for 10ms
+modelsim:
+	@ cp $(PROG_SRC) .
+	vlib mylib
+	vmap work ./mylib
+	vcom -work mylib $(VHD_SRC)
+
+modelsim-top: modelsim
+	vsim $(GUI) mylib.$(TOP) -c -do "vcd file ${TOP}.vcd -compress; vcd add /*; run ${TIME}; quit"
+	
+modelsim-all: modelsim
+	vsim $(GUI) mylib.$(TOP) -c -do "vcd file ${TOP}.vcd -compress; vcd add -r /*; run ${TIME}; quit"
+	
+modelsim-cpu: modelsim
+	vsim $(GUI) mylib.$(TOP) -c -do "vcd file ${TOP}.vcd -compress; vcd add -r /tb/processor/*; run ${TIME}; quit"
+
+
 # Command line simulation using the free ghdl
-# run simulation with 'make ghdl time=10ms' to run for 10ms
+# run simulation with 'make ghdl-vcd TIME=10ms' to run for 10ms
 ghdl:
 	@ cp $(PROG_SRC) .
 	@ mkdir -p simu
 	ghdl -a --ieee=synopsys --warn-no-vital-generic --workdir=simu --work=work -fexplicit $(VHD_SRC)
-	ghdl -r --ieee=synopsys --warn-no-vital-generic --workdir=simu --work=work -fexplicit $(TOP) --assert-level=failure --stop-time=$(time) --vcdgz=$(TOP).vcdgz
-#	ghdl -r --ieee=synopsys --warn-no-vital-generic --workdir=simu --work=work -fexplicit $(TOP) --assert-level=failure --stop-time=$(time) --wave=$(TOP).ghw
+	
+ghdl-vcd: ghdl
+	ghdl -r --ieee=synopsys --warn-no-vital-generic --workdir=simu --work=work -fexplicit $(TOP) --assert-level=failure --stop-time=$(TIME) --vcdgz=$(TOP).vcd.gz
+
+ghdl-ghw: ghdl
+	ghdl -r --ieee=synopsys --warn-no-vital-generic --workdir=simu --work=work -fexplicit $(TOP) --assert-level=failure --stop-time=$(TIME) --wave=$(TOP).ghw
 
 
-ghdl-gui:
-	gunzip --stdout $(TOP).vcdgz | gtkwave --vcd
+# Display waveforms
+wave-vcd:
+	gtkwave $(TOP).vcd.gz
+	
+wave-ghw:
+	gtkwave $(TOP).ghw
 
-clean-ghdl:
-	@ rm -rf simu
-	@ rm -f tb
-	@ rm -f tb.vcdgz
-	@ rm -f *.txt
 
 # Clean all generated files
-clean: clean-ghdl
-	@ rm -f debug.txt
+clean:
+	@ rm -rf simu work mylib
+	@ rm -f $(TOP)
+	@ rm -f $(TOP).vcd.gz
+	@ rm -f $(TOP).vcd $(TOP).ghw
+	@ rm -f *.txt *.ini *.vsim transcript
