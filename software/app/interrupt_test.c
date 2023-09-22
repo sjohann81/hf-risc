@@ -70,8 +70,8 @@ int main(void){
 	GPIOB->INMASK |= MASK_P10 | MASK_P2;
 	
 	/* configure alternate function for PORTA pin 0 output (TIMER1 output, PWM generation) */
-	//PAALTCFG0 |= MASK_PWM0;
-	GPIOALT->ALTA |= MASK_PWM0;
+	//PAALTCFG0 |= MASK_PWM1;
+	GPIOALT->ALTA |= MASK_PWM1;
 
 	val = syscall(555, 7, 8, 9);
 	printf(" [%d]", val);
