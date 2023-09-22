@@ -56,10 +56,17 @@ void testfp(void)
 {
 	int i;
 	fixed_t a, x;
-	char buf[30];
+	float f;
+	char buf[30], buf2[30];
 
 	fixtoa(epsilon(), buf, 6);
 	printf("\nmachine epsilon: %s", buf);
+	
+	a = fix_div(fix_val(1.0), fix_val(137.0));
+	f = 1.0f / 137.0f;
+	fixtoa(a, buf, 10);
+	ftoa(f, buf2, 10);
+	printf("\n1 / 137: %s (fix) %s (float)", buf, buf2);
 
 	a = fix_div(fix_val(3.0), fix_val(4.0));
 	for (i = 3; i > -7; i--) {
