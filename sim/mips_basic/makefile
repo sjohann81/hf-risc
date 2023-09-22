@@ -52,6 +52,8 @@ modelsim-all: modelsim
 modelsim-cpu: modelsim
 	vsim $(GUI) mylib.$(TOP) -c -do "vcd file ${TOP}.vcd -compress; vcd add -r /tb/processor/*; run ${TIME}; quit"
 
+modelsim-wave: modelsim
+	vsim $(GUI) mylib.$(TOP) -do "add wave -r /*; run ${TIME};"
 
 # Command line simulation using the free ghdl
 # run simulation with 'make ghdl-vcd TIME=10ms' to run for 10ms
