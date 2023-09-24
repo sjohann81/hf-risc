@@ -1,15 +1,15 @@
 #include <hf-risc.h>
 
 #define UART_AXI_BASE			0xe4000000
-#define UART_AXI_DIVISOR		(*(volatile uint32_t *)(UART_AXI_BASE + 0x000))
 #define UART_AXI_STATUS			(*(volatile uint32_t *)(UART_AXI_BASE + 0x010))
-#define UART_AXI_MDATA			(*(volatile uint32_t *)(UART_AXI_BASE + 0x020))
-#define UART_AXI_SDATA			(*(volatile uint32_t *)(UART_AXI_BASE + 0x030))
+#define UART_AXI_SDATA			(*(volatile uint32_t *)(UART_AXI_BASE + 0x020))
+#define UART_AXI_MDATA			(*(volatile uint32_t *)(UART_AXI_BASE + 0x030))
+#define UART_AXI_DIVISOR		(*(volatile uint32_t *)(UART_AXI_BASE + 0x040))
 
-#define UART_AXI_MTREADY		(1 << 0)
-#define UART_AXI_MTVALID		(1 << 1)
-#define UART_AXI_STREADY		(1 << 2)
-#define UART_AXI_STVALID		(1 << 3)
+#define UART_AXI_STREADY		(1 << 0)
+#define UART_AXI_STVALID		(1 << 1)
+#define UART_AXI_MTREADY		(1 << 2)
+#define UART_AXI_MTVALID		(1 << 3)
 
 
 /* AXIS UART driver functions */
@@ -17,23 +17,29 @@
 void uart_axi_init(uint32_t baud)
 {
 	UART_AXI_DIVISOR = CPU_SPEED / baud;
+	
+	/* set PORTB pin 6 as an output (uart_axi tx) */
+	PBDDR |= MASK_P6;
+	
+	/* set PORTB pin 7 as an input (uart_axi rx) */
+	PBDDR &= ~MASK_P7;
 }
 
 void uart_axi_tx(uint8_t byte)
 {
-	UART_AXI_SDATA = byte;
-	while (!(UART_AXI_STATUS & UART_AXI_STREADY));
+	UART_AXI_MDATA = byte;
+	while (!(UART_AXI_STATUS & UART_AXI_MTREADY));
 }
 
 uint32_t uart_axi_rxdata(void)
 {
-	return (UART_AXI_STATUS & UART_AXI_MTVALID);
+	return (UART_AXI_STATUS & UART_AXI_STVALID);
 }
 
 uint8_t uart_axi_rx(void)
 {
 	while (!uart_axi_rxdata());
-	return UART_AXI_MDATA;
+	return UART_AXI_SDATA;
 }
 
 
