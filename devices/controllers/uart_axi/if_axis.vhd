@@ -40,7 +40,6 @@ architecture if_arch of if_axis is
 	
 	-- custom logic signals (uart)
 	signal device : std_logic_vector(15 downto 0);
-	
 	signal uart_divisor: std_logic_vector(11 downto 0);
 	
 begin
@@ -70,17 +69,17 @@ begin
 		elsif axis_aclk_i'event and axis_aclk_i = '1' then
 			if (data_access = '1') then				-- AXI peripheral is at 0xe4000000
 				case device(6 downto 4) is
-					when "000" =>		-- uart divisor			0xe4000000 (RW)
-						data_read_axis <= x"00000" & uart_divisor;
 					when "001" =>		-- AXI control/status		0xe4000010 (RO)
 						data_read_axis <= x"0000000" & m_axis_control(1) & m_axis_control(0) & s_axis_control(1) & s_axis_control(0);
-					when "010" =>		-- AXI peripheral master data	0xe4000020 (RO)
+					when "010" =>		-- AXI slave data (in)		0xe4000020 (RO)
 						if s_axis_control(1) = '1' then
 							data_read_axis <= x"000000" & s_axis_tdata_i;
 							s_axis_control(0) <= '1';
 						end if;
-					when "011" =>		-- AXI peripheral slave data	0xe4000030 (RW)
+					when "011" =>		-- AXI master data (out)	0xe4000030 (RW)
 						data_read_axis <= x"000000" & m_axis_data;
+					when "100" =>		-- uart divisor			0xe4000040 (RW)
+						data_read_axis <= x"00000" & uart_divisor;
 					when others =>
 						data_read_axis <= (others => '0');
 				end case;
@@ -101,15 +100,15 @@ begin
 			m_axis_data <= (others => '0');
 			uart_divisor <= (others => '0');
 		elsif axis_aclk_i'event and axis_aclk_i = '1' then
-			if (data_access = '1' and data_w_i = '1') then	-- AXI peripheral is at 0xe4000000
+			if (data_access = '1' and data_w_i = '1') then		-- AXI peripheral is at 0xe4000000
 				case device(6 downto 4) is
-					when "000" =>		-- uart divisor			0xe4000000
-						uart_divisor <= data_i(11 downto 0);
-					when "011" =>		-- AXI peripheral slave data	0xe4000030
+					when "011" =>		-- AXI master data (out)	0xe4000030 (RW)
 						if m_axis_control(0) = '1' then
 							m_axis_data <= data_i(7 downto 0);
 							m_axis_control(1) <= '1';
 						end if;
+					when "100" =>		-- uart divisor			0xe4000000 (RW)
+						uart_divisor <= data_i(11 downto 0);
 					when others =>
 				end case;
 			end if;
