@@ -49,7 +49,7 @@ serial:
 load: serial
 	echo "u" > ${SERIAL_DEV}
 	sleep 1
-	cat code.bin ${SERIAL_DEV}
+	cat code.bin > ${SERIAL_DEV}
 	sleep 5
 	echo "b" > ${SERIAL_DEV}
 
