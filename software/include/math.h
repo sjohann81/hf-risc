@@ -18,7 +18,7 @@
 
 float fabs(float n);
 float frexp(float value, int32_t *eptr);
-float ldexp(float x, int32_t exp);
+float ldexp(float val, int32_t expon);
 float modf(float x, float *iptr);
 float floor(float d);
 float ceil(float d);

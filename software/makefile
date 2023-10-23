@@ -30,7 +30,7 @@ READ_riscv = riscv64-unknown-elf-readelf
 OBJ_riscv = riscv64-unknown-elf-objcopy
 SIZE_riscv = riscv64-unknown-elf-size
 
-GCC_riscve = riscv64-unknown-elf-gcc -march=rv32e -mabi=ilp32e -Wall -O2 -c -mstrict-align -ffreestanding -nostdlib -ffixed-a5 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) #-DDEBUG_PORT 
+GCC_riscve = riscv64-unknown-elf-gcc -march=rv32e -mabi=ilp32e -Wall -O2 -c -mstrict-align -ffreestanding -nostdlib -ffixed-a5 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) -DDEBUG_PORT 
 AS_riscve = riscv64-unknown-elf-as -march=rv32e -mabi=ilp32e #-fPIC
 LD_riscve = riscv64-unknown-elf-ld -melf32lriscv $(LDFLAGS_STRIP)
 DUMP_riscve = riscv64-unknown-elf-objdump -Mno-aliases
