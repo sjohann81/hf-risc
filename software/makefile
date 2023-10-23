@@ -30,7 +30,7 @@ READ_riscv = riscv64-unknown-elf-readelf
 OBJ_riscv = riscv64-unknown-elf-objcopy
 SIZE_riscv = riscv64-unknown-elf-size
 
-GCC_riscve = riscv64-unknown-elf-gcc -march=rv32e -mabi=ilp32e -Wall -O2 -c -mstrict-align -ffreestanding -nostdlib -ffixed-a5 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) -DDEBUG_PORT 
+GCC_riscve = riscv64-unknown-elf-gcc -march=rv32e -mabi=ilp32e -Wall -O2 -c -mstrict-align -ffreestanding -nostdlib -ffixed-a5 -I ./include -DCPU_SPEED=${F_CLK} -DLITTLE_ENDIAN $(CFLAGS_STRIP) #-DDEBUG_PORT 
 AS_riscve = riscv64-unknown-elf-as -march=rv32e -mabi=ilp32e #-fPIC
 LD_riscve = riscv64-unknown-elf-ld -melf32lriscv $(LDFLAGS_STRIP)
 DUMP_riscve = riscv64-unknown-elf-objdump -Mno-aliases
@@ -265,7 +265,7 @@ interrupt_test3: crt
 labyrinth: crt
 	$(GCC_$(ARCH)) -o labyrinth.o app/labyrinth.c
 	@$(MAKE) --no-print-directory link
-	
+
 list_test: crt
 	$(GCC_$(ARCH)) -o list.o lib/list.c
 	$(GCC_$(ARCH)) -o list_test.o app/list_test.c
@@ -405,6 +405,22 @@ aes_lite: crt
 test: crt
 	$(GCC_$(ARCH)) -o test.o app/test.c
 	@$(MAKE) --no-print-directory link
+
+vga_test: crt
+	$(GCC_$(ARCH)) -o vga_test.o app/vga/vga_test.c
+	@$(MAKE) --no-print-directory link
+
+vga_demo: crt
+	$(GCC_$(ARCH)) -o vga_drv.o app/vga/vga_drv.c
+	$(GCC_$(ARCH)) -o vga_demo.o app/vga/vga_demo.c
+	@$(MAKE) --no-print-directory link
+
+vga_cube: crt
+	$(GCC_$(ARCH)) -o vga_drv.o app/vga/vga_drv.c
+	$(GCC_$(ARCH)) -o vga_cube.o app/vga/vga_cube.c
+	@$(MAKE) --no-print-directory link
+
+
 
 include app/malardalen/malardalen.mak
 include app/powerstone/powerstone.mak
