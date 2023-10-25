@@ -419,7 +419,11 @@ vga_cube: crt
 	$(GCC_$(ARCH)) -o vga_drv.o app/vga/vga_drv.c
 	$(GCC_$(ARCH)) -o vga_cube.o app/vga/vga_cube.c
 	@$(MAKE) --no-print-directory link
-
+	
+vga_ball: crt
+	$(GCC_$(ARCH)) -o vga_drv.o app/vga/vga_drv.c
+	$(GCC_$(ARCH)) -o vga_ball.o app/vga/vga_ball.c
+	@$(MAKE) --no-print-directory link
 
 
 include app/malardalen/malardalen.mak
