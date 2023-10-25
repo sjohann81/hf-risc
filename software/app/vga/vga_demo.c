@@ -1,24 +1,12 @@
 #include <hf-risc.h>
 #include "vga_drv.h"
 
-void display_test0()
-{
-	int i, j, k, size = 1;
-	
-	for (j = 10, k = 0; k < 255; j += FONT_Y * size) {
-		for (i = 1; i < VGA_WIDTH - 1 - FONT_X * size && k < 255; i += FONT_X * size, k++) {
-			display_char(k, i, j, size, YELLOW);
-		}
-	}
-	
-	display_print("The quick brown fox", 0, 100, 1, GREEN);
-	display_print("jumps over the lazy dog", 0, 150 + FONT_Y, 1, GREEN);
-}
-
-
+/* graphic objects and text test */
 void display_test1()
 {
 	char buf[30];
+
+	display_background(BLACK);
 		
 	display_pixel(10, 10, YELLOW);
 	display_line(0, 0, VGA_WIDTH-1, VGA_HEIGHT-1, GREEN);
@@ -43,6 +31,8 @@ void display_test2()
 {
 	int i, j, k;
 	
+	display_background(BLUE);
+	
 	for (j = 10, k = 0; k < 255; j += FONT_Y)
 		for (i = 1; i < VGA_WIDTH - 1 - FONT_X && k < 255; i += FONT_X, k++)
 			display_char(k, i, j, 1, YELLOW);
@@ -52,6 +42,7 @@ void display_test2()
 }
 
 
+/* graphic objects test */
 int dot_demo()
 {
 	uint16_t k, l, c;
@@ -101,7 +92,6 @@ int line_demo()
 	return i;
 }
 
-
 int rectangle_demo()
 {
 	uint16_t k, l, m, n, c;
@@ -135,7 +125,6 @@ int rectangle_demo()
 	return i;
 }
 
-
 int circle_demo()
 {
 	uint16_t k, l, r, c;
@@ -165,7 +154,6 @@ int circle_demo()
 	
 	return i;
 }
-
 
 int triangle_demo()
 {
@@ -211,16 +199,67 @@ void display_test3()
 	triangle_demo();
 }
 
+/* maldelbrot test */
+int mandelbrot(float C_re, float C_im, int max_count)
+{
+	int count = 0;
+	float Z_re = 0;
+	float Z_im = 0;
+	float magnitude = 0;
+	float max_magnitude = 1000000;
+
+	/* Calculate Z=Z^2+C for given C */
+	while ((magnitude < max_magnitude) && (count++ < max_count)) {
+		float N_re = Z_re * Z_re - Z_im * Z_im + C_re;
+		float N_im = Z_re * Z_im + Z_im * Z_re + C_im;
+		Z_re = N_re;
+		Z_im = N_im;
+		magnitude = Z_re * Z_re + Z_im * Z_im;
+	}
+
+	if (count >= max_count)
+		return 0;
+	else
+		return count;
+}
+
+void draw_mandelbrot(int width, int height)
+{
+	float center_re = -0.5;
+	float center_im = 0.0;
+	float radius = 1.0;
+	uint16_t color;
+
+	for (int y = 0; y < height; y++) {
+		for (int x = 0; x < width; x++) {
+			float C_re = center_re - radius + (2 * radius * x) / width;
+			float C_im = center_im - radius + (2 * radius * y) / height;
+
+			color = mandelbrot(C_re, C_im, 32);
+
+			display_pixel(x, y, color & 0xf);
+		}
+	}
+}
+
+void display_test4()
+{
+	display_background(BLACK);
+	draw_mandelbrot(VGA_WIDTH, VGA_HEIGHT);
+}
+
+
 int main(void)
 {
 	while (1) {
-		display_background(BLACK);
 		display_test1();
 		delay_ms(5000);
-		display_background(BLUE);
 		display_test2();
 		delay_ms(5000);
 		display_test3();
+		delay_ms(5000);
+		display_test4();
+		delay_ms(5000);
 	}
 
 	return 0;
