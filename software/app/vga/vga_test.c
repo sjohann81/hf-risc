@@ -20,15 +20,21 @@ void vram_putbyte(uint16_t addr, char color)
 	VGA_STATUS &= ~VGA_WRITE;
 }
 
-char vram_getbyte(uint16_t addr)
+static char vram_getbyte(uint16_t addr)
 {
-	char data;
+	char data1, data2;
 	
 	VGA_ADDRESS = addr;
-	while (!(VGA_STATUS & VGA_NOTBUSY));
-	data = VGA_DATA;
 	
-	return data;
+retry:
+	while (!(VGA_STATUS & VGA_NOTBUSY));
+	data1 = VGA_DATA;
+	while (!(VGA_STATUS & VGA_NOTBUSY));
+	data2 = VGA_DATA;
+	
+	if (data1 != data2) goto retry;
+	
+	return data1;
 }
 
 void display_pixel(uint16_t x, uint16_t y, char color)

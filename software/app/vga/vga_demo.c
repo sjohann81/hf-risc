@@ -64,26 +64,7 @@ int dot_demo()
 
 		display_pixel(k, l, c);
 		
-		if (i > 1000)
-			break;
-			
-		i++;
-	}
-	
-	display_background(BLACK);
-	
-	delay_ms(2000);
-	
-	i = 0;
-	
-	for (;;) {
-		k = random() % VGA_WIDTH;
-		l = random() % VGA_HEIGHT;
-		c = random() % 16;
-
-		display_pixel(k, l, c);
-		
-		if (i > 1000)
+		if (i > 100000)
 			break;
 			
 		i++;

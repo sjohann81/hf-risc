@@ -22,13 +22,19 @@ static void vram_putbyte(uint16_t addr, char color)
 
 static char vram_getbyte(uint16_t addr)
 {
-	char data;
+	char data1, data2;
 	
 	VGA_ADDRESS = addr;
-	while (!(VGA_STATUS & VGA_NOTBUSY));
-	data = VGA_DATA;
 	
-	return data;
+retry:
+	while (!(VGA_STATUS & VGA_NOTBUSY));
+	data1 = VGA_DATA;
+	while (!(VGA_STATUS & VGA_NOTBUSY));
+	data2 = VGA_DATA;
+	
+	if (data1 != data2) goto retry;
+	
+	return data1;
 }
 
 void display_pixel(uint16_t x, uint16_t y, char color)
@@ -49,6 +55,20 @@ void display_pixel(uint16_t x, uint16_t y, char color)
 	}
 
 	vram_putbyte(vram_addr, byte);
+}
+
+char display_getpixel(uint16_t x, uint16_t y)
+{
+	char byte;
+	uint16_t vram_addr;
+	
+	vram_addr = y * (VGA_WIDTH >> 1) + (x >> 1);	
+	byte = vram_getbyte(vram_addr);
+	
+	if (x & 1)
+		return (byte >> 4) & 0xf;
+	else
+		return byte & 0xf;
 }
 
 void display_line(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color)
