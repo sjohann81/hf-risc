@@ -76,6 +76,7 @@ void draw_cube(struct cube_s *cube, int x_off, int y_off, uint16_t color)
 int main(void)
 {
 	struct cube_s cube1, cube2;
+	struct cube_s last_cube1, last_cube2;
 	
 	display_background(BLACK);
 	
@@ -88,14 +89,17 @@ int main(void)
 	rotate_cube(&cube2, PI / 4.0, atan(sqrt(2.0)));
 	
 	while (1) {
-		draw_cube(&cube1, 100, 40, BLACK);
-		draw_cube(&cube2, 200, 130, BLACK);
+		last_cube1 = cube1;
+		last_cube2 = cube2;
 		rotate_cube(&cube1, PI / 180.0, PI / 150.0);
 		rotate_cube(&cube2, PI / 180.0, PI / 120.0);
+		draw_cube(&last_cube1, 100, 40, BLACK);
 		draw_cube(&cube1, 100, 40, BLUE);
+		draw_cube(&last_cube2, 200, 130, BLACK);
 		draw_cube(&cube2, 200, 130, GREEN);
-		delay_ms(10);
+		delay_ms(20);
 	}
+	
 	
 	return 0;
 }
