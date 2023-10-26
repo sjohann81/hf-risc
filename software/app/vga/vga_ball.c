@@ -28,6 +28,14 @@ void init_ball(struct ball_s *ball, int x, int y, int dx, int dy)
 	ball->dy = dy;
 }
 
+void init_input()
+{
+	/* configure GPIOB pins 8 .. 12 as inputs */
+	GPIOB->DDR &= ~(MASK_P8 | MASK_P9 | MASK_P10 | MASK_P11 | MASK_P12);
+}
+
+
+
 void test_limits(char *limits, struct ball_s *ball)
 {
 	unsigned int ballx, bally;
@@ -50,13 +58,13 @@ void test_limits(char *limits, struct ball_s *ball)
 
 char test_collision(char *limits, struct ball_s *ball)
 {
-	char collision = 0;
+	char hit = 0;
 	int i;
 	
-	if ((ball->ballx < VGA_WIDTH-1) && (ball->ballx > 0) && (ball->bally < VGA_HEIGHT-1) && (ball->bally > 0)){
+	if ((ball->ballx < VGA_WIDTH-1) && (ball->ballx > 0) && (ball->bally < VGA_HEIGHT-1) && (ball->bally > 0)) {
 		for (i = 0; i < 9; i++) {
 			if (limits[i]) {
-				collision = 1;
+				hit = 1;
 				break;
 			}
 		}
@@ -89,7 +97,7 @@ char test_collision(char *limits, struct ball_s *ball)
 			ball->dy = -ball->dy;
 	}
 	
-	return collision;
+	return hit;
 }
 
 void update_ball(struct ball_s *ball)
@@ -103,6 +111,28 @@ void update_ball(struct ball_s *ball)
 	ball->bally = ball->bally + ball->dy;
 }
 
+void get_input()
+{
+	if (GPIOB->IN & MASK_P10)
+		display_frectangle(30, (VGA_HEIGHT/2)-10, 5, 20, YELLOW);
+	else
+		display_frectangle(30, (VGA_HEIGHT/2)-10, 5, 20, BLACK);
+		
+	if (GPIOB->IN & MASK_P11)
+		display_frectangle(VGA_WIDTH-31, (VGA_HEIGHT/2)-10, 5, 20, YELLOW);
+	else
+		display_frectangle(VGA_WIDTH-31, (VGA_HEIGHT/2)-10, 5, 20, BLACK);
+		
+	if (GPIOB->IN & MASK_P9)
+		display_frectangle((VGA_WIDTH/2)-10, 0, 20, 5, YELLOW);
+	else
+		display_frectangle((VGA_WIDTH/2)-10, 0, 20, 5, BLACK);
+		
+	if (GPIOB->IN & MASK_P12)
+		display_frectangle((VGA_WIDTH/2)-10, VGA_HEIGHT-6, 20, 5, YELLOW);
+	else
+		display_frectangle((VGA_WIDTH/2)-10, VGA_HEIGHT-6, 20, 5, BLACK);
+}
 
 int main(void)
 {
@@ -112,14 +142,14 @@ int main(void)
 	
 	init_display();
 	init_ball(pball, 150, 105, 1, 1);
+	init_input();
 
 	while (1) {
 		test_limits(limits, pball);
 		test_collision(limits, pball);
-		
 		delay_ms(10);
-
 		update_ball(pball);
+		get_input();
 	}
 
 	return 0;

@@ -114,20 +114,20 @@ void display_vline(uint16_t x0, uint16_t y0, uint16_t length, uint16_t color)
 		display_pixel(x0, y0 + i, color);
 }
 
-void display_rectangle(uint16_t x0, uint16_t y0, uint16_t length, uint16_t width, uint16_t color)
+void display_rectangle(uint16_t x0, uint16_t y0, uint16_t width, uint16_t height, uint16_t color)
 {
-	display_hline(x0, y0, length, color);
-	display_hline(x0, y0 + width, length + 1, color);
-	display_vline(x0, y0, width, color);
-	display_vline(x0 + length, y0, width, color);
+	display_hline(x0, y0, width, color);
+	display_hline(x0, y0 + height, width + 1, color);
+	display_vline(x0, y0, height, color);
+	display_vline(x0 + width, y0, height, color);
 }
 
-void display_frectangle(uint16_t x0, uint16_t y0, uint16_t length, uint16_t width, uint16_t color)
+void display_frectangle(uint16_t x0, uint16_t y0, uint16_t width, uint16_t height, uint16_t color)
 {
 	int i;
 	
-	for (i = 0; i < width; i++)
-		display_hline(x0, y0 + i, length, color);
+	for (i = 0; i < height; i++)
+		display_hline(x0, y0 + i, width, color);
 }
 
 void display_background(uint16_t color)

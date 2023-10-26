@@ -12,7 +12,7 @@ void display_test1()
 	display_line(0, 0, VGA_WIDTH-1, VGA_HEIGHT-1, GREEN);
 	display_line(VGA_WIDTH-1, 0, 0, VGA_HEIGHT-1, GREEN);
 	display_rectangle(0, 0, 120, 120, LGREEN);
-	display_frectangle(20, 10, 50, 10, RED);
+	display_frectangle(20, 10, 10, 50, RED);
 	display_circle(45,90,15, WHITE);
 	display_fcircle(25, 165, 20, BLUE);
 	display_ftriangle(50, 60, 10, 125, 80, 75, YELLOW);
