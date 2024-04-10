@@ -3,6 +3,7 @@ approximation of euler's number using fixed point math
 */
 
 #include <hf-risc.h>
+#define FIX_IBITS		12
 #include <fixed.h>
 
 int fac(int n){

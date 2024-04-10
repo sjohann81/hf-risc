@@ -1,4 +1,5 @@
 #include <hf-risc.h>
+#define FIX_IBITS		12
 #include <fixed.h>
 
 float testfloat_add(float min, float max, float step)
