@@ -136,19 +136,24 @@ void get_input()
 
 int main(void)
 {
-	struct ball_s ball;
-	struct ball_s *pball = &ball;
+	struct ball_s ball1, ball2;
+	struct ball_s *pball1 = &ball1;
+	struct ball_s *pball2 = &ball2;
 	char limits[9];
 	
 	init_display();
-	init_ball(pball, 150, 105, 1, 1);
+	init_ball(pball1, 150, 105, 1, 1);
+	init_ball(pball2, 25, 17, 1, -1);
 	init_input();
 
 	while (1) {
-		test_limits(limits, pball);
-		test_collision(limits, pball);
+		test_limits(limits, pball1);
+		test_collision(limits, pball1);
+		test_limits(limits, pball2);
+		test_collision(limits, pball2);
 		delay_ms(10);
-		update_ball(pball);
+		update_ball(pball1);
+		update_ball(pball2);
 		get_input();
 	}
 
