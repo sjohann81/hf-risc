@@ -1,6 +1,6 @@
 /* file:          fixed.h
  * description:   fixed point arithmetic / math library
- * date:          05/2018
+ * date:          05/2018, rev 04/2024
  * author:        Sergio Johann Filho <sergio.johann@acad.pucrs.br>
  */
 
@@ -11,22 +11,21 @@ typedef int32_t fixed_t;
 #endif
 
 #ifndef FIX_MULDIV_WIDTH
-#define FIX_MULDIV_WIDTH	32
+#define FIX_MULDIV_WIDTH	64
 #endif
 
 #if FIX_MULDIV_WIDTH != 32 && FIX_MULDIV_WIDTH != 64
 #error "FIX_MULDIV_WIDTH should be either 32 or 64"
 #endif
 
-#if FIX_IBITS < 16 && FIX_MULDIV_WIDTH == 32
-#error "FIX_IBITS must be greater or equal to 16 when FIX_MULDIV_WIDTH is 32"
+#if FIX_IBITS < 2 || FIX_IBITS > 30
+#error "FIX_IBITS must be greater than 1 and smaller than 31"
 #endif
 
 #define FIX_FBITS		(32 - FIX_IBITS)
 #define FIX_FMASK		(((fixed_t)1 << FIX_FBITS) - 1)
 #define FIX_ONE			((fixed_t)((fixed_t)1 << FIX_FBITS))
 
-//#define fix_val(V)		((fixed_t)((V) * FIX_ONE + ((V) >= 0 ? 0.5f : -0.5f)))
 #define fix_val(V)		((fixed_t)((V) * FIX_ONE))
 #define fix_int(F)		((F) >> FIX_FBITS)
 #define fix_frac(A)		((fixed_t)(A) & FIX_FMASK)
@@ -96,6 +95,7 @@ fixed_t fix_div(fixed_t x, fixed_t y)
 #else
 	res = fix_mul(x, ((0x80000000 / y)) >> (FIX_IBITS * 2 - 33));
 #endif
+
 	return (neg ? -res : res);
 }
 #endif
@@ -109,7 +109,7 @@ float fix_to_float(fixed_t val)
 {
 	float ip, fp;
 
-	ip = (float)(val >> FIX_IBITS);
+	ip = (float)(val >> FIX_FBITS);
 	fp = ((float)(val & FIX_FMASK)) / ((float)(1 << FIX_FBITS));
 
 	return ip + fp;
