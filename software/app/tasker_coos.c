@@ -1,46 +1,98 @@
 #include <hf-risc.h>
 #include "coos/coos.h"
 
-/* application tasks */
-void *task1(void *arg);
-void *task2(void *arg);
-void *task3(void *arg);
+void *t1(void *arg);
+void *t2(void *arg);
+void *t3(void *arg);
+void *t4(void *arg);
 
-void *task1(void *arg)
+void *t1(void *arg)
 {
-	static int cont = 0;
-	struct message_s msg;
-	struct message_s *pmsg = &msg;
+	static int val = 0;
+	static struct message_s msg1, msg2;
+	static char str[50];
+	struct message_s *pmsg;
 	
-	printf("task 1, cont: %d\n", cont++);
+	printf("t1\n");
 	
-	if ((cont % 10) == 0) {
-		pmsg->type = 0;
-		pmsg->data = (void *)123;
-		task_mq_enqueue(task3, pmsg);
+	if (task_mq_items() == 0)
+		if (val > 0) return 0;
+
+	printf("task 1 enters...\n");
+	
+	if (task_mq_items())
+		task_mq_dequeue();
+
+	pmsg = &msg1;
+	pmsg->data = (void *)(size_t)val;
+	task_mq_enqueue(t2, pmsg);
+	pmsg = &msg2;
+	sprintf(str, "hello %d from t1...", val++);
+	pmsg->data = (void *)&str;
+	task_mq_enqueue(t3, pmsg);
+
+	return 0;
+}
+
+void *t2(void *arg)
+{
+	static struct message_s msg1;
+	static int val = 200;
+	struct message_s *msg;
+	
+	printf("t2\n");
+	
+	if (task_mq_items() > 0) {
+		printf("task 2 enters...\n");
+
+		msg = task_mq_dequeue();
+		printf("message %d\n", (int)(size_t)msg->data);
+		msg = &msg1;
+		msg->data = (void *)(size_t)val++;
+		task_mq_enqueue(t4, msg);
 	}
 	
 	return 0;
 }
 
-void *task2(void *arg)
+void *t3(void *arg)
 {
-	static int cont = 0;
+	static struct message_s msg1;
+	static int val = 300;
+	struct message_s *msg;
 	
-	printf("task 2, cont: %d\n", cont++);
+	printf("t3\n");
+	
+	if (task_mq_items() > 0) {
+		printf("task 3 enters...\n");
+		
+		msg = task_mq_dequeue();
+		printf("message: %s\n", (char *)msg->data);
+		msg = &msg1;
+		msg->data = (void *)(size_t)val++;
+		task_mq_enqueue(t4, msg);
+	}
 	
 	return 0;
 }
 
-void *task3(void *arg)
+void *t4(void *arg)
 {
-	static int cont = 0;
-	struct message_s *pmsg;
+	struct message_s *msg1, *msg2;
+	static struct message_s dummy;
 	
-	printf("task 3, cont: %d\n", cont++);
-	if (task_mq_items() > 0) {
-		pmsg = task_mq_dequeue();
-		printf("received (%d): type: %d, data: %ld\n", task_mq_items(), pmsg->type, (long)pmsg->data);
+	printf("t4\n");
+	
+	if (task_mq_items() > 1) {
+		printf("task 4 enters...\n");
+
+		msg1 = task_mq_dequeue();
+		msg2 = task_mq_dequeue();
+		printf("messages: %d %d\n", (int)(size_t)msg1->data, (int)(size_t)msg2->data);
+		
+		delay_ms(100);
+		
+		task_mq_enqueue(t1, &dummy);
 	}
 	
 	return 0;
@@ -53,9 +105,10 @@ int main(void)
 
 	/* setup CoOS and tasks */
 	task_pinit(ptasks);
-	task_add(ptasks, task1, 128);
-	task_add(ptasks, task2, 75);
-	task_add(ptasks, task3, 50);
+	task_add(ptasks, t1, 30);
+	task_add(ptasks, t2, 50);
+	task_add(ptasks, t3, 30);
+	task_add(ptasks, t4, 60);
 
 	while (1) {
 		task_schedule(ptasks);
