@@ -199,6 +199,24 @@ void display_test3()
 	triangle_demo();
 }
 
+
+void display_test4()
+{
+	int it = 0;
+	int i, j, k;
+	
+	display_background(BLACK);
+	
+	while (++it < 500000) {
+		i = random() % VGA_WIDTH >> 1;
+		j = random() % VGA_HEIGHT >> 1;
+		k = random() % 16;
+		
+		display_quad(i << 1, j << 1, k);
+	}
+}
+
+
 /* maldelbrot test */
 int mandelbrot(float C_re, float C_im, int max_count)
 {
@@ -235,14 +253,14 @@ void draw_mandelbrot(int width, int height)
 			float C_re = center_re - radius + (2 * radius * x) / width;
 			float C_im = center_im - radius + (2 * radius * y) / height;
 
-			color = mandelbrot(C_re, C_im, 32);
+			color = mandelbrot(C_re, C_im, 16);
 
 			display_pixel(x, y, color & 0xf);
 		}
 	}
 }
 
-void display_test4()
+void display_test5()
 {
 	display_background(BLACK);
 	draw_mandelbrot(VGA_WIDTH, VGA_HEIGHT);
@@ -259,6 +277,8 @@ int main(void)
 		display_test3();
 		delay_ms(5000);
 		display_test4();
+		delay_ms(5000);
+		display_test5();
 		delay_ms(5000);
 	}
 
