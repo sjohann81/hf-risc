@@ -37,6 +37,16 @@ retry:
 	return data1;
 }
 
+void display_quad(uint16_t x, uint16_t y, char color)
+{
+	uint16_t vram_addr1, vram_addr2;
+	
+	vram_addr1 = y * (VGA_WIDTH >> 1) + (x >> 1);
+	vram_addr2 = vram_addr1 + (VGA_WIDTH >> 1);
+	vram_putbyte(vram_addr1, color << 4 | color);
+	vram_putbyte(vram_addr2, color << 4 | color);
+}
+
 void display_pixel(uint16_t x, uint16_t y, char color)
 {
 	char byte;

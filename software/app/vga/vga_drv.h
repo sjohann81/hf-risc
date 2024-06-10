@@ -21,6 +21,7 @@
 #define FONT_X		8
 #define FONT_Y		8
 
+void display_quad(uint16_t x, uint16_t y, char color);
 void display_pixel(uint16_t x, uint16_t y, char color);
 char display_getpixel(uint16_t x, uint16_t y);
 void display_line(uint16_t x0,uint16_t y0,uint16_t x1, uint16_t y1, uint16_t color);
