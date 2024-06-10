@@ -172,6 +172,10 @@ ann3: crt
 	$(GCC_$(ARCH)) -o ann3.o app/ann3.c
 	@$(MAKE) --no-print-directory link
 
+ann4: crt
+	$(GCC_$(ARCH)) -o ann4.o app/ann4.c
+	@$(MAKE) --no-print-directory link
+
 base64: crt
 	$(GCC_$(ARCH)) -o base64.o app/base64.c
 	@$(MAKE) --no-print-directory link
@@ -428,6 +432,11 @@ vga_cube: crt
 vga_ball: crt
 	$(GCC_$(ARCH)) -o vga_drv.o app/vga/vga_drv.c
 	$(GCC_$(ARCH)) -o vga_ball.o app/vga/vga_ball.c
+	@$(MAKE) --no-print-directory link
+	
+vga_sandpile: crt
+	$(GCC_$(ARCH)) -o vga_drv.o app/vga/vga_drv.c
+	$(GCC_$(ARCH)) -o vga_sandpile.o app/vga/vga_sandpile.c
 	@$(MAKE) --no-print-directory link
 
 
