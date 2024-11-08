@@ -438,6 +438,11 @@ vga_sandpile: crt
 	$(GCC_$(ARCH)) -o vga_drv.o app/vga/vga_drv.c
 	$(GCC_$(ARCH)) -o vga_sandpile.o app/vga/vga_sandpile.c
 	@$(MAKE) --no-print-directory link
+	
+vga_sprite: crt
+	$(GCC_$(ARCH)) -o vga_drv.o app/vga/vga_drv.c
+	$(GCC_$(ARCH)) -o vga_sprite.o app/vga/vga_sprite.c
+	@$(MAKE) --no-print-directory link
 
 
 include app/malardalen/malardalen.mak
