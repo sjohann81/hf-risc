@@ -1,66 +1,66 @@
-ENTRY(_entry)
-
-/* specify HF-RISC memory areas */
-
 MEMORY
 {
-rom		: ORIGIN = 0x00000000, LENGTH = 256M	/* ROM area*/
-ram		: ORIGIN = 0x40000000, LENGTH = 256M	/* RAM area. */
-ram_top		: ORIGIN = 0x4ffffc00, LENGTH = 0x400	/* RAM area. 1KB reserved for the bootloader .bss + stack */
+	ram (rwx)     : ORIGIN = 0x40000000, LENGTH = 32K
 }
 
-/* define a global symbol _stack  */
+/* Entry Point */
+ENTRY(_entry)
 
-_stack = 0x4ffffffc;
+/* Defines beginning and ending of stack. */
+_stack_size  = 2K;
+_stack = _stack_start;
+_stack_start = ORIGIN(ram) + LENGTH(ram);
+_stack_end   = _stack_start - _stack_size;
 
-/* now define the output sections  */
+/* Defines beginning and ending of heap. */
+_heap_start = _ebss;
+_heap_end   = _stack_end;
+_heap_size  = _stack_end - _ebss;
 
 SECTIONS
 {
-	. = 0;
-
-	.text :
-	{
-		*(.text.init)
-	}
-
-	.text :
-	{
+	.text : {
 		_text = .;
+		KEEP(*(.vector_core*))
+		*(.text.init)
 		*(.text)
 		*(.text.*)
 		_etext = .;
 	} > ram
-
-	.data :
-	{
+	
+	.rodata : {
+		. = ALIGN(4);
 		_rodata = .;
 		*(.rdata)
 		*(.rodata)
-		*(.rodata.*)
+		*(.rodata*)
+		. = ALIGN(4);
 		_erodata = .;
+	} > ram
+
+	.data : {
+		. = ALIGN(4);
 		_data = .;
 		*(.data)
-		*(.data.*)
+		*(.data*)
 		_gp = . + 0x800;
 		*(.sdata)
 		*(.sdata.*)
-		. = ALIGN(16);
+		. = ALIGN(4);
+		_edata = .;
 	} > ram
-
-	_edata = .;
-
-	.bss :
-	{
-		_bss_start = .;
+	
+	.bss : {
+		. = ALIGN(4);
+		_sbss = .;
 		*(.sbss)
 		*(.sbss.*)
 		*(.bss)
-		*(.bss.*)
+		*(.bss*)
+		*(COMMON)
 		. = ALIGN(4);
-		_bss_end = . ;
+		_ebss = .;
 	} > ram
-
+	
 	_end = .;
 }
-
