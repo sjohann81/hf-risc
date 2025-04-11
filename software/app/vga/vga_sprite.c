@@ -113,25 +113,31 @@ void init_display()
 	display_background(BLACK);
 }
 
+enum {
+	KEY_CENTER	= 0x01,
+	KEY_UP		= 0x02,
+	KEY_LEFT	= 0x04,
+	KEY_RIGHT	= 0x08,
+	KEY_DOWN	= 0x10
+};
+
 void init_input()
 {
 	/* configure GPIOB pins 8 .. 12 as inputs */
 	GPIOB->DDR &= ~(MASK_P8 | MASK_P9 | MASK_P10 | MASK_P11 | MASK_P12);
 }
 
-void get_input()
+int get_input()
 {
-	if (GPIOB->IN & MASK_P9) {
-	}
+	int keys = 0;
 	
-	if (GPIOB->IN & MASK_P10) {
-	}
-	
-	if (GPIOB->IN & MASK_P11) {
-	}
-	
-	if (GPIOB->IN & MASK_P12) {
-	}
+	if (GPIOB->IN & MASK_P8)	keys |= KEY_CENTER;
+	if (GPIOB->IN & MASK_P9)	keys |= KEY_UP;
+	if (GPIOB->IN & MASK_P10)	keys |= KEY_LEFT;
+	if (GPIOB->IN & MASK_P11)	keys |= KEY_RIGHT;
+	if (GPIOB->IN & MASK_P12)	keys |= KEY_DOWN;
+		
+	return keys;
 }
 
 /* main game loop */
@@ -151,6 +157,11 @@ int main(void)
 		
 		// you can change the direction, speed, etc...
 		
+		// you can get input keys
+		if (get_input() == KEY_CENTER) {
+		}
+		
+		// game loop frame limiter
 		delay_ms(200);
 	}
 
