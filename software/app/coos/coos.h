@@ -8,7 +8,7 @@ struct message_s {
 };
 
 struct mq_s {
-	struct message_s queue[MAX_MESSAGES];
+	struct message_s *queue[MAX_MESSAGES];
 	int size;
 	int mask;
 	int head, tail;
