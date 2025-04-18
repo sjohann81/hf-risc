@@ -1,6 +1,6 @@
 -- file:          minimal_soc_uart.vhd
 -- description:   minimal SoC with peripherals, including a UART
--- date:          01/2019
+-- date:          01/2019, updated 04/2025
 -- author:        Sergio Johann Filho <sergio.filho@pucrs.br>
 --
 -- Very simple SoC configuration for prototyping. A single GPIO port,
@@ -39,7 +39,6 @@ architecture peripherals_arch of peripherals is
 	signal timer0: std_logic_vector(31 downto 0);
 	signal timer1, timer1_ctc, timer1_ocr: std_logic_vector(15 downto 0);
 	signal timer1_pre: std_logic_vector(2 downto 0);
-	signal timer1_set: std_logic;
 	signal int_gpio, int_timer: std_logic;
 	signal int_gpioa, int_timer1_ocr, int_timer1_ctc, tmr1_pulse, tmr1_dly, tmr1_dly2: std_logic;
 	signal paalt0, paalt2: std_logic;
@@ -71,10 +70,9 @@ begin
 
 	int_uart <= '1' when ((uartcause xor uartcause_inv) and uartmask) /= "0000" else '0';
 	uartcause <= "00" & uart0_write_busy & uart0_data_avail;
-	paalt0 <= int_timer1_ctc when paaltcfg0(1 downto 0) = "01" else int_timer1_ocr when paaltcfg0(1 downto 0) = "10" else paout(0);
+	paalt0 <= int_timer1_ocr when paaltcfg0(1 downto 0) = "01" else paout(0);
 	paalt2 <= uart0_tx when paaltcfg0(5 downto 4) = "01" else paout(2);
 	uart0_rx <= gpioa_in(3) when paaltcfg0(7 downto 6) = "01" else '1';
-
 
 	-- address decoder, read from peripheral registers
 	process(clk_i, rst_i, segment, class, device, funct)
@@ -194,7 +192,6 @@ begin
 			timermask <= (others => '0');
 			timer0 <= (others => '0');
 			timer1 <= (others => '0');
-			timer1_set <= '0';
 			timer1_pre <= (others => '0');
 			timer1_ctc <= (others => '1');
 			timer1_ocr <= (others => '0');
@@ -244,13 +241,7 @@ begin
 						when "010001" =>					-- TIMER1
 							case funct is
 							when "0000" =>					-- TIMER1		(RW)
-								if data_i(31) = '1' then
-									timer1_set <= '1';
-								end if;
-								if timer1_set = '1' then
-									timer1 <= data_i(15 downto 0);
-									timer1_set <= '0';
-								end if;
+								timer1 <= data_i(15 downto 0);
 							when "0001" =>					-- TIMER1_PRE		(RW)
 								timer1_pre <= data_i(2 downto 0);
 							when "0010" =>					-- TIMER1_CTC		(RW)
@@ -290,9 +281,7 @@ begin
 
 			if tmr1_pulse = '1' then
 				if (timer1 /= timer1_ctc) then
-					if timer1_set = '0' then
-						timer1 <= timer1 + 1;
-					end if;
+					timer1 <= timer1 + 1;
 				else
 					int_timer1_ctc <= not int_timer1_ctc;
 					timer1 <= (others => '0');

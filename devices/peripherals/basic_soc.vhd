@@ -1,10 +1,11 @@
 -- file:          basic_soc.vhd
 -- description:   basic SoC with peripherals
--- date:          07/2019
+-- date:          07/2019, updated 04/2025
 -- author:        Sergio Johann Filho <sergio.filho@pucrs.br>
 --
 -- Basic SoC configuration template for prototyping. Dual GPIO ports,
--- a counter, a timer and a UART are included in this version.
+-- a counter, a timer (two PWM channels) and a UART are included in this
+-- version.
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -36,18 +37,19 @@ architecture peripherals_arch of peripherals is
 	signal device: std_logic_vector(5 downto 0);
 	signal funct: std_logic_vector(3 downto 0);
 
-	signal paaltcfg0: std_logic_vector(23 downto 0);
 	signal s0cause, gpiocause, gpiocause_inv, gpiomask: std_logic_vector(3 downto 0);
 	signal timercause, timercause_inv, timermask: std_logic_vector(4 downto 0);
 	signal paddr, paout, pain, pain_inv, pain_mask: std_logic_vector(15 downto 0);
 	signal pbddr, pbout, pbin, pbin_inv, pbin_mask: std_logic_vector(15 downto 0);
-	signal timer0: std_logic_vector(31 downto 0);
-	signal timer1, timer1_ctc, timer1_ocr: std_logic_vector(15 downto 0);
-	signal timer1_pre: std_logic_vector(2 downto 0);
-	signal timer1_set: std_logic;
+	
+	signal paaltcfg0: std_logic_vector(23 downto 0);
+	signal paalt0, paalt1, paalt2, paalt8, paalt9, paalt10: std_logic;
 	signal int_gpio, int_timer: std_logic;
-	signal int_gpioa, int_gpiob, int_timer1_ocr, int_timer1_ctc, tmr1_pulse, tmr1_dly, tmr1_dly2: std_logic;
-	signal paalt0, paalt2, paalt8, paalt10: std_logic;
+	signal int_gpioa, int_gpiob, int_timer1_ocr, int_timer1_ctc, val_timer1_ocr1: std_logic;
+	signal tmr1_pulse, tmr1_dly, tmr1_dly2: std_logic;
+	signal timer0: std_logic_vector(31 downto 0);
+	signal timer1, timer1_ctc, timer1_ocr, timer1_ocr1: std_logic_vector(15 downto 0);
+	signal timer1_pre: std_logic_vector(2 downto 0);
 
 	signal int_uart, uart0_tx, uart0_rx, uart0_enable_w, uart0_enable_r, uart0_write_busy, uart0_data_avail: std_logic;
 	signal uartcause, uartcause_inv, uartmask: std_logic_vector(3 downto 0);
@@ -72,7 +74,7 @@ begin
 	timercause <= timer1(15) & int_timer1_ocr & int_timer1_ctc & timer0(18) & timer0(16);
 
 	pain <= gpioa_in(15 downto 0);
-	gpioa_out <= paout(15 downto 11) & paalt10 & paout(9) & paalt8 & paout(7 downto 3) & paalt2 & paout(1) & paalt0;
+	gpioa_out <= paout(15 downto 11) & paalt10 & paalt9 & paalt8 & paout(7 downto 3) & paalt2 & paalt1 & paalt0;
 	gpioa_ddr <= paddr;
 
 	pbin <= gpiob_in(15 downto 0);
@@ -81,9 +83,11 @@ begin
 
 	int_uart <= '1' when ((uartcause xor uartcause_inv) and uartmask) /= "0000" else '0';
 	uartcause <= "00" & uart0_write_busy & uart0_data_avail;
-	paalt0 <= int_timer1_ctc when paaltcfg0(1 downto 0) = "01" else int_timer1_ocr when paaltcfg0(1 downto 0) = "10" else paout(0);
+	paalt0 <= int_timer1_ocr when paaltcfg0(1 downto 0) = "01" else paout(0);
+	paalt1 <= val_timer1_ocr1 when paaltcfg0(3 downto 2) = "01" else paout(1);
 	paalt2 <= uart0_tx when paaltcfg0(5 downto 4) = "01" else paout(2);
-	paalt8 <= int_timer1_ctc when paaltcfg0(17 downto 16) = "01" else int_timer1_ocr when paaltcfg0(17 downto 16) = "10" else paout(8);
+	paalt8 <= int_timer1_ocr when paaltcfg0(17 downto 16) = "01" else paout(8);
+	paalt9 <= val_timer1_ocr1 when paaltcfg0(19 downto 18) = "01" else paout(9);
 	paalt10 <= uart0_tx when paaltcfg0(21 downto 20) = "01" else paout(10);
 	uart0_rx <= gpioa_in(3) when paaltcfg0(7 downto 6) = "01" else gpioa_in(11) when paaltcfg0(23 downto 22) = "01" else '1';
 
@@ -166,8 +170,10 @@ begin
 								data_o <= x"0000000" & '0' & timer1_pre;
 							when "0010" =>					-- TIMER1_CTC		(RW)
 								data_o <= x"0000" & timer1_ctc;
-							when "0011" =>					-- TIMER1_OCR		(RW)
+							when "0011" =>					-- TIMER1_OCR ch0	(RW)
 								data_o <= x"0000" & timer1_ocr;
+							when "0100" =>					-- TIMER1_OCR ch1	(RW)
+								data_o <= x"0000" & timer1_ocr1;
 							when others =>
 								data_o <= (others => '0');
 							end case;
@@ -224,10 +230,10 @@ begin
 			timermask <= (others => '0');
 			timer0 <= (others => '0');
 			timer1 <= (others => '0');
-			timer1_set <= '0';
 			timer1_pre <= (others => '0');
 			timer1_ctc <= (others => '1');
 			timer1_ocr <= (others => '0');
+			timer1_ocr1 <= (others => '0');
 			int_timer1_ctc <= '0';
 			uartcause_inv <= (others => '0');
 			uartmask <= (others => '0');
@@ -286,19 +292,15 @@ begin
 						when "010001" =>					-- TIMER1
 							case funct is
 							when "0000" =>					-- TIMER1		(RW)
-								if data_i(31) = '1' then
-									timer1_set <= '1';
-								end if;
-								if timer1_set = '1' then
-									timer1 <= data_i(15 downto 0);
-									timer1_set <= '0';
-								end if;
+								timer1 <= data_i(15 downto 0);
 							when "0001" =>					-- TIMER1_PRE		(RW)
 								timer1_pre <= data_i(2 downto 0);
 							when "0010" =>					-- TIMER1_CTC		(RW)
 								timer1_ctc <= data_i(15 downto 0);
-							when "0011" =>					-- TIMER1_OCR		(RW)
+							when "0011" =>					-- TIMER1_OCR ch0	(RW)
 								timer1_ocr <= data_i(15 downto 0);
+							when "0100" =>					-- TIMER1_OCR ch1	(RW)
+								timer1_ocr1 <= data_i(15 downto 0);
 							when others =>
 							end case;
 						when others =>
@@ -332,9 +334,7 @@ begin
 
 			if tmr1_pulse = '1' then
 				if (timer1 /= timer1_ctc) then
-					if timer1_set = '0' then
-						timer1 <= timer1 + 1;
-					end if;
+					timer1 <= timer1 + 1;
 				else
 					int_timer1_ctc <= not int_timer1_ctc;
 					timer1 <= (others => '0');
@@ -374,6 +374,7 @@ begin
 
 	tmr1_pulse <= '1' when tmr1_dly /= tmr1_dly2 else '0';
 	int_timer1_ocr <= '1' when timer1 < timer1_ocr else '0';
+	val_timer1_ocr1 <= '1' when timer1 < timer1_ocr1 else '0';
 
 	uart0: entity work.uart
 	port map(

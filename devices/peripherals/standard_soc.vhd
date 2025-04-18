@@ -1,10 +1,11 @@
 -- file:          standard_soc.vhd
 -- description:   standard SoC with peripherals
--- date:          08/2019
+-- date:          08/2019, updated 04/2025
 -- author:        Sergio Johann Filho <sergio.filho@pucrs.br>
 --
 -- Standard SoC configuration template for prototyping. Dual GPIO ports,
--- a counter, two timers, dual UARTs and dual SPIs are included in this version.
+-- a counter, two timers (4 PWM channels each), dual UARTs and dual SPIs
+-- are included in this version.
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -46,14 +47,14 @@ architecture peripherals_arch of peripherals is
 	signal paalt: std_logic_vector(15 downto 0);	
 	signal int_gpio, int_timer, int_gpioa, int_gpiob: std_logic;
 	signal int_timer1_ocr, int_timer1_ctc, tmr1_pulse, tmr1_dly, tmr1_dly2: std_logic;
+	signal val_timer1_ocr1, val_timer1_ocr2, val_timer1_ocr3: std_logic;
 	signal timer0: std_logic_vector(31 downto 0);
-	signal timer1, timer1_ctc, timer1_ocr: std_logic_vector(15 downto 0);
+	signal timer1, timer1_ctc, timer1_ocr, timer1_ocr1, timer1_ocr2, timer1_ocr3: std_logic_vector(15 downto 0);
 	signal timer1_pre: std_logic_vector(2 downto 0);
-	signal timer1_set: std_logic;
 	signal int_timer2_ocr, int_timer2_ctc, tmr2_pulse, tmr2_dly, tmr2_dly2: std_logic;
-	signal timer2, timer2_ctc, timer2_ocr: std_logic_vector(15 downto 0);
+	signal val_timer2_ocr1, val_timer2_ocr2, val_timer2_ocr3: std_logic;
+	signal timer2, timer2_ctc, timer2_ocr, timer2_ocr1, timer2_ocr2, timer2_ocr3: std_logic_vector(15 downto 0);
 	signal timer2_pre: std_logic_vector(2 downto 0);
-	signal timer2_set: std_logic;
 
 	signal int_uart: std_logic;
 	signal uartcause, uartcause_inv, uartmask: std_logic_vector(3 downto 0);
@@ -105,23 +106,23 @@ begin
 	spicause <= "00" & spi1_data_valid & spi0_data_valid;
 	
 	-- PORT A alternate config MUXes for outputs
-	paalt(0) <= int_timer1_ctc when paaltcfg0(1 downto 0) = "01" else int_timer1_ocr when paaltcfg0(1 downto 0) = "10" else paout(0);
-	paalt(1) <= int_timer2_ctc when paaltcfg0(1 downto 0) = "01" else int_timer2_ocr when paaltcfg0(1 downto 0) = "10" else spi1_clk_o when paaltcfg0(3 downto 2) = "11" else paout(1);
+	paalt(0) <= int_timer1_ocr when paaltcfg0(1 downto 0) = "01" else int_timer2_ocr when paaltcfg0(1 downto 0) = "10" else paout(0);
+	paalt(1) <= val_timer1_ocr1 when paaltcfg0(3 downto 2) = "01" else val_timer2_ocr1 when paaltcfg0(3 downto 2) = "10" else spi1_clk_o when paaltcfg0(3 downto 2) = "11" else paout(1);
 	paalt(2) <= uart0_tx when paaltcfg0(5 downto 4) = "01" else spi1_do when paaltcfg0(5 downto 4) = "11" else paout(2);
 	paalt(3) <= spi1_do when paaltcfg0(7 downto 6) = "11" else paout(3);
-	paalt(4) <= uart1_tx when paaltcfg0(9 downto 8) = "01" else paout(4);
-	paalt(5) <= spi0_clk_o when paaltcfg0(11 downto 10) =  "10" else paout(5);
-	paalt(6) <= spi0_do when paaltcfg0(13 downto 12) = "10" else paout(6);
-	paalt(7) <= spi0_do when paaltcfg0(15 downto 14) = "10" else paout(7);
+	paalt(4) <= uart1_tx when paaltcfg0(9 downto 8) = "01" else val_timer1_ocr2 when paaltcfg0(9 downto 8) = "11" else paout(4);
+	paalt(5) <= spi0_clk_o when paaltcfg0(11 downto 10) = "10" else val_timer1_ocr3 when paaltcfg0(11 downto 10) = "11" else paout(5);
+	paalt(6) <= spi0_do when paaltcfg0(13 downto 12) = "10" else val_timer2_ocr2 when paaltcfg0(13 downto 12) = "11" else paout(6);
+	paalt(7) <= spi0_do when paaltcfg0(15 downto 14) = "10" else val_timer2_ocr3 when paaltcfg0(15 downto 14) = "11" else paout(7);
 	
-	paalt(8) <= int_timer1_ctc when paaltcfg0(17 downto 16) = "01" else int_timer1_ocr when paaltcfg0(17 downto 16) = "10" else paout(8);
-	paalt(9) <= int_timer2_ctc when paaltcfg0(19 downto 18) = "01" else int_timer2_ocr when paaltcfg0(19 downto 18) = "10" else spi1_clk_o when paaltcfg0(19 downto 18) = "11" else paout(9);
+	paalt(8) <= int_timer1_ocr when paaltcfg0(17 downto 16) = "01" else int_timer2_ocr when paaltcfg0(17 downto 16) = "10" else paout(8);
+	paalt(9) <= val_timer1_ocr1 when paaltcfg0(19 downto 18) = "01" else val_timer2_ocr1 when paaltcfg0(19 downto 18) = "10" else spi1_clk_o when paaltcfg0(19 downto 18) = "11" else paout(9);
 	paalt(10) <= uart0_tx when paaltcfg0(21 downto 20) = "01" else spi1_do when paaltcfg0(21 downto 20) = "11" else paout(10);
 	paalt(11) <= spi1_do when paaltcfg0(23 downto 22) = "11" else paout(11);
-	paalt(12) <= uart1_tx when paaltcfg0(25 downto 24) = "01" else paout(12);
-	paalt(13) <= spi0_clk_o when paaltcfg0(27 downto 26) = "10" else paout(13);
-	paalt(14) <= spi0_do when paaltcfg0(29 downto 28) = "10" else paout(14);
-	paalt(15) <= spi0_do when paaltcfg0(31 downto 30) = "10" else paout(15);
+	paalt(12) <= uart1_tx when paaltcfg0(25 downto 24) = "01" else val_timer1_ocr2 when paaltcfg0(25 downto 24) = "11" else paout(12);
+	paalt(13) <= spi0_clk_o when paaltcfg0(27 downto 26) = "10" else val_timer1_ocr3 when paaltcfg0(27 downto 26) = "11" else paout(13);
+	paalt(14) <= spi0_do when paaltcfg0(29 downto 28) = "10" else val_timer2_ocr2 when paaltcfg0(29 downto 28) = "11" else paout(14);
+	paalt(15) <= spi0_do when paaltcfg0(31 downto 30) = "10" else val_timer2_ocr3 when paaltcfg0(31 downto 30) = "11" else paout(15);
 	
 	-- PORT A alternate config MUXes for inputs
 	uart0_rx <= pain(3) when paaltcfg0(7 downto 6) = "01" else pain(11) when paaltcfg0(23 downto 22) = "01" else '1';
@@ -217,8 +218,14 @@ begin
 								data_o <= x"0000000" & '0' & timer1_pre;
 							when "0010" =>					-- TIMER1_CTC		(RW)
 								data_o <= x"0000" & timer1_ctc;
-							when "0011" =>					-- TIMER1_OCR		(RW)
+							when "0011" =>					-- TIMER1_OCR ch0	(RW)
 								data_o <= x"0000" & timer1_ocr;
+							when "0100" =>					-- TIMER1_OCR ch1	(RW)
+								data_o <= x"0000" & timer1_ocr1;
+							when "0101" =>					-- TIMER1_OCR ch2	(RW)
+								data_o <= x"0000" & timer1_ocr2;
+							when "0110" =>					-- TIMER1_OCR ch3	(RW)
+								data_o <= x"0000" & timer1_ocr3;
 							when others =>
 								data_o <= (others => '0');
 							end case;
@@ -230,8 +237,14 @@ begin
 								data_o <= x"0000000" & '0' & timer2_pre;
 							when "0010" =>					-- TIMER2_CTC		(RW)
 								data_o <= x"0000" & timer2_ctc;
-							when "0011" =>					-- TIMER2_OCR		(RW)
+							when "0011" =>					-- TIMER2_OCR ch0	(RW)
 								data_o <= x"0000" & timer2_ocr;
+							when "0100" =>					-- TIMER2_OCR ch1	(RW)
+								data_o <= x"0000" & timer2_ocr1;
+							when "0101" =>					-- TIMER2_OCR ch2	(RW)
+								data_o <= x"0000" & timer2_ocr2;
+							when "0110" =>					-- TIMER2_OCR ch3	(RW)
+								data_o <= x"0000" & timer2_ocr3;
 							when others =>
 								data_o <= (others => '0');
 							end case;
@@ -324,15 +337,19 @@ begin
 			timermask <= (others => '0');
 			timer0 <= (others => '0');
 			timer1 <= (others => '0');
-			timer1_set <= '0';
 			timer1_pre <= (others => '0');
 			timer1_ctc <= (others => '1');
 			timer1_ocr <= (others => '0');
+			timer1_ocr1 <= (others => '0');
+			timer1_ocr2 <= (others => '0');
+			timer1_ocr3 <= (others => '0');
 			timer2 <= (others => '0');
-			timer2_set <= '0';
 			timer2_pre <= (others => '0');
 			timer2_ctc <= (others => '1');
 			timer2_ocr <= (others => '0');
+			timer2_ocr1 <= (others => '0');
+			timer2_ocr2 <= (others => '0');
+			timer2_ocr3 <= (others => '0');
 			int_timer1_ctc <= '0';
 			int_timer2_ctc <= '0';
 			uartcause_inv <= (others => '0');
@@ -403,37 +420,37 @@ begin
 						when "010001" =>					-- TIMER1
 							case funct is
 							when "0000" =>					-- TIMER1		(RW)
-								if data_i(31) = '1' then
-									timer1_set <= '1';
-								end if;
-								if timer1_set = '1' then
-									timer1 <= data_i(15 downto 0);
-									timer1_set <= '0';
-								end if;
+								timer1 <= data_i(15 downto 0);
 							when "0001" =>					-- TIMER1_PRE		(RW)
 								timer1_pre <= data_i(2 downto 0);
 							when "0010" =>					-- TIMER1_CTC		(RW)
 								timer1_ctc <= data_i(15 downto 0);
-							when "0011" =>					-- TIMER1_OCR		(RW)
+							when "0011" =>					-- TIMER1_OCR ch0	(RW)
 								timer1_ocr <= data_i(15 downto 0);
+							when "0100" =>					-- TIMER1_OCR ch1	(RW)
+								timer1_ocr1 <= data_i(15 downto 0);
+							when "0101" =>					-- TIMER1_OCR ch2	(RW)
+								timer1_ocr2 <= data_i(15 downto 0);
+							when "0110" =>					-- TIMER1_OCR ch3	(RW)
+								timer1_ocr3 <= data_i(15 downto 0);
 							when others =>
 							end case;
 						when "010010" =>					-- TIMER2
 							case funct is
 							when "0000" =>					-- TIMER2		(RW)
-								if data_i(31) = '1' then
-									timer2_set <= '1';
-								end if;
-								if timer2_set = '1' then
-									timer2 <= data_i(15 downto 0);
-									timer2_set <= '0';
-								end if;
+								timer2 <= data_i(15 downto 0);
 							when "0001" =>					-- TIMER2_PRE		(RW)
 								timer2_pre <= data_i(2 downto 0);
 							when "0010" =>					-- TIMER2_CTC		(RW)
 								timer2_ctc <= data_i(15 downto 0);
-							when "0011" =>					-- TIMER2_OCR		(RW)
+							when "0011" =>					-- TIMER2_OCR ch0	(RW)
 								timer2_ocr <= data_i(15 downto 0);
+							when "0100" =>					-- TIMER2_OCR ch1	(RW)
+								timer2_ocr1 <= data_i(15 downto 0);
+							when "0101" =>					-- TIMER2_OCR ch2	(RW)
+								timer2_ocr2 <= data_i(15 downto 0);
+							when "0110" =>					-- TIMER2_OCR ch3	(RW)
+								timer2_ocr3 <= data_i(15 downto 0);
 							when others =>
 							end case;
 						when others =>
@@ -505,9 +522,7 @@ begin
 
 			if tmr1_pulse = '1' then
 				if (timer1 /= timer1_ctc) then
-					if timer1_set = '0' then
-						timer1 <= timer1 + 1;
-					end if;
+					timer1 <= timer1 + 1;
 				else
 					int_timer1_ctc <= not int_timer1_ctc;
 					timer1 <= (others => '0');
@@ -516,9 +531,7 @@ begin
 			
 			if tmr2_pulse = '1' then
 				if (timer2 /= timer2_ctc) then
-					if timer2_set = '0' then
-						timer2 <= timer2 + 1;
-					end if;
+					timer2 <= timer2 + 1;
 				else
 					int_timer2_ctc <= not int_timer2_ctc;
 					timer2 <= (others => '0');
@@ -580,8 +593,14 @@ begin
 
 	tmr1_pulse <= '1' when tmr1_dly /= tmr1_dly2 else '0';
 	int_timer1_ocr <= '1' when timer1 < timer1_ocr else '0';
+	val_timer1_ocr1 <= '1' when timer1 < timer1_ocr1 else '0';
+	val_timer1_ocr2 <= '1' when timer1 < timer1_ocr2 else '0';
+	val_timer1_ocr3 <= '1' when timer1 < timer1_ocr3 else '0';
 	tmr2_pulse <= '1' when tmr2_dly /= tmr2_dly2 else '0';
 	int_timer2_ocr <= '1' when timer2 < timer2_ocr else '0';
+	val_timer2_ocr1 <= '1' when timer2 < timer2_ocr1 else '0';
+	val_timer2_ocr2 <= '1' when timer2 < timer2_ocr2 else '0';
+	val_timer2_ocr3 <= '1' when timer2 < timer2_ocr3 else '0';
 
 	uart0: entity work.uart
 	port map(
