@@ -71,7 +71,7 @@ ghdl-ghw: ghdl
 
 # Display waveforms
 wave-vcd:
-	gtkwave $(TOP).vcd.gz
+	gtkwave $(TOP).vcd.gz --rcvar 'fontname_signals Monospace 12' --rcvar 'fontname_waves Monospace 12'
 	
 wave-ghw:
 	gtkwave $(TOP).ghw
