@@ -12,8 +12,8 @@ _entry:
 	.set noreorder
 	.set noat
 
-	la	$a1, _bss_start
-	la	$a0, _end
+	la	$a1, _sbss
+	la	$a0, _ebss
 	la	$gp, _gp
 	la	$sp, _stack
 
