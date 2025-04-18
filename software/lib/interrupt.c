@@ -258,7 +258,7 @@ void irq_enable(void)
 	UART0DIV = d;
 	UART0 = 0;
 
-	PAALTCFG0 |= MASK_UART0;
+	PAALTCFG0 |= (MASK_UART0_TX | MASK_UART0_RX);
 #endif
 	/* enable mask for Segment 0 (tied to IRQ0 line) */
 	IRQ_MASK = MASK_IRQ0;
