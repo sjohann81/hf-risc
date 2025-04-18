@@ -1,29 +1,34 @@
 #include <hf-risc.h>
 
 /*
- * setup TIMER 1, PORTA pin 0 as a PWM output
+ * setup TIMER 1, PORTA pins 0 and 1 as a PWM output
 
- * TIMER1OCR (timer1, output compare) is set to 16383 (output low after 25%)
+ * TIMER1OCR (timer1, output compare ch0) is set to 32767 (output low after 50%)
+ * TIMER1OCR1 (timer1, output compare ch1) is set to 6553 (output low after 10%)
  * 
  * for F_CLK = 25MHz, PWM frequency is:
- * PWM_CLK = F_CLK (no prescaler)
- * F_PWM = PWM_CLK / 65536 = 381.47 Hz
+ * PWM_CLK = F_CLK / 4
+ * F_PWM = PWM_CLK / 65536 = 95.36 Hz
  */
 
 int main(void)
 {
-	/* unlock TIMER1 for reset */
-	TIMER1 = TIMERSET;
+	/* set timer prescaler to 4 */
+	TIMER1PRE = TIMERPRE_DIV4;
+	
+	/* reset timer */
 	TIMER1 = 0;
 
-	/* TIMER1 PWM duty cycle, 25% */
-	TIMER1OCR = 16383;
+	/* TIMER1 PWM duty cycle, ch0 @ 50%, ch1 @10% */
+	TIMER1OCR = 32767;
+	TIMER1OCR1 = 6553;
 	
-	/* configure alternate function for PORTA pin 0 output (TIMER1 output, PWM generation) */
-	PAALTCFG0 |= MASK_PWM1;
+	/* configure alternate function for PORTA */
+	/* (TIMER1 output for channels 0 and 1, PWM generation) */
+	PAALTCFG0 |= MASK_TIM1_CH0 | MASK_TIM1_CH1;
 	
-	/* set PORTA pin 0 as an output */
-	PADDR |= MASK_P0;
+	/* set PORTA pins 0 and 1 as outputs */
+	PADDR |= MASK_P0 | MASK_P1;
 	
 	printf("pwm set\n");
 	
