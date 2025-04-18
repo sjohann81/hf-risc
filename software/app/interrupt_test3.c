@@ -28,8 +28,7 @@ int main(void){
 	/* 100000 / 256 = 390.625 */
 	TIMER1OCR = 391;
 
-	/* unlock TIMER1 for reset */
-	TIMER1 = TIMERSET;
+	/* TIMER1 reset */
 	TIMER1 = 0;
 
 	/* enable interrupt mask for TIMER1 CTC and OCR events */

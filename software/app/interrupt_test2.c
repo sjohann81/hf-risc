@@ -9,9 +9,7 @@ int main(void){
 	//TIMER1PRE = TIMERPRE_DIV64;
 	TIM1->PRE = TIMERPRE_DIV64;
 
-	/* unlock TIMER1 for reset */
-	//TIMER1 = TIMERSET;
-	TIM1->COUNT = TIMERSET;
+	/* TIMER1 reset */
 	//TIMER1 = 0;
 	TIM1->COUNT = 0;
 	

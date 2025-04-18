@@ -38,12 +38,10 @@ void timer1ovf_handler(void)
 int main(void){
 	int32_t val;
 	
-	//TIMER1PRE = TIMERPRE_DIV64;
+	//TIMER1PRE = TIMERPRE_DIV16;
 	TIM1->PRE = TIMERPRE_DIV16;
 
-	/* unlock TIMER1 for reset */
-	//TIMER1 = TIMERSET;
-	TIM1->COUNT = TIMERSET;
+	/* TIMER1 reset */
 	//TIMER1 = 0;
 	TIM1->COUNT = 0;
 
@@ -54,7 +52,7 @@ int main(void){
 	TIM1->CTC = 50000;
 
 	/* enable interrupt masks for TIMER0 and TIMER1 CTC and OCR events */
-	//TIMERMASK |= (MASK_TIMER0A | MASK_TIMER0B | MASK_TIMER1CTC | MASK_TIMER1OCR);
+	//TIMERMASK |= (MASK_TIMER0A | MASK_TIMER0B | MASK_TIMER1CTC | MASK_TIMER1OCR | MASK_TIMER1OVF);
 	TIMER->MASK |= (MASK_TIMER0A | MASK_TIMER0B | MASK_TIMER1CTC | MASK_TIMER1OCR | MASK_TIMER1OVF);
 	
 	/* enable interrupt mask for PORTA and PORTB inputs */
@@ -70,8 +68,8 @@ int main(void){
 	GPIOB->INMASK |= MASK_P10 | MASK_P2;
 	
 	/* configure alternate function for PORTA pin 0 output (TIMER1 output, PWM generation) */
-	//PAALTCFG0 |= MASK_PWM1;
-	GPIOALT->ALTA |= MASK_PWM1;
+	//PAALTCFG0 |= MASK_TIM1_CH0;
+	GPIOALT->ALTA |= MASK_TIM1_CH0;
 
 	val = syscall(555, 7, 8, 9);
 	printf(" [%d]", val);
