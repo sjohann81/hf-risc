@@ -133,22 +133,54 @@ typedef volatile struct __attribute__((packed, aligned(4))) {
 #define MASK_S0CAUSE_I2C		(1 << 5)
 
 /* alternate pin configuration masks for PAALTCFG0 */
-#define MASK_OSC1			0x00000001
-#define MASK_PWM1			0x00000002
-#define MASK_OSC2			0x00000004
-#define MASK_PWM2			0x00000008
-#define MASK_UART0			0x00000150
-#define MASK_UART1			0x000002a0
-#define MASK_SPI0			0x00001540
-#define MASK_SPI1			0x0000003f
-#define MASK_OSC1H			0x00010000
-#define MASK_PWM1H			0x00020000
-#define MASK_OSC2H			0x00040000
-#define MASK_PWM2H			0x00080000
-#define MASK_UART0H			0x01500000
-#define MASK_UART1H			0x02a00000
-#define MASK_SPI0H			0x15400000
-#define MASK_SPI1H			0x003f0000
+#define MASK_TIM1_CH0			(1 << 0)
+#define MASK_TIM1_CH1			(1 << 2)
+#define MASK_TIM1_CH2			(3 << 8)
+#define MASK_TIM1_CH3			(3 << 10)
+#define MASK_TIM1H_CH0			(1 << 16)
+#define MASK_TIM1H_CH1			(1 << 18)
+#define MASK_TIM1H_CH2			(3 << 24)
+#define MASK_TIM1H_CH3			(3 << 26)
+#define MASK_TIM2_CH0			(2 << 0)
+#define MASK_TIM2_CH1			(2 << 2)
+#define MASK_TIM2_CH2			(3 << 12)
+#define MASK_TIM2_CH3			(3 << 14)
+#define MASK_TIM2H_CH0			(2 << 16)
+#define MASK_TIM2H_CH1			(2 << 18)
+#define MASK_TIM2H_CH2			(3 << 28)
+#define MASK_TIM2H_CH3			(3 << 30)
+#define MASK_UART0_TX			(1 << 4)
+#define MASK_UART0_RX			(1 << 6)
+#define MASK_UART0H_TX			(1 << 20)
+#define MASK_UART0H_RX			(1 << 22)
+#define MASK_UART1_TX			(1 << 8)
+#define MASK_UART1_RX			(1 << 10)
+#define MASK_UART1H_TX			(1 << 24)
+#define MASK_UART1H_RX			(1 << 26)
+#define MASK_I2C0_SCL			(1 << 12)
+#define MASK_I2C0_SDA			(1 << 14)
+#define MASK_I2C0H_SCL			(1 << 28)
+#define MASK_I2C0H_SDA			(1 << 30)
+#define MASK_I2C1_SCL			(2 << 4)
+#define MASK_I2C1_SDA			(2 << 6)
+#define MASK_I2C1H_SCL			(2 << 20)
+#define MASK_I2C1H_SDA			(2 << 22)
+#define MASK_SPI0_SSN			(2 << 8)
+#define MASK_SPI0_CLK			(2 << 10)
+#define MASK_SPI0_MOSI			(2 << 12)
+#define MASK_SPI0_MISO			(2 << 14)
+#define MASK_SPI0H_SSN			(2 << 24)
+#define MASK_SPI0H_CLK			(2 << 26)
+#define MASK_SPI0H_MOSI			(2 << 28)
+#define MASK_SPI0H_MISO			(2 << 30)
+#define MASK_SPI1_SSN			(3 << 0)
+#define MASK_SPI1_CLK			(3 << 2)
+#define MASK_SPI1_MOSI			(3 << 4)
+#define MASK_SPI1_MISO			(3 << 6)
+#define MASK_SPI1H_SSN			(3 << 16)
+#define MASK_SPI1H_CLK			(3 << 18)
+#define MASK_SPI1H_MOSI			(3 << 20)
+#define MASK_SPI1H_MISO			(3 << 22)
 
 /* GPIO registers */
 #define GPIO_BASE			(S0_BASE + 0x10000)
@@ -229,30 +261,51 @@ typedef volatile struct __attribute__((packed, aligned(4))) {
 #define TIMER1PRE			(*(volatile uint32_t *)(TIMER_BASE + 0x4410))
 #define TIMER1CTC			(*(volatile uint32_t *)(TIMER_BASE + 0x4420))
 #define TIMER1OCR			(*(volatile uint32_t *)(TIMER_BASE + 0x4430))
+#define TIMER1OCR1			(*(volatile uint32_t *)(TIMER_BASE + 0x4440))
+#define TIMER1OCR2			(*(volatile uint32_t *)(TIMER_BASE + 0x4450))
+#define TIMER1OCR3			(*(volatile uint32_t *)(TIMER_BASE + 0x4460))
 #define TIMER2				(*(volatile uint32_t *)(TIMER_BASE + 0x4800))
 #define TIMER2PRE			(*(volatile uint32_t *)(TIMER_BASE + 0x4810))
 #define TIMER2CTC			(*(volatile uint32_t *)(TIMER_BASE + 0x4820))
 #define TIMER2OCR			(*(volatile uint32_t *)(TIMER_BASE + 0x4830))
+#define TIMER2OCR1			(*(volatile uint32_t *)(TIMER_BASE + 0x4840))
+#define TIMER2OCR2			(*(volatile uint32_t *)(TIMER_BASE + 0x4850))
+#define TIMER2OCR3			(*(volatile uint32_t *)(TIMER_BASE + 0x4860))
 #define TIMER3				(*(volatile uint32_t *)(TIMER_BASE + 0x4c00))
 #define TIMER3PRE			(*(volatile uint32_t *)(TIMER_BASE + 0x4c10))
 #define TIMER3CTC			(*(volatile uint32_t *)(TIMER_BASE + 0x4c20))
 #define TIMER3OCR			(*(volatile uint32_t *)(TIMER_BASE + 0x4c30))
+#define TIMER3OCR1			(*(volatile uint32_t *)(TIMER_BASE + 0x4c40))
+#define TIMER3OCR2			(*(volatile uint32_t *)(TIMER_BASE + 0x4c50))
+#define TIMER3OCR3			(*(volatile uint32_t *)(TIMER_BASE + 0x4c60))
 #define TIMER4				(*(volatile uint32_t *)(TIMER_BASE + 0x5000))
 #define TIMER4PRE			(*(volatile uint32_t *)(TIMER_BASE + 0x5010))
 #define TIMER4CTC			(*(volatile uint32_t *)(TIMER_BASE + 0x5020))
 #define TIMER4OCR			(*(volatile uint32_t *)(TIMER_BASE + 0x5030))
+#define TIMER4OCR1			(*(volatile uint32_t *)(TIMER_BASE + 0x5040))
+#define TIMER4OCR2			(*(volatile uint32_t *)(TIMER_BASE + 0x5050))
+#define TIMER4OCR3			(*(volatile uint32_t *)(TIMER_BASE + 0x5060))
 #define TIMER5				(*(volatile uint32_t *)(TIMER_BASE + 0x5400))
 #define TIMER5PRE			(*(volatile uint32_t *)(TIMER_BASE + 0x5410))
 #define TIMER5CTC			(*(volatile uint32_t *)(TIMER_BASE + 0x5420))
 #define TIMER5OCR			(*(volatile uint32_t *)(TIMER_BASE + 0x5430))
+#define TIMER5OCR1			(*(volatile uint32_t *)(TIMER_BASE + 0x5440))
+#define TIMER5OCR2			(*(volatile uint32_t *)(TIMER_BASE + 0x5450))
+#define TIMER5OCR3			(*(volatile uint32_t *)(TIMER_BASE + 0x5460))
 #define TIMER6				(*(volatile uint32_t *)(TIMER_BASE + 0x5800))
 #define TIMER6PRE			(*(volatile uint32_t *)(TIMER_BASE + 0x5810))
 #define TIMER6CTC			(*(volatile uint32_t *)(TIMER_BASE + 0x5820))
 #define TIMER6OCR			(*(volatile uint32_t *)(TIMER_BASE + 0x5830))
+#define TIMER6OCR1			(*(volatile uint32_t *)(TIMER_BASE + 0x5840))
+#define TIMER6OCR2			(*(volatile uint32_t *)(TIMER_BASE + 0x5850))
+#define TIMER6OCR3			(*(volatile uint32_t *)(TIMER_BASE + 0x5860))
 #define TIMER7				(*(volatile uint32_t *)(TIMER_BASE + 0x5c00))
 #define TIMER7PRE			(*(volatile uint32_t *)(TIMER_BASE + 0x5c10))
 #define TIMER7CTC			(*(volatile uint32_t *)(TIMER_BASE + 0x5c20))
 #define TIMER7OCR			(*(volatile uint32_t *)(TIMER_BASE + 0x5c30))
+#define TIMER7OCR1			(*(volatile uint32_t *)(TIMER_BASE + 0x5c40))
+#define TIMER7OCR2			(*(volatile uint32_t *)(TIMER_BASE + 0x5c50))
+#define TIMER7OCR3			(*(volatile uint32_t *)(TIMER_BASE + 0x5c60))
 
 typedef volatile struct __attribute__((packed, aligned(4))) {
 	uint32_t COUNT;			/* timer current count */
@@ -261,8 +314,14 @@ typedef volatile struct __attribute__((packed, aligned(4))) {
 	uint32_t RESERVED1[3];
 	uint32_t CTC;			/* clear timer on compare */
 	uint32_t RESERVED2[3];
-	uint32_t OCR;			/* output compare */
+	uint32_t OCR;			/* output compare CH0 */
 	uint32_t RESERVED3[3];
+	uint32_t OCR1;			/* output compare CH1 */
+	uint32_t RESERVED4[3];
+	uint32_t OCR2;			/* output compare CH2 */
+	uint32_t RESERVED5[3];
+	uint32_t OCR3;			/* output compare CH3 */
+	uint32_t RESERVED6[3];
 } timer_t;
 
 #define TIMER				((pint_t *)(TIMER_BASE + 0x0400))
@@ -298,7 +357,6 @@ typedef volatile struct __attribute__((packed, aligned(4))) {
 #define MASK_TIMER7CTC			(1 << 20)
 #define MASK_TIMER7OCR			(1 << 21)
 #define MASK_TIMER7OVF			(1 << 22)
-#define TIMERSET			(1 << 31)
 
 #define TIMERPRE_DIV1			0x00
 #define TIMERPRE_DIV4			0x01
@@ -366,23 +424,6 @@ typedef volatile struct __attribute__((packed, aligned(4))) {
 #define MASK_SPI1_DATAVALID		(1 << 1)
 #define MASK_SPI2_DATAVALID		(1 << 2)
 #define MASK_SPI3_DATAVALID		(1 << 3)
-
-#define SPI0_SSN			(2 << 8)
-#define SPI0_CLK			(2 << 10)
-#define SPI0_MOSI			(2 << 12)
-#define SPI0_MISO			(2 << 14)
-#define SPI0H_SSN			(2 << 24)
-#define SPI0H_CLK			(2 << 26)
-#define SPI0H_MOSI			(2 << 28)
-#define SPI0H_MISO			(2 << 30)
-#define SPI1_SSN			(3 << 0)
-#define SPI1_CLK			(3 << 2)
-#define SPI1_MOSI			(3 << 4)
-#define SPI1_MISO			(3 << 6)
-#define SPI1H_SSN			(3 << 16)
-#define SPI1H_CLK			(3 << 18)
-#define SPI1H_MOSI			(3 << 20)
-#define SPI1H_MISO			(3 << 22)
 
 #define SPI_DATA_XFER			(1 << 0)
 #define SPI_DATA_VALID			(1 << 1)
