@@ -444,6 +444,11 @@ vga_sprite: crt
 	$(GCC_$(ARCH)) -o vga_sprite.o app/vga/vga_sprite.c
 	@$(MAKE) --no-print-directory link
 
+core_wrapper: crt
+	$(GCC_$(ARCH)) -o core_wrapper.o app/core_wrapper.c
+	@$(MAKE) --no-print-directory link
+
+
 
 include app/malardalen/malardalen.mak
 include app/powerstone/powerstone.mak
