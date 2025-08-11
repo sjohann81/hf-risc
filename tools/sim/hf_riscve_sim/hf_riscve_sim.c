@@ -1,6 +1,6 @@
 /* file:          hf_riscve_sim.c
  * description:   HF-RISCV-E simulator
- * date:          01/2022
+ * date:          01/2022, updated 08/2025
  * author:        Sergio Johann Filho <sergio.filho@pucrs.br>
  */
 
@@ -23,12 +23,14 @@
 #define EXTIO_OUT			0xf0000090
 #define DEBUG_ADDR			0xf00000d0
 
+#define S0BASE				0xe1000000
 #define S0CAUSE				0xe1000400
 
 #define GPIOCAUSE			0xe1010400
 #define GPIOCAUSEINV			0xe1010800
 #define GPIOMASK			0xe1010c00
 
+#define PAALTCFG0			0xe1004000
 #define PADDR				0xe1014000
 #define PAOUT				0xe1014010
 #define PAIN				0xe1014020
@@ -207,6 +209,7 @@ static int32_t mem_read(struct state_s *s, struct intctrl_s *ic, struct periph_s
 		case GPIOCAUSE:		return per->gpiocause;
 		case GPIOCAUSEINV:	return per->gpiocause_inv;
 		case GPIOMASK:		return per->gpiomask;
+		case PAALTCFG0:		return 0;
 		case PADDR:		return per->paddr;
 		case PAOUT:		return per->paout;
 		case PAIN:		return per->pain;
@@ -229,6 +232,11 @@ static int32_t mem_read(struct state_s *s, struct intctrl_s *ic, struct periph_s
 		case DISPLAY_WIDTH:	return per->display_width;
 		case DISPLAY_HEIGHT:	return per->display_height;
 		case DISPLAY_SCALE:	return per->display_scale;
+		default:
+			if (address >= S0BASE) {
+				printf("\nwrong IO address: %08x\n", address);
+				exit(-1);
+			}
 	}
 	if (address == EXIT_TRAP) return 0;
 
@@ -279,6 +287,7 @@ static void mem_write(struct state_s *s, struct intctrl_s *ic, struct periph_s *
 		case GPIOCAUSE:		per->gpiocause = value & 0xffff; return;
 		case GPIOCAUSEINV:	per->gpiocause_inv = value & 0xffff; return;
 		case GPIOMASK:		per->gpiomask = value & 0xffff; return;
+		case PAALTCFG0:		return;
 		case PADDR:		per->paddr = value & 0xffff; return;
 		case PAOUT:		per->paout = value & 0xffff; return;
 		case PAININV:		per->pain_inv = value & 0xffff; return;
@@ -312,6 +321,11 @@ static void mem_write(struct state_s *s, struct intctrl_s *ic, struct periph_s *
 			return;
 		case UART0_DIV:
 			return;
+		default:
+			if (address >= S0BASE) {
+				printf("\nwrong IO address: %08x\n", address);
+				exit(-1);
+			}
 	}
 	if (address == EXIT_TRAP) return;
 
