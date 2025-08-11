@@ -5,8 +5,7 @@ use ieee.numeric_std.all;
 entity if_wrapper is
 	generic (
 		SOC_SEGMENT : integer := 	16#e2#;		-- SoC segment address is 0xe2
-		SOC_CLASS : integer := 		16#00#;		-- Class address is 0x00
-		AXIS_DATA_WIDTH : integer := 8
+		SOC_CLASS : integer := 		16#00#		-- Class address is 0x00
 	);
 	port (
 		-- CPU bus signals
@@ -27,8 +26,8 @@ architecture if_arch of if_wrapper is
 	signal device : std_logic_vector(15 downto 0);
 	
 	-- registers
-	signal control: std_logic_vector(11 downto 0);
-	signal data: std_logic_vector(127 downto 0);
+	signal control : std_logic_vector(11 downto 0);
+	signal data : std_logic_vector(127 downto 0);
 begin
 	device <= addr_i(15 downto 0);
 	data_access <= '1' when addr_i(31 downto 24) = std_logic_vector(to_unsigned(SOC_SEGMENT, 8)) and
