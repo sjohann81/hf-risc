@@ -1,6 +1,6 @@
 /* file:          hf_riscv_sim.c
  * description:   HF-RISCV simulator
- * date:          11/2015 (first release), 03/2019 (last update)
+ * date:          11/2015 (first release), 08/2025 (last update)
  * author:        Sergio Johann Filho <sergio.filho@pucrs.br>
  */
 
@@ -22,12 +22,14 @@
 #define EXTIO_OUT			0xf0000090
 #define DEBUG_ADDR			0xf00000d0
 
+#define S0BASE				0xe1000000
 #define S0CAUSE				0xe1000400
 
 #define GPIOCAUSE			0xe1010400
 #define GPIOCAUSEINV			0xe1010800
 #define GPIOMASK			0xe1010c00
 
+#define PAALTCFG0			0xe1004000
 #define PADDR				0xe1014000
 #define PAOUT				0xe1014010
 #define PAIN				0xe1014020
@@ -75,7 +77,8 @@ int8_t sram[MEM_SIZE];
 FILE *fptr;
 int32_t log_enabled = 0;
 
-void dumpregs(state *s){
+void dumpregs(state *s)
+{
 	int32_t i;
 
 	for (i = 0; i < 32; i+=4){
@@ -85,13 +88,15 @@ void dumpregs(state *s){
 	printf("\n");
 }
 
-void bp(state *s, uint32_t ir){
+void bp(state *s, uint32_t ir)
+{
 	printf("\npc: %08x, ir: %08x", s->pc, ir);
 	dumpregs(s);
 	getchar();
 }
 
-static int32_t mem_fetch(state *s, uint32_t address){
+static int32_t mem_fetch(state *s, uint32_t address)
+{
 	uint32_t value=0;
 	uint32_t *ptr;
 
@@ -101,8 +106,9 @@ static int32_t mem_fetch(state *s, uint32_t address){
 	return(value);
 }
 
-static int32_t mem_read(state *s, int32_t size, uint32_t address){
-	uint32_t value=0;
+static int32_t mem_read(state *s, int32_t size, uint32_t address)
+{
+	uint32_t value = 0;
 	uint32_t *ptr;
 
 	switch (address & ~0xf){
@@ -115,6 +121,7 @@ static int32_t mem_read(state *s, int32_t size, uint32_t address){
 		case GPIOCAUSE:		return s->gpiocause;
 		case GPIOCAUSEINV:	return s->gpiocause_inv;
 		case GPIOMASK:		return s->gpiomask;
+		case PAALTCFG0:		return 0;
 		case PADDR:		return s->paddr;
 		case PAOUT:		return s->paout;
 		case PAIN:		return s->pain;
@@ -133,6 +140,11 @@ static int32_t mem_read(state *s, int32_t size, uint32_t address){
 		case UARTMASK:		return s->uartmask;
 		case UART0:		return getchar();
 		case UART0_DIV:		return 0;
+		default:
+			if (address >= S0BASE) {
+				printf("\nwrong IO address: %08x\n", address);
+				exit(-1);
+			}
 	}
 	if (address >= EXIT_TRAP) return 0;
 
@@ -167,7 +179,8 @@ static int32_t mem_read(state *s, int32_t size, uint32_t address){
 	return(value);
 }
 
-static void mem_write(state *s, int32_t size, uint32_t address, uint32_t value){
+static void mem_write(state *s, int32_t size, uint32_t address, uint32_t value)
+{
 	uint32_t i;
 	uint32_t *ptr;
 
@@ -179,9 +192,9 @@ static void mem_write(state *s, int32_t size, uint32_t address, uint32_t value){
 		case GPIOCAUSE:		s->gpiocause = value & 0xffff; return;
 		case GPIOCAUSEINV:	s->gpiocause_inv = value & 0xffff; return;
 		case GPIOMASK:		s->gpiomask = value & 0xffff; return;
+		case PAALTCFG0:		return;
 		case PADDR:		s->paddr = value & 0xffff; return;
 		case PAOUT:		s->paout = value & 0xffff; return;
-//		case PAIN:		s->gpiocause = value & 0xffff; return;
 		case PAININV:		s->pain_inv = value & 0xffff; return;
 		case PAINMASK:		s->pain_mask = value & 0xffff; return;
 		case TIMERCAUSE_INV:	s->timercause_inv = value & 0xff; return;
@@ -209,6 +222,11 @@ static void mem_write(state *s, int32_t size, uint32_t address, uint32_t value){
 			return;
 		case UART0_DIV:
 			return;
+		default:
+			if (address >= S0BASE) {
+				printf("\nwrong IO address: %08x\n", address);
+				exit(-1);
+			}
 	}
 	if (address >= EXIT_TRAP) return;
 
@@ -241,7 +259,8 @@ static void mem_write(state *s, int32_t size, uint32_t address, uint32_t value){
 	}
 }
 
-void cycle(state *s){
+void cycle(state *s)
+{
 	uint32_t inst, i;
 	uint32_t opcode, rd, rs1, rs2, funct3, funct7, imm_i, imm_s, imm_sb, imm_u, imm_uj;
 	int32_t *r = s->r;
@@ -458,7 +477,8 @@ fail:
 	exit(0);
 }
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[])
+{
 	state context;
 	state *s;
 	FILE *in;

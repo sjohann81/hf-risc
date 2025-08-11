@@ -1,6 +1,6 @@
 /* file:          hf_risc_sim.c
  * description:   HF-RISC simulator
- * date:          08/2015
+ * date:          08/2015 (first release), 08/2025 (last update)
  * author:        Sergio Johann Filho <sergio.filho@pucrs.br>
  */
 
@@ -22,7 +22,19 @@
 #define EXTIO_OUT			0xf0000090
 #define DEBUG_ADDR			0xf00000d0
 
+#define S0BASE				0xe1000000
 #define S0CAUSE				0xe1000400
+
+#define GPIOCAUSE			0xe1010400
+#define GPIOCAUSEINV			0xe1010800
+#define GPIOMASK			0xe1010c00
+
+#define PAALTCFG0			0xe1004000
+#define PADDR				0xe1014000
+#define PAOUT				0xe1014010
+#define PAIN				0xe1014020
+#define PAININV				0xe1014030
+#define PAINMASK			0xe1014040
 
 #define TIMERCAUSE			0xe1020400
 #define TIMERCAUSE_INV			0xe1020800
@@ -65,17 +77,19 @@ int8_t sram[MEM_SIZE];
 FILE *fptr;
 int32_t log_enabled = 0;
 
-static int32_t mem_read(state *s, int32_t size, uint32_t address){
-	uint32_t value=0;
+static int32_t mem_read(state *s, int32_t size, uint32_t address)
+{
+	uint32_t value = 0;
 	uint32_t *ptr;
 
-	switch (address){
+	switch (address & 0xf){
 		case IRQ_VECTOR:	return s->vector;
 		case IRQ_CAUSE:		return s->cause;
 		case IRQ_MASK:		return s->mask;
 		case IRQ_STATUS:	return s->status;
 		case IRQ_EPC:		return s->epc;
 		case S0CAUSE:		return s->s0cause;
+		case PAALTCFG0:		return 0;
 		case TIMERCAUSE:	return s->timercause;
 		case TIMERCAUSE_INV:	return s->timercause_inv;
 		case TIMERMASK:		return s->timermask;
@@ -89,6 +103,11 @@ static int32_t mem_read(state *s, int32_t size, uint32_t address){
 		case UARTMASK:		return s->uartmask;
 		case UART0:		return getchar();
 		case UART0_DIV:		return 0;
+		default:
+			if (address >= S0BASE) {
+				printf("\nwrong IO address: %08x\n", address);
+				exit(-1);
+			}
 	}
 	if (address >= EXIT_TRAP) return 0;
 	
@@ -123,7 +142,8 @@ static int32_t mem_read(state *s, int32_t size, uint32_t address){
 	return(value);
 }
 
-static void mem_write(state *s, int32_t size, uint32_t address, uint32_t value){
+static void mem_write(state *s, int32_t size, uint32_t address, uint32_t value)
+{
 	uint32_t i;
 	uint32_t *ptr;
 
@@ -132,6 +152,7 @@ static void mem_write(state *s, int32_t size, uint32_t address, uint32_t value){
 		case IRQ_MASK:		s->mask = value; return;
 		case IRQ_STATUS:	if (value == 0){ s->status = 0; for (i = 0; i < 4; i++) s->status_dly[i] = 0; }else{ s->status_dly[3] = value; } return;
 		case IRQ_EPC:		s->epc = value; return;
+		case PAALTCFG0:		return;
 		case TIMERCAUSE_INV:	s->timercause_inv = value & 0xff; return;
 		case TIMERMASK:		s->timermask = value & 0xff; return;
 		case TIMER0:		return;
@@ -167,6 +188,11 @@ static void mem_write(state *s, int32_t size, uint32_t address, uint32_t value){
 			return;
 		case UART0_DIV:
 			return;
+		default:
+			if (address >= S0BASE) {
+				printf("\nwrong IO address: %08x\n", address);
+				exit(-1);
+			}
 	}
 	if (address >= EXIT_TRAP) return;
 
@@ -199,7 +225,8 @@ static void mem_write(state *s, int32_t size, uint32_t address, uint32_t value){
 	}
 }
 
-void mult_unsigned(uint32_t a, uint32_t b, uint32_t *hi, uint32_t *lo){
+void mult_unsigned(uint32_t a, uint32_t b, uint32_t *hi, uint32_t *lo)
+{
 	uint32_t ahi, alo, bhi, blo;
 	uint32_t c0, c1, c2;
 	uint32_t c1_a, c1_b;
@@ -222,7 +249,8 @@ void mult_unsigned(uint32_t a, uint32_t b, uint32_t *hi, uint32_t *lo){
 	*lo = c0;
 }
 
-void mult_signed(int32_t a, int32_t b, uint32_t *hi, uint32_t *lo){
+void mult_signed(int32_t a, int32_t b, uint32_t *hi, uint32_t *lo)
+{
 	uint32_t ahi, alo, bhi, blo;
 	uint32_t c0, c1, c2;
 	int32_t c1_a, c1_b;
@@ -245,7 +273,8 @@ void mult_signed(int32_t a, int32_t b, uint32_t *hi, uint32_t *lo){
 	*lo = c0;
 }
 
-void cycle(state *s){
+void cycle(state *s)
+{
 	uint32_t opcode, i;
 	uint32_t op, rs, rt, rd, re, func, imm, target;
 	int32_t imm_shift, branch=0;
@@ -412,7 +441,8 @@ void cycle(state *s){
 	s->timer1 &= 0xffff;
 }
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[])
+{
 	state context;
 	state *s;
 	FILE *in;
