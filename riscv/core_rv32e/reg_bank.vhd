@@ -21,13 +21,12 @@ begin
 	process(clock, write_reg, wreg, write_data, read_reg1, read_reg2, registers)
 	begin
 		if clock'event and clock = '1' then
-			if write_reg /= "00000" and wreg = '1' then
+			if write_reg /= "0000" and wreg = '1' then
 				registers(conv_integer(write_reg)) <= write_data;
 			end if;
 		end if;
 	end process;
 
-	read_data1 <= registers(conv_integer(read_reg1)) when read_reg1 /= "00000" else (others => '0');
-	read_data2 <= registers(conv_integer(read_reg2)) when read_reg2 /= "00000" else (others => '0');
+	read_data1 <= registers(conv_integer(read_reg1)) when read_reg1 /= "0000" else (others => '0');
+	read_data2 <= registers(conv_integer(read_reg2)) when read_reg2 /= "0000" else (others => '0');
 end arch_reg_bank;
-
