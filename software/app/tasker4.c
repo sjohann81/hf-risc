@@ -80,7 +80,6 @@ void timer_init()
 	TIMER1PRE = TIMERPRE_DIV16;
 
 	/* unlock TIMER1 for reset */
-	TIMER1 = TIMERSET;
 	TIMER1 = 0;
 
 	/* TIMER1 frequency: (39063 * 16) = 250000 cycles (10ms timer @ 25MHz) */
