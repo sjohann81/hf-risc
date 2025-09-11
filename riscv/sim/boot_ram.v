@@ -1,4 +1,4 @@
-module bram #(
+module boot_ram #(
 	parameter [31:0] ADDR_WIDTH=12
 ) (
 	input wire clk,

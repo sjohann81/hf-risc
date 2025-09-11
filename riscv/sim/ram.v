@@ -1,4 +1,4 @@
-module ram #(
+module bram #(
 	parameter [31:0] ADDR_WIDTH=15
 ) (
 	input wire clk,

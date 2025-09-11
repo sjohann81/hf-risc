@@ -16,6 +16,7 @@ module top_tb
 	wire [31:0] data_read_periph; wire [31:0] data_read_periph_s; wire [31:0] data_write_periph;
 	wire [15:0] gpioa_in; wire [15:0] gpioa_out; wire [15:0] gpioa_ddr;
 	wire [15:0] gpiob_in; wire [15:0] gpiob_out; wire [15:0] gpiob_ddr;
+	wire gpio_sig = 1'b0; wire gpio_sig2 = 1'b0; wire gpio_sig3 = 1'b0;
 
 	// reset generation
 	initial begin
@@ -38,7 +39,7 @@ module top_tb
 	assign boot_enable_n = (address[31:28] == 4'b0000) || reset == 1'b1 ? 4'b0000 : 4'b1111;
 	assign ram_enable_n = (address[31:28] == 4'b0100) || reset == 1'b1 ? 4'b0000 : 4'b1111;
 	assign data_read = periph == 1'b1 || periph_dly == 1'b1 ? data_read_periph : address[31:28] == 4'b0000 && ram_dly == 1'b0 ? data_read_boot : data_read_ram;
-	assign data_w_n_ram = ~data_we;
+	assign data_w_n_ram =  ~data_we;
 
 	always @(posedge clock, posedge reset) begin
 		if (reset == 1'b1) begin
@@ -89,8 +90,8 @@ module top_tb
 	);
 
 	// instruction and data memory (boot RAM)
-	bram
-	#() rom (
+	boot_ram #(
+	) ram (
 		.clk(clock),
 		.addr(address[11:2]),
 		.cs_n(boot_enable_n),
@@ -100,8 +101,8 @@ module top_tb
 	);
 	
 	// instruction and data memory
-	ram
-	#() ram (
+	bram #(
+	) bram (
 		.clk(clock),
 		.addr(address[14:2]),
 		.cs_n(ram_enable_n),
@@ -114,16 +115,15 @@ module top_tb
 		$dumpfile("top_tb.vcd");
 		$dumpvars(0, top_tb);
 		
-		//$monitor("time=%1d, loop=%1d", $time, i);
 		#510
-		
 		while (address != 32'he0000000) begin
 			@(posedge clock);
 			//$strobe("---> x=%h", address);
+			if (address == 32'hf00000d0) begin
+				$write("%c", data_write >> 24);
+			end
 		end
 		
-		//#100000
-		//$strobe("---> x=%h", address);
 		$display("end of simulation");
 		$finish(0);
 	end
