@@ -10,7 +10,7 @@ module hfrisc_soc
 
 	parameter [31:0] address_width=15;
 
-	reg clock; wire [3:0] boot_enable_n; wire [3:0] ram_enable_n; wire stall; reg ram_dly; reg rff1; reg reset;
+	reg clock; wire boot_enable; wire [3:0] ram_enable_n; wire stall; reg ram_dly; reg rff1; reg reset;
 	wire [31:0] address; wire [31:0] data_read; wire [31:0] data_write; wire [31:0] data_read_boot; wire [31:0] data_read_ram;
 	wire [7:0] ext_irq;
 	wire [3:0] data_we; wire [3:0] data_w_n_ram;
@@ -133,7 +133,7 @@ module hfrisc_soc
 	assign gpiob_in[15] = gpiob_ddr[15] == 1'b1 ? 1'b0 : gpiob[15];
 
 	assign stall = 1'b0;
-	assign boot_enable_n = address[31:28] == 4'b0000 ? 4'b0000 : 1'b1111;
+	assign boot_enable = address[31:28] == 4'b0000 ? 1'b1 : 1'b0;
 	assign ram_enable_n = address[31:28] == 4'b0100 ? 4'b0000 : 1'b1111;
 	assign data_read = periph == 1'b1 || periph_dly == 1'b1 ? data_read_periph : address[31:28] == 4'b0000 && ram_dly == 1'b0 ? data_read_boot : data_read_ram;
 	assign data_w_n_ram =  ~data_we;
@@ -183,9 +183,9 @@ module hfrisc_soc
 	boot_ram
 	(
 		.clk(clock),
-		.enable(boot_enable_n),
+		.enable(boot_enable),
 		.write_byte_enable(4'b0000),
-		.address(address[31:2]),
+		.address(address[11:2]),
 		.data_write(),
 		.data_read(data_read_boot)
 	);
@@ -196,11 +196,12 @@ module hfrisc_soc
 	bram
 	(
 		.clk(clock),
-		.addr(address[15:2]),
+		.addr(address[address_width - 1:2]),
 		.cs_n(ram_enable_n),
 		.we_n(data_w_n_ram),
 		.data_i(data_write),
 		.data_o(data_read_ram)
 	);
+
 
 endmodule
