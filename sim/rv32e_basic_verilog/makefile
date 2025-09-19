@@ -30,7 +30,7 @@ modelsim:
 	@ cp $(PROG_SRC) .
 	vlib mylib
 	vmap work ./mylib
-	vcom -work mylib $(VHD_SRC) $(VERILOG_SRC)
+	vlog -work mylib $(VERILOG_SRC)
 
 modelsim-top: modelsim
 	vsim $(GUI) mylib.$(TOP) -voptargs=+acc -c -do "vcd file ${TOP}.vcd -compress; vcd add /*; run ${TIME}; quit"
