@@ -448,6 +448,14 @@ core_wrapper: crt
 	$(GCC_$(ARCH)) -o core_wrapper.o app/core_wrapper.c
 	@$(MAKE) --no-print-directory link
 
+switch_axi: crt
+	$(GCC_$(ARCH)) -o switch_axi.o app/switch_axi.c
+	@$(MAKE) --no-print-directory link
+
+leds_axi: crt
+	$(GCC_$(ARCH)) -o leds_axi.o app/leds_axi.c
+	@$(MAKE) --no-print-directory link
+
 
 
 include app/malardalen/malardalen.mak
