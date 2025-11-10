@@ -66,6 +66,8 @@ typedef struct {
 	int8_t j, nox_bds;
 	int32_t vector, cause, mask, status, status_dly[4], epc;
 	uint32_t s0cause;
+	uint32_t gpiocause, gpiocause_inv, gpiomask;
+	uint32_t paddr, paout, pain, pain_inv, pain_mask;
 	uint32_t timercause, timercause_inv, timermask;
 	uint32_t timer0, timer1, timer1_pre, timer1_ctc, timer1_ocr;
 	uint32_t uartcause, uartcause_inv, uartmask;
@@ -82,14 +84,22 @@ static int32_t mem_read(state *s, int32_t size, uint32_t address)
 	uint32_t value = 0;
 	uint32_t *ptr;
 
-	switch (address & 0xf){
+	switch (address & ~0xf){
 		case IRQ_VECTOR:	return s->vector;
 		case IRQ_CAUSE:		return s->cause;
 		case IRQ_MASK:		return s->mask;
 		case IRQ_STATUS:	return s->status;
 		case IRQ_EPC:		return s->epc;
 		case S0CAUSE:		return s->s0cause;
+		case GPIOCAUSE:		return s->gpiocause;
+		case GPIOCAUSEINV:	return s->gpiocause_inv;
+		case GPIOMASK:		return s->gpiomask;
 		case PAALTCFG0:		return 0;
+		case PADDR:		return s->paddr;
+		case PAOUT:		return s->paout;
+		case PAIN:		return s->pain;
+		case PAININV:		return s->pain_inv;
+		case PAINMASK:		return s->pain_mask;
 		case TIMERCAUSE:	return s->timercause;
 		case TIMERCAUSE_INV:	return s->timercause_inv;
 		case TIMERMASK:		return s->timermask;
@@ -108,6 +118,7 @@ static int32_t mem_read(state *s, int32_t size, uint32_t address)
 				printf("\nwrong IO address: %08x\n", address);
 				exit(-1);
 			}
+			//printf("\naddress: %08x", address);
 	}
 	if (address >= EXIT_TRAP) return 0;
 	
@@ -147,12 +158,19 @@ static void mem_write(state *s, int32_t size, uint32_t address, uint32_t value)
 	uint32_t i;
 	uint32_t *ptr;
 
-	switch (address){
+	switch (address & ~0xf){
 		case IRQ_VECTOR:	s->vector = value; return;
 		case IRQ_MASK:		s->mask = value; return;
 		case IRQ_STATUS:	if (value == 0){ s->status = 0; for (i = 0; i < 4; i++) s->status_dly[i] = 0; }else{ s->status_dly[3] = value; } return;
 		case IRQ_EPC:		s->epc = value; return;
+		case GPIOCAUSE:		s->gpiocause = value & 0xffff; return;
+		case GPIOCAUSEINV:	s->gpiocause_inv = value & 0xffff; return;
+		case GPIOMASK:		s->gpiomask = value & 0xffff; return;
 		case PAALTCFG0:		return;
+		case PADDR:		s->paddr = value & 0xffff; return;
+		case PAOUT:		s->paout = value & 0xffff; return;
+		case PAININV:		s->pain_inv = value & 0xffff; return;
+		case PAINMASK:		s->pain_mask = value & 0xffff; return;
 		case TIMERCAUSE_INV:	s->timercause_inv = value & 0xff; return;
 		case TIMERMASK:		s->timermask = value & 0xff; return;
 		case TIMER0:		return;
@@ -180,10 +198,13 @@ static void mem_write(state *s, int32_t size, uint32_t address, uint32_t value)
 			printf("other: %d (%f)\n", s->other, (float)s->other / (float)s->ins);
 			exit(0);
 		case DEBUG_ADDR:
+			//printf("!%08x\n", value);
+			printf("%c", (int8_t)(value & 0xff));
 			if (log_enabled)
 				fprintf(fptr, "%c", (int8_t)(value & 0xff));
 			return;
 		case UART0:
+			//printf("@%08x\n", value);
 			fprintf(stdout, "%c", (int8_t)(value & 0xff));
 			return;
 		case UART0_DIV:
@@ -309,6 +330,7 @@ void cycle(state *s)
 	s->status = s->status_dly[0];
 	for (i = 0; i < 3; i++)
 		s->status_dly[i] = s->status_dly[i+1];
+	s->cause = s->s0cause ? 0x01 : 0x00;
 	s->j = 0;
 	if (s->nox_bds){
 		s->nox_bds = 0;
@@ -390,6 +412,8 @@ void cycle(state *s)
 
 	s->ins++;
 	if (branch) s->taken_bra++;
+	
+	s->gpiocause = (s->pain ^ s->pain_inv) & s->pain_mask ? 0x01 : 0x00;
 	if (s->timer0 & 0x10000) {
 		s->timercause |= 0x01;
 	} else {
@@ -409,8 +433,8 @@ void cycle(state *s)
 	} else {
 		s->timercause &= 0xf7;
 	}
-	s->s0cause = (s->timercause ^ s->timercause_inv) & s->timermask ? 0x04 : 0x00;
-	s->cause = s->s0cause ? 0x01 : 0x00;
+	s->s0cause = (s->gpiocause ^ s->gpiocause_inv) & s->gpiomask ? 0x02 : 0x00;
+	s->s0cause |= (s->timercause ^ s->timercause_inv) & s->timermask ? 0x04 : 0x00;
 
 	s->timer0++;
 	switch (s->timer1_pre) {

@@ -214,6 +214,7 @@ static void mem_write(state *s, int32_t size, uint32_t address, uint32_t value)
 			printf("\nend of simulation - %ld cycles (%d).\n", s->cycles, s->r[10]);
 			exit(s->r[10]);
 		case DEBUG_ADDR:
+			printf("%c", (int8_t)(value & 0xff));
 			if (log_enabled)
 				fprintf(fptr, "%c", (int8_t)(value & 0xff));
 			return;
