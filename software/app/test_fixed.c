@@ -100,6 +100,8 @@ int testmath()
 	printf("log (2,10): %s\n", buf);
 	fixtoa(fix_pow(fix_val(2.0), fix_val(3.0)), buf, 6);
 	printf("pow (2,3): %s\n", buf);
+	fixtoa(fix_pow(fix_val(2.21), fix_val(3.5432)), buf, 6);
+	printf("pow (2.21,3.5432): %s\n", buf);
 
 	for (i = 0; i < angles; i++) {
 		angle = degrees[i];
