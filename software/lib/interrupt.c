@@ -236,6 +236,16 @@ void irq0_handler(void)
 			} while (irq);
 			break;
 		case MASK_S0CAUSE_UART:
+			irq = (UARTCAUSE ^ UARTCAUSEINV) & UARTMASK;
+
+			do {
+				if (irq & 0x1) {
+					/* call irq handler */
+					uart_vector[i]();
+				}
+				irq >>= 1;
+				++i;
+			} while (irq);
 			break;
 		case MASK_S0CAUSE_SPI:
 			break;
@@ -251,15 +261,6 @@ void irq0_handler(void)
 
 void irq_enable(void)
 {
-#ifndef DEBUG_PORT
-	uint16_t d;
-
-	d = (uint16_t)(CPU_SPEED / 57600);
-	UART0DIV = d;
-	UART0 = 0;
-
-	PAALTCFG0 |= (MASK_UART0_TX | MASK_UART0_RX);
-#endif
 	/* enable mask for Segment 0 (tied to IRQ0 line) */
 	IRQ_MASK = MASK_IRQ0;
 	/* global interrupts enable */

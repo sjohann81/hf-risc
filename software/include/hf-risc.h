@@ -1,8 +1,11 @@
 /* file:          hf-risc.h
  * description:   hardware abstraction layer (HAL) definitions for HF-RISC
- * date:          01/2019 (last updated: 03/2023)
+ * date:          01/2019 (last updated: 03/2026)
  * author:        Sergio Johann Filho <sergio.filho@pucrs.br>
  */
+
+#ifndef _HF_RISC_H_
+#define _HF_RISC_H_
 
 /* C type extensions */
 typedef unsigned char			uint8_t;
@@ -14,6 +17,7 @@ typedef int				int32_t;
 typedef unsigned long long		uint64_t;
 typedef long long			int64_t;
 typedef unsigned long			size_t;
+typedef unsigned long			uintptr_t;
 
 /* disable interrupts, return previous int status / enable interrupts */
 #define _di()				_interrupt_set(0)
@@ -471,3 +475,5 @@ extern int32_t syscall(int32_t service, int32_t arg0, int32_t arg1, int32_t arg2
 
 #include <libc.h>
 #include <malloc.h>
+
+#endif

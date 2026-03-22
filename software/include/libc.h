@@ -97,7 +97,7 @@ int32_t sprintf(int8_t *out, const int8_t *fmt, ...);
 /*
 auxiliary routines
 */
-void uart_init(uint32_t baud);
+//void uart_init(uint32_t baud);
 void delay_ms(uint32_t msec);
 void delay_us(uint32_t usec);
 void panic(void);
