@@ -451,6 +451,13 @@ vga_sprite: crt
 core_wrapper: crt
 	$(GCC_$(ARCH)) -o core_wrapper.o app/core_wrapper.c
 	@$(MAKE) --no-print-directory link
+	
+uart_test: crt
+	$(GCC_$(ARCH)) -I ./drivers/uart -o uart_hal.o drivers/uart/uart_hal.c
+	$(GCC_$(ARCH)) -I ./drivers/uart -o uart_hfrisc.o drivers/uart/uart_hfrisc.c
+	$(GCC_$(ARCH)) -I ./drivers/uart -o uart_test.o app/uart_test.c
+	@$(MAKE) --no-print-directory link
+
 
 
 
